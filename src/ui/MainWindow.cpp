@@ -6,6 +6,7 @@
 #include <QSplitter>
 #include <QScrollArea>
 #include <QProgressDialog>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), decoder(nullptr), metricsCollector(nullptr),
@@ -65,6 +66,12 @@ void MainWindow::setupUI() {
 
     tabWidget->addTab(frameListView, "帧分析");
     tabWidget->setMinimumWidth(350);
+
+    connect(tabWidget, &QTabWidget::currentChanged, this, [this](int index) {
+        if (index == 1 && metricsCollector->getFrameCount() > 0) {
+            frameListView->updateFrameList();
+        }
+    });
 
     splitter->addWidget(tabWidget);
     splitter->setStretchFactor(0, 2);
@@ -146,11 +153,11 @@ void MainWindow::openFile() {
 
         analyzerThread = new VideoAnalyzerThread(filePath, this);
         connect(analyzerThread, &VideoAnalyzerThread::progressUpdated,
-                this, &MainWindow::onAnalysisProgress);
+                this, &MainWindow::onAnalysisProgress, Qt::QueuedConnection);
         connect(analyzerThread, &VideoAnalyzerThread::analysisComplete,
-                this, &MainWindow::onAnalysisComplete);
+                this, &MainWindow::onAnalysisComplete, Qt::QueuedConnection);
         connect(analyzerThread, &VideoAnalyzerThread::analysisFailed,
-                this, &MainWindow::onAnalysisFailed);
+                this, &MainWindow::onAnalysisFailed, Qt::QueuedConnection);
         connect(progressDialog, &QProgressDialog::canceled, [this]() {
             if (analyzerThread) {
                 analyzerThread->stop();
@@ -213,30 +220,28 @@ void MainWindow::onAnalysisProgress(int current, int total) {
     }
 }
 
-void MainWindow::onAnalysisComplete(const QImage& firstFrame) {
-    if (progressDialog) {
-        progressDialog->close();
-        delete progressDialog;
-        progressDialog = nullptr;
-    }
-
-    if (analyzerThread) {
-        const QVector<FrameInfo>& frames = analyzerThread->getFrames();
-        for (const auto& frame : frames) {
-            metricsCollector->addFrame(frame);
+void MainWindow::onAnalysisComplete() {
+    // 使用 QTimer 延迟处理，确保信号处理完毕
+    QTimer::singleShot(0, this, [this]() {
+        if (progressDialog) {
+            progressDialog->close();
+            delete progressDialog;
+            progressDialog = nullptr;
         }
-    }
 
-    if (!firstFrame.isNull()) {
-        videoPreview->setPixmap(QPixmap::fromImage(firstFrame).scaled(
-            videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    } else {
-        videoPreview->setText("无法加载预览图像");
-    }
+        if (analyzerThread) {
+            analyzerThread->wait();
+            const QVector<FrameInfo>& frames = analyzerThread->getFrames();
+            metricsCollector->addFrames(frames);
+            delete analyzerThread;
+            analyzerThread = nullptr;
+        }
 
-    statusLabel->setText(QString("已打开: %1 (共 %2 帧)")
-        .arg(currentFilePath)
-        .arg(metricsCollector->getFrameCount()));
+        videoPreview->setText("点击帧列表查看预览");
+        statusLabel->setText(QString("已打开: %1 (共 %2 帧)")
+            .arg(currentFilePath)
+            .arg(metricsCollector->getFrameCount()));
+    });
 }
 
 void MainWindow::onAnalysisFailed(const QString& error) {

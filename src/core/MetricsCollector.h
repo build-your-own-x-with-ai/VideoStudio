@@ -12,6 +12,7 @@ public:
     explicit MetricsCollector(QObject* parent = nullptr);
 
     void addFrame(const FrameInfo& frame);
+    void addFrames(const QVector<FrameInfo>& frames);
     void clear();
 
     int getFrameCount() const { return frames.size(); }

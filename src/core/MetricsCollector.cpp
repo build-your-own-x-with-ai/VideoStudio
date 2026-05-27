@@ -10,6 +10,11 @@ void MetricsCollector::addFrame(const FrameInfo& frame) {
     emit metricsUpdated();
 }
 
+void MetricsCollector::addFrames(const QVector<FrameInfo>& newFrames) {
+    frames.append(newFrames);
+    emit metricsUpdated();
+}
+
 void MetricsCollector::clear() {
     frames.clear();
     emit metricsUpdated();

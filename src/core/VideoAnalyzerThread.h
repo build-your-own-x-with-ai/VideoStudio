@@ -19,7 +19,7 @@ public:
 
 signals:
     void progressUpdated(int current, int total);
-    void analysisComplete(const QImage& firstFrame);
+    void analysisComplete();
     void analysisFailed(const QString& error);
 
 protected:

@@ -75,10 +75,7 @@ void FrameListView::setupUI() {
 
 void FrameListView::setMetricsCollector(MetricsCollector* collector) {
     metricsCollector = collector;
-    if (metricsCollector) {
-        connect(metricsCollector, &MetricsCollector::metricsUpdated,
-                this, &FrameListView::updateFrameList);
-    }
+    // 不自动连接信号，改为手动调用 updateFrameList
 }
 
 void FrameListView::updateFrameList() {

@@ -28,7 +28,7 @@ private slots:
     void about();
     void onFrameSelected(int frameIndex);
     void onAnalysisProgress(int current, int total);
-    void onAnalysisComplete(const QImage& firstFrame);
+    void onAnalysisComplete();
     void onAnalysisFailed(const QString& error);
 
 private:
