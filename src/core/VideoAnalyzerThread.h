@@ -14,6 +14,7 @@ public:
 
     void stop();
     const QVector<FrameInfo>& getFrames() const { return frames; }
+    const QImage& getFirstFrameImage() const { return firstFrameImage; }
 
 signals:
     void progressUpdated(int current, int total);
@@ -26,6 +27,7 @@ protected:
 private:
     QString filePath;
     QVector<FrameInfo> frames;
+    QImage firstFrameImage;
     bool shouldStop;
 };
 

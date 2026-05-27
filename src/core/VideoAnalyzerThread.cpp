@@ -29,10 +29,16 @@ void VideoAnalyzerThread::run() {
 
     FrameInfo frameInfo;
     int frameCount = 0;
+    bool firstFrame = true;
 
     while (!shouldStop && decoder.readNextFrame(frameInfo)) {
         frames.append(frameInfo);
         frameCount++;
+
+        if (firstFrame) {
+            firstFrameImage = decoder.getCurrentFrameImage();
+            firstFrame = false;
+        }
 
         if (frameCount % 100 == 0) {
             emit progressUpdated(frameCount, estimatedFrames);

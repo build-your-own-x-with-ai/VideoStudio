@@ -55,7 +55,6 @@ private:
     QAction* aboutAction;
 
     QString currentFilePath;
-    QImage firstFrameImage;
 };
 
 #endif // MAINWINDOW_H

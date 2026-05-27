@@ -130,16 +130,6 @@ void MainWindow::openFile() {
         currentFilePath = filePath;
         StreamInfo info = decoder->getStreamInfo();
         streamInfoPanel->setStreamInfo(info);
-
-        FrameInfo frameInfo;
-        if (decoder->readNextFrame(frameInfo)) {
-            firstFrameImage = decoder->getCurrentFrameImage();
-            if (!firstFrameImage.isNull()) {
-                videoPreview->setPixmap(QPixmap::fromImage(firstFrameImage).scaled(
-                    videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-            }
-        }
-
         decoder->close();
 
         metricsCollector->clear();
@@ -234,6 +224,12 @@ void MainWindow::onAnalysisComplete() {
         const QVector<FrameInfo>& frames = analyzerThread->getFrames();
         for (const auto& frame : frames) {
             metricsCollector->addFrame(frame);
+        }
+
+        const QImage& firstFrame = analyzerThread->getFirstFrameImage();
+        if (!firstFrame.isNull()) {
+            videoPreview->setPixmap(QPixmap::fromImage(firstFrame).scaled(
+                videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
         }
     }
 
