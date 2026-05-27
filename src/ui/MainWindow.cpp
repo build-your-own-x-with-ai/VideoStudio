@@ -7,6 +7,7 @@
 #include <QScrollArea>
 #include <QProgressDialog>
 #include <QTimer>
+#include <QDir>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), decoder(nullptr), metricsCollector(nullptr),
@@ -117,6 +118,29 @@ void MainWindow::setupMenuBar() {
     exitAction->setShortcut(QKeySequence::Quit);
     connect(exitAction, &QAction::triggered, this, &QMainWindow::close);
 
+    QMenu* exportMenu = menuBar->addMenu("导出");
+    exportHTMLAction = exportMenu->addAction("导出 HTML 报告...");
+    exportHTMLAction->setEnabled(false);
+    connect(exportHTMLAction, &QAction::triggered, this, &MainWindow::exportHTMLReport);
+
+    exportFrameListAction = exportMenu->addAction("导出帧列表 (CSV)...");
+    exportFrameListAction->setEnabled(false);
+    connect(exportFrameListAction, &QAction::triggered, this, &MainWindow::exportFrameListCSV);
+
+    exportBitrateAction = exportMenu->addAction("导出比特率数据 (CSV)...");
+    exportBitrateAction->setEnabled(false);
+    connect(exportBitrateAction, &QAction::triggered, this, &MainWindow::exportBitrateCSV);
+
+    exportGOPAction = exportMenu->addAction("导出 GOP 数据 (CSV)...");
+    exportGOPAction->setEnabled(false);
+    connect(exportGOPAction, &QAction::triggered, this, &MainWindow::exportGOPCSV);
+
+    exportMenu->addSeparator();
+
+    saveScreenshotAction = exportMenu->addAction("保存截图...");
+    saveScreenshotAction->setEnabled(false);
+    connect(saveScreenshotAction, &QAction::triggered, this, &MainWindow::saveScreenshot);
+
     QMenu* helpMenu = menuBar->addMenu("帮助");
     aboutAction = helpMenu->addAction("关于");
     connect(aboutAction, &QAction::triggered, this, &MainWindow::about);
@@ -216,6 +240,13 @@ void MainWindow::about() {
 void MainWindow::updateUI() {
     bool hasVideo = decoder->isOpen();
     closeAction->setEnabled(hasVideo);
+
+    bool hasAnalyzedData = metricsCollector->getFrameCount() > 0;
+    exportHTMLAction->setEnabled(hasAnalyzedData);
+    exportFrameListAction->setEnabled(hasAnalyzedData);
+    exportBitrateAction->setEnabled(hasAnalyzedData);
+    exportGOPAction->setEnabled(hasAnalyzedData);
+    saveScreenshotAction->setEnabled(!videoPreview->pixmap().isNull());
 }
 
 void MainWindow::onFrameSelected(int frameIndex) {
@@ -282,6 +313,7 @@ void MainWindow::onAnalysisComplete() {
         statusLabel->setText(QString("已打开: %1 (共 %2 帧)")
             .arg(currentFilePath)
             .arg(metricsCollector->getFrameCount()));
+        updateUI();
     });
 }
 
@@ -294,4 +326,137 @@ void MainWindow::onAnalysisFailed(const QString& error) {
 
     QMessageBox::critical(this, "错误", QString("分析失败: %1").arg(error));
     closeFile();
+}
+
+void MainWindow::exportHTMLReport() {
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        "导出 HTML 报告",
+        QDir::homePath() + "/video_report.html",
+        "HTML 文件 (*.html)"
+    );
+
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    bitrateAnalyzer->analyze(metricsCollector->getAllFrames(), 1.0);
+    gopAnalyzer->analyze(metricsCollector->getAllFrames());
+
+    bool success = Exporter::exportHTMLReport(
+        filePath,
+        currentFilePath,
+        streamInfoPanel->getStreamInfo(),
+        metricsCollector,
+        bitrateAnalyzer->getStats(),
+        gopAnalyzer->getStats()
+    );
+
+    if (success) {
+        QMessageBox::information(this, "成功", "HTML 报告已导出");
+    } else {
+        QMessageBox::critical(this, "错误", "导出 HTML 报告失败");
+    }
+}
+
+void MainWindow::exportFrameListCSV() {
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        "导出帧列表",
+        QDir::homePath() + "/frame_list.csv",
+        "CSV 文件 (*.csv)"
+    );
+
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    bool success = Exporter::exportFrameListToCSV(
+        filePath,
+        metricsCollector->getAllFrames()
+    );
+
+    if (success) {
+        QMessageBox::information(this, "成功", "帧列表已导出");
+    } else {
+        QMessageBox::critical(this, "错误", "导出帧列表失败");
+    }
+}
+
+void MainWindow::exportBitrateCSV() {
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        "导出比特率数据",
+        QDir::homePath() + "/bitrate_data.csv",
+        "CSV 文件 (*.csv)"
+    );
+
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    bitrateAnalyzer->analyze(metricsCollector->getAllFrames(), 1.0);
+
+    bool success = Exporter::exportBitrateToCSV(
+        filePath,
+        bitrateAnalyzer->getBitratePoints()
+    );
+
+    if (success) {
+        QMessageBox::information(this, "成功", "比特率数据已导出");
+    } else {
+        QMessageBox::critical(this, "错误", "导出比特率数据失败");
+    }
+}
+
+void MainWindow::exportGOPCSV() {
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        "导出 GOP 数据",
+        QDir::homePath() + "/gop_data.csv",
+        "CSV 文件 (*.csv)"
+    );
+
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    gopAnalyzer->analyze(metricsCollector->getAllFrames());
+
+    bool success = Exporter::exportGOPToCSV(
+        filePath,
+        gopAnalyzer->getGOPs()
+    );
+
+    if (success) {
+        QMessageBox::information(this, "成功", "GOP 数据已导出");
+    } else {
+        QMessageBox::critical(this, "错误", "导出 GOP 数据失败");
+    }
+}
+
+void MainWindow::saveScreenshot() {
+    if (videoPreview->pixmap().isNull()) {
+        QMessageBox::warning(this, "警告", "没有可保存的图像");
+        return;
+    }
+
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        "保存截图",
+        QDir::homePath() + "/screenshot.png",
+        "PNG 图像 (*.png);;JPEG 图像 (*.jpg)"
+    );
+
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    bool success = videoPreview->pixmap().save(filePath);
+
+    if (success) {
+        QMessageBox::information(this, "成功", "截图已保存");
+    } else {
+        QMessageBox::critical(this, "错误", "保存截图失败");
+    }
 }

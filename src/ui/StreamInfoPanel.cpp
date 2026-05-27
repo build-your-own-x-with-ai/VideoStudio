@@ -62,6 +62,8 @@ void StreamInfoPanel::setupUI() {
 }
 
 void StreamInfoPanel::setStreamInfo(const StreamInfo& info) {
+    currentStreamInfo = info;
+
     codecLabel->setText(QString("%1 (%2)")
         .arg(info.codecName)
         .arg(info.codecLongName));
@@ -82,6 +84,7 @@ void StreamInfoPanel::setStreamInfo(const StreamInfo& info) {
 }
 
 void StreamInfoPanel::clear() {
+    currentStreamInfo = StreamInfo();
     codecLabel->setText("-");
     resolutionLabel->setText("-");
     frameRateLabel->setText("-");

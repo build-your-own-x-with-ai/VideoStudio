@@ -25,6 +25,7 @@ set(SOURCES
     src/core/VideoAnalyzerThread.cpp
     src/core/BitrateAnalyzer.cpp
     src/core/GOPAnalyzer.cpp
+    src/core/Exporter.cpp
     src/ui/MainWindow.cpp
     src/ui/StreamInfoPanel.cpp
     src/ui/FrameListView.cpp
@@ -40,6 +41,7 @@ set(HEADERS
     src/core/VideoAnalyzerThread.h
     src/core/BitrateAnalyzer.h
     src/core/GOPAnalyzer.h
+    src/core/Exporter.h
     src/ui/MainWindow.h
     src/ui/StreamInfoPanel.h
     src/ui/FrameListView.h

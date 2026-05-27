@@ -12,6 +12,7 @@ class StreamInfoPanel : public QWidget {
 public:
     explicit StreamInfoPanel(QWidget* parent = nullptr);
     void setStreamInfo(const StreamInfo& info);
+    StreamInfo getStreamInfo() const { return currentStreamInfo; }
     void clear();
 
 private:
@@ -23,6 +24,7 @@ private:
     QLabel* pixelFormatLabel;
     QLabel* containerLabel;
     QLabel* numFramesLabel;
+    StreamInfo currentStreamInfo;
 
     void setupUI();
     QString formatBitrate(int64_t bitrate);

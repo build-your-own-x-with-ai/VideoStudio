@@ -14,6 +14,7 @@
 #include "core/VideoAnalyzerThread.h"
 #include "core/BitrateAnalyzer.h"
 #include "core/GOPAnalyzer.h"
+#include "core/Exporter.h"
 #include "StreamInfoPanel.h"
 #include "FrameListView.h"
 #include "BitrateChart.h"
@@ -34,6 +35,11 @@ private slots:
     void onAnalysisProgress(int current, int total);
     void onAnalysisComplete();
     void onAnalysisFailed(const QString& error);
+    void exportHTMLReport();
+    void exportFrameListCSV();
+    void exportBitrateCSV();
+    void exportGOPCSV();
+    void saveScreenshot();
 
 private:
     void setupUI();
@@ -61,6 +67,11 @@ private:
     QAction* closeAction;
     QAction* exitAction;
     QAction* aboutAction;
+    QAction* exportHTMLAction;
+    QAction* exportFrameListAction;
+    QAction* exportBitrateAction;
+    QAction* exportGOPAction;
+    QAction* saveScreenshotAction;
 
     QString currentFilePath;
 };

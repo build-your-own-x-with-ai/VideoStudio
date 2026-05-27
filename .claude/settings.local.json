@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.elecard.com)",
+      "Bash(ffmpeg -version)",
+      "Bash(cmake *)",
+      "Bash(pkg-config --modversion Qt6Core)",
+      "Bash(pkg-config --modversion Qt5Core)",
+      "Read(//Users/i/Qt/**)",
+      "Bash(brew list *)",
+      "Bash(make *)",
+      "Bash(open *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git reset *)",
+      "Bash(killall VideoStudio)",
+      "Bash(nm VideoStudio.app/Contents/MacOS/VideoStudio)",
+      "Bash(./VideoStudio.app/Contents/MacOS/VideoStudio *)"
+    ]
+  }
+}
