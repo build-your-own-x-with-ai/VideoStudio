@@ -19,6 +19,7 @@
 #include "FrameListView.h"
 #include "BitrateChart.h"
 #include "GOPViewer.h"
+#include "VideoPlayer.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -57,7 +58,7 @@ private:
     FrameListView* frameListView;
     BitrateChart* bitrateChart;
     GOPViewer* gopViewer;
-    QLabel* videoPreview;
+    VideoPlayer* videoPlayer;
     QTabWidget* tabWidget;
     QStatusBar* statusBar;
     QLabel* statusLabel;

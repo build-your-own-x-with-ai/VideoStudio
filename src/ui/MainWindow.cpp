@@ -45,13 +45,11 @@ void MainWindow::setupUI() {
     QWidget* leftPanel = new QWidget(this);
     QVBoxLayout* leftLayout = new QVBoxLayout(leftPanel);
 
-    videoPreview = new QLabel("未打开视频文件", this);
-    videoPreview->setAlignment(Qt::AlignCenter);
-    videoPreview->setMinimumSize(640, 360);
-    videoPreview->setStyleSheet("QLabel { background-color: #2b2b2b; color: #888; border: 1px solid #555; }");
-    videoPreview->setScaledContents(false);
-
-    leftLayout->addWidget(videoPreview, 1);
+    videoPlayer = new VideoPlayer(this);
+    connect(videoPlayer, &VideoPlayer::frameChanged, this, [this](int frameNumber) {
+        statusLabel->setText(QString("帧 #%1 / %2").arg(frameNumber).arg(videoPlayer->getTotalFrames()));
+    });
+    leftLayout->addWidget(videoPlayer, 1);
 
     splitter->addWidget(leftPanel);
 
@@ -181,6 +179,9 @@ void MainWindow::openFile() {
         streamInfoPanel->setStreamInfo(info);
         decoder->close();
 
+        // Open video in player
+        videoPlayer->openVideo(filePath);
+
         metricsCollector->clear();
 
         progressDialog = new QProgressDialog("正在分析视频帧...", "取消", 0, 100, this);
@@ -222,8 +223,7 @@ void MainWindow::closeFile() {
     currentFilePath.clear();
     streamInfoPanel->clear();
     frameListView->clear();
-    videoPreview->clear();
-    videoPreview->setText("未打开视频文件");
+    videoPlayer->closeVideo();
     statusLabel->setText("就绪");
     setWindowTitle("VideoStudio - 专业视频编解码分析工具");
     updateUI();
@@ -246,7 +246,7 @@ void MainWindow::updateUI() {
     exportFrameListAction->setEnabled(hasAnalyzedData);
     exportBitrateAction->setEnabled(hasAnalyzedData);
     exportGOPAction->setEnabled(hasAnalyzedData);
-    saveScreenshotAction->setEnabled(!videoPreview->pixmap().isNull());
+    saveScreenshotAction->setEnabled(videoPlayer->isVideoOpen());
 }
 
 void MainWindow::onFrameSelected(int frameIndex) {
@@ -261,27 +261,9 @@ void MainWindow::onFrameSelected(int frameIndex) {
         .arg(frame.size)
         .arg(frame.timestamp, 0, 'f', 3));
 
-    // 加载并显示该帧的预览图像
-    if (!currentFilePath.isEmpty()) {
-        VideoDecoder tempDecoder;
-        if (tempDecoder.open(currentFilePath)) {
-            FrameInfo tempFrame;
-            int currentFrame = 0;
-
-            // 跳到目标帧
-            while (currentFrame <= frameIndex && tempDecoder.readNextFrame(tempFrame)) {
-                if (currentFrame == frameIndex) {
-                    QImage image = tempDecoder.getCurrentFrameImage();
-                    if (!image.isNull()) {
-                        videoPreview->setPixmap(QPixmap::fromImage(image).scaled(
-                            videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-                    }
-                    break;
-                }
-                currentFrame++;
-            }
-            tempDecoder.close();
-        }
+    // Seek video player to selected frame
+    if (videoPlayer->isVideoOpen()) {
+        videoPlayer->seekToFrame(frameIndex);
     }
 }
 
@@ -309,7 +291,6 @@ void MainWindow::onAnalysisComplete() {
             analyzerThread = nullptr;
         }
 
-        videoPreview->setText("点击帧列表查看预览");
         statusLabel->setText(QString("已打开: %1 (共 %2 帧)")
             .arg(currentFilePath)
             .arg(metricsCollector->getFrameCount()));
@@ -436,7 +417,8 @@ void MainWindow::exportGOPCSV() {
 }
 
 void MainWindow::saveScreenshot() {
-    if (videoPreview->pixmap().isNull()) {
+    QPixmap pixmap = videoPlayer->getCurrentFramePixmap();
+    if (pixmap.isNull()) {
         QMessageBox::warning(this, "警告", "没有可保存的图像");
         return;
     }
@@ -452,7 +434,7 @@ void MainWindow::saveScreenshot() {
         return;
     }
 
-    bool success = videoPreview->pixmap().save(filePath);
+    bool success = pixmap.save(filePath);
 
     if (success) {
         QMessageBox::information(this, "成功", "截图已保存");

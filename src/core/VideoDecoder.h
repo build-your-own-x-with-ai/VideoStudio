@@ -26,6 +26,7 @@ public:
     void close();
 
     bool isOpen() const { return formatCtx != nullptr; }
+    QString getFilePath() const { return currentFilePath; }
 
 private:
     AVFormatContext* formatCtx;
@@ -35,6 +36,7 @@ private:
     SwsContext* swsCtx;
     int videoStreamIndex;
     int64_t frameCounter;
+    QString currentFilePath;
 
     void freeResources();
 };

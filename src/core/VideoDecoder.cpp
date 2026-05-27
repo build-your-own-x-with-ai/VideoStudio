@@ -3,7 +3,8 @@
 
 VideoDecoder::VideoDecoder()
     : formatCtx(nullptr), codecCtx(nullptr), frame(nullptr),
-      packet(nullptr), swsCtx(nullptr), videoStreamIndex(-1), frameCounter(0) {
+      packet(nullptr), swsCtx(nullptr), videoStreamIndex(-1), frameCounter(0),
+      currentFilePath("") {
 }
 
 VideoDecoder::~VideoDecoder() {
@@ -12,6 +13,8 @@ VideoDecoder::~VideoDecoder() {
 
 bool VideoDecoder::open(const QString& filePath) {
     close();
+
+    currentFilePath = filePath;
 
     formatCtx = avformat_alloc_context();
     if (avformat_open_input(&formatCtx, filePath.toUtf8().constData(), nullptr, nullptr) != 0) {
