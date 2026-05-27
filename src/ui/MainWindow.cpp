@@ -74,6 +74,9 @@ void MainWindow::setupUI() {
     gopViewer = new GOPViewer(this);
     tabWidget->addTab(gopViewer, "GOP 分析");
 
+    frameSizeChart = new FrameSizeChart(this);
+    tabWidget->addTab(frameSizeChart, "帧大小分布");
+
     tabWidget->setMinimumWidth(350);
 
     connect(tabWidget, &QTabWidget::currentChanged, this, [this](int index) {
@@ -87,6 +90,10 @@ void MainWindow::setupUI() {
             gopAnalyzer->analyze(metricsCollector->getAllFrames());
             gopViewer->setGOPData(gopAnalyzer->getGOPs(),
                                   gopAnalyzer->getStats());
+        } else if (index == 4 && metricsCollector->getFrameCount() > 0) {
+            FrameSizeDistribution dist = metricsCollector->calculateFrameSizeDistribution();
+            frameSizeChart->setDistribution(dist);
+            frameSizeChart->setFrameData(metricsCollector->getAllFrames());
         }
     });
 
@@ -224,6 +231,9 @@ void MainWindow::closeFile() {
     streamInfoPanel->clear();
     frameListView->clear();
     videoPlayer->closeVideo();
+    bitrateChart->clear();
+    gopViewer->clear();
+    frameSizeChart->clear();
     statusLabel->setText("就绪");
     setWindowTitle("VideoStudio - 专业视频编解码分析工具");
     updateUI();

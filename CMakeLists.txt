@@ -32,6 +32,7 @@ set(SOURCES
     src/ui/BitrateChart.cpp
     src/ui/GOPViewer.cpp
     src/ui/VideoPlayer.cpp
+    src/ui/FrameSizeChart.cpp
 )
 
 set(HEADERS
@@ -49,6 +50,7 @@ set(HEADERS
     src/ui/BitrateChart.h
     src/ui/GOPViewer.h
     src/ui/VideoPlayer.h
+    src/ui/FrameSizeChart.h
 )
 
 add_executable(VideoStudio ${SOURCES} ${HEADERS})

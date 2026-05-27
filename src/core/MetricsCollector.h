@@ -3,7 +3,20 @@
 
 #include <QObject>
 #include <QVector>
+#include <QMap>
 #include "FrameInfo.h"
+
+struct FrameSizeDistribution {
+    QVector<int> binEdges;      // 区间边界（字节）
+    QVector<int> binCounts;     // 每个区间的帧数量
+    QMap<QString, QVector<int>> typeDistribution; // 按帧类型分类的分布
+    int totalFrames;
+    int minSize;
+    int maxSize;
+    double avgSize;
+
+    FrameSizeDistribution() : totalFrames(0), minSize(0), maxSize(0), avgSize(0.0) {}
+};
 
 class MetricsCollector : public QObject {
     Q_OBJECT
@@ -25,6 +38,8 @@ public:
 
     double getAverageBitrate() const;
     int64_t getTotalSize() const;
+
+    FrameSizeDistribution calculateFrameSizeDistribution(int numBins = 50) const;
 
 signals:
     void frameAdded(const FrameInfo& frame);
