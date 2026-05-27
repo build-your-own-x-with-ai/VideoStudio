@@ -13,9 +13,11 @@
 #include "core/MetricsCollector.h"
 #include "core/VideoAnalyzerThread.h"
 #include "core/BitrateAnalyzer.h"
+#include "core/GOPAnalyzer.h"
 #include "StreamInfoPanel.h"
 #include "FrameListView.h"
 #include "BitrateChart.h"
+#include "GOPViewer.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -44,9 +46,11 @@ private:
     MetricsCollector* metricsCollector;
     VideoAnalyzerThread* analyzerThread;
     BitrateAnalyzer* bitrateAnalyzer;
+    GOPAnalyzer* gopAnalyzer;
     StreamInfoPanel* streamInfoPanel;
     FrameListView* frameListView;
     BitrateChart* bitrateChart;
+    GOPViewer* gopViewer;
     QLabel* videoPreview;
     QTabWidget* tabWidget;
     QStatusBar* statusBar;

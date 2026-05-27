@@ -10,10 +10,12 @@
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), decoder(nullptr), metricsCollector(nullptr),
-      analyzerThread(nullptr), bitrateAnalyzer(nullptr), progressDialog(nullptr), currentFilePath("") {
+      analyzerThread(nullptr), bitrateAnalyzer(nullptr), gopAnalyzer(nullptr),
+      progressDialog(nullptr), currentFilePath("") {
     decoder = new VideoDecoder();
     metricsCollector = new MetricsCollector(this);
     bitrateAnalyzer = new BitrateAnalyzer(this);
+    gopAnalyzer = new GOPAnalyzer(this);
     setupUI();
     setupMenuBar();
     setupToolBar();
@@ -70,6 +72,9 @@ void MainWindow::setupUI() {
     bitrateChart = new BitrateChart(this);
     tabWidget->addTab(bitrateChart, "比特率分析");
 
+    gopViewer = new GOPViewer(this);
+    tabWidget->addTab(gopViewer, "GOP 分析");
+
     tabWidget->setMinimumWidth(350);
 
     connect(tabWidget, &QTabWidget::currentChanged, this, [this](int index) {
@@ -79,6 +84,10 @@ void MainWindow::setupUI() {
             bitrateAnalyzer->analyze(metricsCollector->getAllFrames(), 1.0);
             bitrateChart->setBitrateData(bitrateAnalyzer->getBitratePoints(),
                                          bitrateAnalyzer->getStats());
+        } else if (index == 3 && metricsCollector->getFrameCount() > 0) {
+            gopAnalyzer->analyze(metricsCollector->getAllFrames());
+            gopViewer->setGOPData(gopAnalyzer->getGOPs(),
+                                  gopAnalyzer->getStats());
         }
     });
 

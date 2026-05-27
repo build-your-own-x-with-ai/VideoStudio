@@ -24,10 +24,12 @@ set(SOURCES
     src/core/MetricsCollector.cpp
     src/core/VideoAnalyzerThread.cpp
     src/core/BitrateAnalyzer.cpp
+    src/core/GOPAnalyzer.cpp
     src/ui/MainWindow.cpp
     src/ui/StreamInfoPanel.cpp
     src/ui/FrameListView.cpp
     src/ui/BitrateChart.cpp
+    src/ui/GOPViewer.cpp
 )
 
 set(HEADERS
@@ -37,10 +39,12 @@ set(HEADERS
     src/core/MetricsCollector.h
     src/core/VideoAnalyzerThread.h
     src/core/BitrateAnalyzer.h
+    src/core/GOPAnalyzer.h
     src/ui/MainWindow.h
     src/ui/StreamInfoPanel.h
     src/ui/FrameListView.h
     src/ui/BitrateChart.h
+    src/ui/GOPViewer.h
 )
 
 add_executable(VideoStudio ${SOURCES} ${HEADERS})
