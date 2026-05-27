@@ -7,8 +7,9 @@
 #include <QScrollArea>
 
 MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent), decoder(nullptr), currentFilePath("") {
+    : QMainWindow(parent), decoder(nullptr), metricsCollector(nullptr), currentFilePath("") {
     decoder = new VideoDecoder();
+    metricsCollector = new MetricsCollector(this);
     setupUI();
     setupMenuBar();
     setupToolBar();
@@ -50,6 +51,12 @@ void MainWindow::setupUI() {
     scrollArea->setWidgetResizable(true);
 
     tabWidget->addTab(scrollArea, "概览");
+
+    frameListView = new FrameListView(this);
+    frameListView->setMetricsCollector(metricsCollector);
+    connect(frameListView, &FrameListView::frameSelected, this, &MainWindow::onFrameSelected);
+
+    tabWidget->addTab(frameListView, "帧分析");
     tabWidget->setMinimumWidth(350);
 
     splitter->addWidget(tabWidget);
@@ -117,16 +124,26 @@ void MainWindow::openFile() {
         StreamInfo info = decoder->getStreamInfo();
         streamInfoPanel->setStreamInfo(info);
 
+        metricsCollector->clear();
+
         FrameInfo frameInfo;
-        if (decoder->readNextFrame(frameInfo)) {
-            QImage image = decoder->getCurrentFrameImage();
-            if (!image.isNull()) {
-                videoPreview->setPixmap(QPixmap::fromImage(image).scaled(
-                    videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        bool firstFrame = true;
+        while (decoder->readNextFrame(frameInfo)) {
+            metricsCollector->addFrame(frameInfo);
+
+            if (firstFrame) {
+                QImage image = decoder->getCurrentFrameImage();
+                if (!image.isNull()) {
+                    videoPreview->setPixmap(QPixmap::fromImage(image).scaled(
+                        videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                }
+                firstFrame = false;
             }
         }
 
-        statusLabel->setText(QString("已打开: %1").arg(filePath));
+        statusLabel->setText(QString("已打开: %1 (共 %2 帧)")
+            .arg(filePath)
+            .arg(metricsCollector->getFrameCount()));
         setWindowTitle(QString("VideoStudio - %1").arg(QFileInfo(filePath).fileName()));
         updateUI();
     } else {
@@ -136,8 +153,10 @@ void MainWindow::openFile() {
 
 void MainWindow::closeFile() {
     decoder->close();
+    metricsCollector->clear();
     currentFilePath.clear();
     streamInfoPanel->clear();
+    frameListView->clear();
     videoPreview->clear();
     videoPreview->setText("未打开视频文件");
     statusLabel->setText("就绪");
@@ -156,4 +175,17 @@ void MainWindow::about() {
 void MainWindow::updateUI() {
     bool hasVideo = decoder->isOpen();
     closeAction->setEnabled(hasVideo);
+}
+
+void MainWindow::onFrameSelected(int frameIndex) {
+    if (!decoder->isOpen() || frameIndex < 0 || frameIndex >= metricsCollector->getFrameCount()) {
+        return;
+    }
+
+    const FrameInfo& frame = metricsCollector->getFrame(frameIndex);
+    statusLabel->setText(QString("帧 #%1 | 类型: %2 | 大小: %3 字节 | 时间: %4 秒")
+        .arg(frame.frameNumber)
+        .arg(frame.frameType)
+        .arg(frame.size)
+        .arg(frame.timestamp, 0, 'f', 3));
 }

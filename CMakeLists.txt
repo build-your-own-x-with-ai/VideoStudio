@@ -21,16 +21,20 @@ pkg_check_modules(FFMPEG REQUIRED
 set(SOURCES
     src/main.cpp
     src/core/VideoDecoder.cpp
+    src/core/MetricsCollector.cpp
     src/ui/MainWindow.cpp
     src/ui/StreamInfoPanel.cpp
+    src/ui/FrameListView.cpp
 )
 
 set(HEADERS
     src/core/FrameInfo.h
     src/core/StreamInfo.h
     src/core/VideoDecoder.h
+    src/core/MetricsCollector.h
     src/ui/MainWindow.h
     src/ui/StreamInfoPanel.h
+    src/ui/FrameListView.h
 )
 
 add_executable(VideoStudio ${SOURCES} ${HEADERS})

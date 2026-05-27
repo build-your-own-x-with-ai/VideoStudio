@@ -9,7 +9,9 @@
 #include <QToolBar>
 #include <QAction>
 #include "core/VideoDecoder.h"
+#include "core/MetricsCollector.h"
 #include "StreamInfoPanel.h"
+#include "FrameListView.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -22,6 +24,7 @@ private slots:
     void openFile();
     void closeFile();
     void about();
+    void onFrameSelected(int frameIndex);
 
 private:
     void setupUI();
@@ -31,7 +34,9 @@ private:
     void updateUI();
 
     VideoDecoder* decoder;
+    MetricsCollector* metricsCollector;
     StreamInfoPanel* streamInfoPanel;
+    FrameListView* frameListView;
     QLabel* videoPreview;
     QTabWidget* tabWidget;
     QStatusBar* statusBar;
