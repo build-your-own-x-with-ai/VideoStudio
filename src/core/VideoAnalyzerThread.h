@@ -2,6 +2,7 @@
 #define VIDEOANALYZERTHREAD_H
 
 #include <QThread>
+#include <QImage>
 #include "VideoDecoder.h"
 #include "MetricsCollector.h"
 
@@ -18,7 +19,7 @@ public:
 
 signals:
     void progressUpdated(int current, int total);
-    void analysisComplete();
+    void analysisComplete(const QImage& firstFrame);
     void analysisFailed(const QString& error);
 
 protected:

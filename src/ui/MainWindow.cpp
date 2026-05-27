@@ -213,7 +213,7 @@ void MainWindow::onAnalysisProgress(int current, int total) {
     }
 }
 
-void MainWindow::onAnalysisComplete() {
+void MainWindow::onAnalysisComplete(const QImage& firstFrame) {
     if (progressDialog) {
         progressDialog->close();
         delete progressDialog;
@@ -225,12 +225,13 @@ void MainWindow::onAnalysisComplete() {
         for (const auto& frame : frames) {
             metricsCollector->addFrame(frame);
         }
+    }
 
-        const QImage& firstFrame = analyzerThread->getFirstFrameImage();
-        if (!firstFrame.isNull()) {
-            videoPreview->setPixmap(QPixmap::fromImage(firstFrame).scaled(
-                videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-        }
+    if (!firstFrame.isNull()) {
+        videoPreview->setPixmap(QPixmap::fromImage(firstFrame).scaled(
+            videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    } else {
+        videoPreview->setText("无法加载预览图像");
     }
 
     statusLabel->setText(QString("已打开: %1 (共 %2 帧)")

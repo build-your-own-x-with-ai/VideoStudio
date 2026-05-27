@@ -49,6 +49,6 @@ void VideoAnalyzerThread::run() {
 
     if (!shouldStop) {
         emit progressUpdated(frameCount, frameCount);
-        emit analysisComplete();
+        emit analysisComplete(firstFrameImage);
     }
 }
