@@ -10,9 +10,10 @@
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), decoder(nullptr), metricsCollector(nullptr),
-      analyzerThread(nullptr), progressDialog(nullptr), currentFilePath("") {
+      analyzerThread(nullptr), bitrateAnalyzer(nullptr), progressDialog(nullptr), currentFilePath("") {
     decoder = new VideoDecoder();
     metricsCollector = new MetricsCollector(this);
+    bitrateAnalyzer = new BitrateAnalyzer(this);
     setupUI();
     setupMenuBar();
     setupToolBar();
@@ -65,11 +66,19 @@ void MainWindow::setupUI() {
     connect(frameListView, &FrameListView::frameSelected, this, &MainWindow::onFrameSelected);
 
     tabWidget->addTab(frameListView, "帧分析");
+
+    bitrateChart = new BitrateChart(this);
+    tabWidget->addTab(bitrateChart, "比特率分析");
+
     tabWidget->setMinimumWidth(350);
 
     connect(tabWidget, &QTabWidget::currentChanged, this, [this](int index) {
         if (index == 1 && metricsCollector->getFrameCount() > 0) {
             frameListView->updateFrameList();
+        } else if (index == 2 && metricsCollector->getFrameCount() > 0) {
+            bitrateAnalyzer->analyze(metricsCollector->getAllFrames(), 1.0);
+            bitrateChart->setBitrateData(bitrateAnalyzer->getBitratePoints(),
+                                         bitrateAnalyzer->getStats());
         }
     });
 
@@ -211,6 +220,29 @@ void MainWindow::onFrameSelected(int frameIndex) {
         .arg(frame.frameType)
         .arg(frame.size)
         .arg(frame.timestamp, 0, 'f', 3));
+
+    // 加载并显示该帧的预览图像
+    if (!currentFilePath.isEmpty()) {
+        VideoDecoder tempDecoder;
+        if (tempDecoder.open(currentFilePath)) {
+            FrameInfo tempFrame;
+            int currentFrame = 0;
+
+            // 跳到目标帧
+            while (currentFrame <= frameIndex && tempDecoder.readNextFrame(tempFrame)) {
+                if (currentFrame == frameIndex) {
+                    QImage image = tempDecoder.getCurrentFrameImage();
+                    if (!image.isNull()) {
+                        videoPreview->setPixmap(QPixmap::fromImage(image).scaled(
+                            videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                    }
+                    break;
+                }
+                currentFrame++;
+            }
+            tempDecoder.close();
+        }
+    }
 }
 
 void MainWindow::onAnalysisProgress(int current, int total) {

@@ -12,8 +12,10 @@
 #include "core/VideoDecoder.h"
 #include "core/MetricsCollector.h"
 #include "core/VideoAnalyzerThread.h"
+#include "core/BitrateAnalyzer.h"
 #include "StreamInfoPanel.h"
 #include "FrameListView.h"
+#include "BitrateChart.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -41,8 +43,10 @@ private:
     VideoDecoder* decoder;
     MetricsCollector* metricsCollector;
     VideoAnalyzerThread* analyzerThread;
+    BitrateAnalyzer* bitrateAnalyzer;
     StreamInfoPanel* streamInfoPanel;
     FrameListView* frameListView;
+    BitrateChart* bitrateChart;
     QLabel* videoPreview;
     QTabWidget* tabWidget;
     QStatusBar* statusBar;

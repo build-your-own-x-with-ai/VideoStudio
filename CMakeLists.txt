@@ -9,7 +9,7 @@ set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_PREFIX_PATH "/Users/i/Qt/6.11.0/macos")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Charts)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FFMPEG REQUIRED
     libavformat
@@ -23,9 +23,11 @@ set(SOURCES
     src/core/VideoDecoder.cpp
     src/core/MetricsCollector.cpp
     src/core/VideoAnalyzerThread.cpp
+    src/core/BitrateAnalyzer.cpp
     src/ui/MainWindow.cpp
     src/ui/StreamInfoPanel.cpp
     src/ui/FrameListView.cpp
+    src/ui/BitrateChart.cpp
 )
 
 set(HEADERS
@@ -34,9 +36,11 @@ set(HEADERS
     src/core/VideoDecoder.h
     src/core/MetricsCollector.h
     src/core/VideoAnalyzerThread.h
+    src/core/BitrateAnalyzer.h
     src/ui/MainWindow.h
     src/ui/StreamInfoPanel.h
     src/ui/FrameListView.h
+    src/ui/BitrateChart.h
 )
 
 add_executable(VideoStudio ${SOURCES} ${HEADERS})
@@ -49,6 +53,7 @@ target_include_directories(VideoStudio PRIVATE
 target_link_libraries(VideoStudio
     Qt6::Core
     Qt6::Widgets
+    Qt6::Charts
     ${FFMPEG_LIBRARIES}
 )
 
