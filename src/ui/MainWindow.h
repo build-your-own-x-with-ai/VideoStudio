@@ -8,8 +8,10 @@
 #include <QMenuBar>
 #include <QToolBar>
 #include <QAction>
+#include <QProgressDialog>
 #include "core/VideoDecoder.h"
 #include "core/MetricsCollector.h"
+#include "core/VideoAnalyzerThread.h"
 #include "StreamInfoPanel.h"
 #include "FrameListView.h"
 
@@ -25,6 +27,9 @@ private slots:
     void closeFile();
     void about();
     void onFrameSelected(int frameIndex);
+    void onAnalysisProgress(int current, int total);
+    void onAnalysisComplete();
+    void onAnalysisFailed(const QString& error);
 
 private:
     void setupUI();
@@ -35,12 +40,14 @@ private:
 
     VideoDecoder* decoder;
     MetricsCollector* metricsCollector;
+    VideoAnalyzerThread* analyzerThread;
     StreamInfoPanel* streamInfoPanel;
     FrameListView* frameListView;
     QLabel* videoPreview;
     QTabWidget* tabWidget;
     QStatusBar* statusBar;
     QLabel* statusLabel;
+    QProgressDialog* progressDialog;
 
     QAction* openAction;
     QAction* closeAction;
@@ -48,6 +55,7 @@ private:
     QAction* aboutAction;
 
     QString currentFilePath;
+    QImage firstFrameImage;
 };
 
 #endif // MAINWINDOW_H

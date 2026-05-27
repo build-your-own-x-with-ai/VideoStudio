@@ -22,6 +22,7 @@ set(SOURCES
     src/main.cpp
     src/core/VideoDecoder.cpp
     src/core/MetricsCollector.cpp
+    src/core/VideoAnalyzerThread.cpp
     src/ui/MainWindow.cpp
     src/ui/StreamInfoPanel.cpp
     src/ui/FrameListView.cpp
@@ -32,6 +33,7 @@ set(HEADERS
     src/core/StreamInfo.h
     src/core/VideoDecoder.h
     src/core/MetricsCollector.h
+    src/core/VideoAnalyzerThread.h
     src/ui/MainWindow.h
     src/ui/StreamInfoPanel.h
     src/ui/FrameListView.h

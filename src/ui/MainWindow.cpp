@@ -5,9 +5,11 @@
 #include <QHBoxLayout>
 #include <QSplitter>
 #include <QScrollArea>
+#include <QProgressDialog>
 
 MainWindow::MainWindow(QWidget* parent)
-    : QMainWindow(parent), decoder(nullptr), metricsCollector(nullptr), currentFilePath("") {
+    : QMainWindow(parent), decoder(nullptr), metricsCollector(nullptr),
+      analyzerThread(nullptr), progressDialog(nullptr), currentFilePath("") {
     decoder = new VideoDecoder();
     metricsCollector = new MetricsCollector(this);
     setupUI();
@@ -21,6 +23,11 @@ MainWindow::MainWindow(QWidget* parent)
 }
 
 MainWindow::~MainWindow() {
+    if (analyzerThread) {
+        analyzerThread->stop();
+        analyzerThread->wait();
+        delete analyzerThread;
+    }
     delete decoder;
 }
 
@@ -124,26 +131,45 @@ void MainWindow::openFile() {
         StreamInfo info = decoder->getStreamInfo();
         streamInfoPanel->setStreamInfo(info);
 
-        metricsCollector->clear();
-
         FrameInfo frameInfo;
-        bool firstFrame = true;
-        while (decoder->readNextFrame(frameInfo)) {
-            metricsCollector->addFrame(frameInfo);
-
-            if (firstFrame) {
-                QImage image = decoder->getCurrentFrameImage();
-                if (!image.isNull()) {
-                    videoPreview->setPixmap(QPixmap::fromImage(image).scaled(
-                        videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-                }
-                firstFrame = false;
+        if (decoder->readNextFrame(frameInfo)) {
+            firstFrameImage = decoder->getCurrentFrameImage();
+            if (!firstFrameImage.isNull()) {
+                videoPreview->setPixmap(QPixmap::fromImage(firstFrameImage).scaled(
+                    videoPreview->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
             }
         }
 
-        statusLabel->setText(QString("已打开: %1 (共 %2 帧)")
-            .arg(filePath)
-            .arg(metricsCollector->getFrameCount()));
+        decoder->close();
+
+        metricsCollector->clear();
+
+        progressDialog = new QProgressDialog("正在分析视频帧...", "取消", 0, 100, this);
+        progressDialog->setWindowModality(Qt::WindowModal);
+        progressDialog->setMinimumDuration(500);
+
+        if (analyzerThread) {
+            analyzerThread->stop();
+            analyzerThread->wait();
+            delete analyzerThread;
+        }
+
+        analyzerThread = new VideoAnalyzerThread(filePath, this);
+        connect(analyzerThread, &VideoAnalyzerThread::progressUpdated,
+                this, &MainWindow::onAnalysisProgress);
+        connect(analyzerThread, &VideoAnalyzerThread::analysisComplete,
+                this, &MainWindow::onAnalysisComplete);
+        connect(analyzerThread, &VideoAnalyzerThread::analysisFailed,
+                this, &MainWindow::onAnalysisFailed);
+        connect(progressDialog, &QProgressDialog::canceled, [this]() {
+            if (analyzerThread) {
+                analyzerThread->stop();
+            }
+        });
+
+        analyzerThread->start();
+
+        statusLabel->setText(QString("正在分析: %1").arg(filePath));
         setWindowTitle(QString("VideoStudio - %1").arg(QFileInfo(filePath).fileName()));
         updateUI();
     } else {
@@ -178,7 +204,7 @@ void MainWindow::updateUI() {
 }
 
 void MainWindow::onFrameSelected(int frameIndex) {
-    if (!decoder->isOpen() || frameIndex < 0 || frameIndex >= metricsCollector->getFrameCount()) {
+    if (frameIndex < 0 || frameIndex >= metricsCollector->getFrameCount()) {
         return;
     }
 
@@ -188,4 +214,41 @@ void MainWindow::onFrameSelected(int frameIndex) {
         .arg(frame.frameType)
         .arg(frame.size)
         .arg(frame.timestamp, 0, 'f', 3));
+}
+
+void MainWindow::onAnalysisProgress(int current, int total) {
+    if (progressDialog) {
+        progressDialog->setMaximum(total);
+        progressDialog->setValue(current);
+    }
+}
+
+void MainWindow::onAnalysisComplete() {
+    if (progressDialog) {
+        progressDialog->close();
+        delete progressDialog;
+        progressDialog = nullptr;
+    }
+
+    if (analyzerThread) {
+        const QVector<FrameInfo>& frames = analyzerThread->getFrames();
+        for (const auto& frame : frames) {
+            metricsCollector->addFrame(frame);
+        }
+    }
+
+    statusLabel->setText(QString("已打开: %1 (共 %2 帧)")
+        .arg(currentFilePath)
+        .arg(metricsCollector->getFrameCount()));
+}
+
+void MainWindow::onAnalysisFailed(const QString& error) {
+    if (progressDialog) {
+        progressDialog->close();
+        delete progressDialog;
+        progressDialog = nullptr;
+    }
+
+    QMessageBox::critical(this, "错误", QString("分析失败: %1").arg(error));
+    closeFile();
 }
