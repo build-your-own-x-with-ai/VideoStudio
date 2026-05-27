@@ -1,4 +1,6 @@
 #include "MainWindow.h"
+#include "QualityHeatmapOverlay.h"
+#include "AboutDialog.h"
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QVBoxLayout>
@@ -12,11 +14,12 @@
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), decoder(nullptr), metricsCollector(nullptr),
       analyzerThread(nullptr), bitrateAnalyzer(nullptr), gopAnalyzer(nullptr),
-      progressDialog(nullptr), currentFilePath("") {
+      qualityAnalyzer(nullptr), progressDialog(nullptr), currentFilePath("") {
     decoder = new VideoDecoder();
     metricsCollector = new MetricsCollector(this);
     bitrateAnalyzer = new BitrateAnalyzer(this);
     gopAnalyzer = new GOPAnalyzer(this);
+    qualityAnalyzer = new QualityAnalyzer();
     setupUI();
     setupMenuBar();
     setupToolBar();
@@ -54,6 +57,8 @@ void MainWindow::setupUI() {
     splitter->addWidget(leftPanel);
 
     tabWidget = new QTabWidget(this);
+    tabWidget->setTabsClosable(false);
+    tabWidget->setUsesScrollButtons(true);
     streamInfoPanel = new StreamInfoPanel(this);
 
     QScrollArea* scrollArea = new QScrollArea(this);
@@ -77,6 +82,20 @@ void MainWindow::setupUI() {
     frameSizeChart = new FrameSizeChart(this);
     tabWidget->addTab(frameSizeChart, "帧大小分布");
 
+    qpChart = new QPChart(this);
+    tabWidget->addTab(qpChart, "QP 分析");
+
+    timestampChart = new TimestampChart(this);
+    tabWidget->addTab(timestampChart, "时间戳分析");
+
+    vbvChart = new VBVChart(this);
+    tabWidget->addTab(vbvChart, "缓冲区分析");
+
+    qualityChart = new QualityChart(this);
+    connect(qualityChart, &QualityChart::referenceVideoSelected, this, &MainWindow::onReferenceVideoSelected);
+    connect(qualityChart, &QualityChart::analyzeRequested, this, &MainWindow::onQualityAnalyzeRequested);
+    tabWidget->addTab(qualityChart, "质量评估");
+
     tabWidget->setMinimumWidth(350);
 
     connect(tabWidget, &QTabWidget::currentChanged, this, [this](int index) {
@@ -94,6 +113,12 @@ void MainWindow::setupUI() {
             FrameSizeDistribution dist = metricsCollector->calculateFrameSizeDistribution();
             frameSizeChart->setDistribution(dist);
             frameSizeChart->setFrameData(metricsCollector->getAllFrames());
+        } else if (index == 5 && metricsCollector->getFrameCount() > 0) {
+            qpChart->setFrameData(metricsCollector->getAllFrames());
+        } else if (index == 6 && metricsCollector->getFrameCount() > 0) {
+            timestampChart->setFrameData(metricsCollector->getAllFrames());
+        } else if (index == 7 && metricsCollector->getFrameCount() > 0) {
+            vbvChart->setFrameData(metricsCollector->getAllFrames());
         }
     });
 
@@ -145,6 +170,56 @@ void MainWindow::setupMenuBar() {
     saveScreenshotAction = exportMenu->addAction("保存截图...");
     saveScreenshotAction->setEnabled(false);
     connect(saveScreenshotAction, &QAction::triggered, this, &MainWindow::saveScreenshot);
+
+    QMenu* viewMenu = menuBar->addMenu("视图");
+    showMacroblockBoundariesAction = viewMenu->addAction("显示宏块边界");
+    showMacroblockBoundariesAction->setCheckable(true);
+    showMacroblockBoundariesAction->setEnabled(false);
+    connect(showMacroblockBoundariesAction, &QAction::toggled, this, &MainWindow::toggleMacroblockBoundaries);
+
+    showMotionVectorsAction = viewMenu->addAction("显示运动矢量");
+    showMotionVectorsAction->setCheckable(true);
+    showMotionVectorsAction->setEnabled(false);
+    connect(showMotionVectorsAction, &QAction::toggled, this, &MainWindow::toggleMotionVectors);
+
+    showQPHeatmapAction = viewMenu->addAction("显示 QP 热力图");
+    showQPHeatmapAction->setCheckable(true);
+    showQPHeatmapAction->setEnabled(false);
+    connect(showQPHeatmapAction, &QAction::toggled, this, &MainWindow::toggleQPHeatmap);
+
+    showSizesAction = viewMenu->addAction("显示块大小");
+    showSizesAction->setCheckable(true);
+    showSizesAction->setEnabled(false);
+    connect(showSizesAction, &QAction::toggled, this, &MainWindow::toggleSizes);
+
+    showExtendedParamsAction = viewMenu->addAction("显示扩展参数");
+    showExtendedParamsAction->setCheckable(true);
+    showExtendedParamsAction->setEnabled(false);
+    connect(showExtendedParamsAction, &QAction::toggled, this, &MainWindow::toggleExtendedParams);
+
+    viewMenu->addSeparator();
+
+    QMenu* qualityHeatmapMenu = viewMenu->addMenu("质量热力图");
+
+    showQualityHeatmapPSNRAction = qualityHeatmapMenu->addAction("PSNR 热力图");
+    showQualityHeatmapPSNRAction->setCheckable(true);
+    showQualityHeatmapPSNRAction->setEnabled(false);
+    connect(showQualityHeatmapPSNRAction, &QAction::toggled, this, &MainWindow::toggleQualityHeatmapPSNR);
+
+    showQualityHeatmapSSIMAction = qualityHeatmapMenu->addAction("SSIM 热力图");
+    showQualityHeatmapSSIMAction->setCheckable(true);
+    showQualityHeatmapSSIMAction->setEnabled(false);
+    connect(showQualityHeatmapSSIMAction, &QAction::toggled, this, &MainWindow::toggleQualityHeatmapSSIM);
+
+    showQualityHeatmapTemperatureAction = qualityHeatmapMenu->addAction("Temperature 模式");
+    showQualityHeatmapTemperatureAction->setCheckable(true);
+    showQualityHeatmapTemperatureAction->setEnabled(false);
+    connect(showQualityHeatmapTemperatureAction, &QAction::toggled, this, &MainWindow::toggleQualityHeatmapTemperature);
+
+    showQualityHeatmapSubtractionAction = qualityHeatmapMenu->addAction("Subtraction 模式");
+    showQualityHeatmapSubtractionAction->setCheckable(true);
+    showQualityHeatmapSubtractionAction->setEnabled(false);
+    connect(showQualityHeatmapSubtractionAction, &QAction::toggled, this, &MainWindow::toggleQualityHeatmapSubtraction);
 
     QMenu* helpMenu = menuBar->addMenu("帮助");
     aboutAction = helpMenu->addAction("关于");
@@ -234,17 +309,17 @@ void MainWindow::closeFile() {
     bitrateChart->clear();
     gopViewer->clear();
     frameSizeChart->clear();
+    qpChart->clear();
+    timestampChart->clear();
+    vbvChart->clear();
     statusLabel->setText("就绪");
     setWindowTitle("VideoStudio - 专业视频编解码分析工具");
     updateUI();
 }
 
 void MainWindow::about() {
-    QMessageBox::about(this, "关于 VideoStudio",
-        "<h3>VideoStudio 1.0</h3>"
-        "<p>专业视频编解码分析工具</p>"
-        "<p>基于 Qt 和 FFmpeg 开发</p>"
-        "<p>用于深度分析视频流的编解码参数、比特率、帧类型、GOP 结构等专业指标</p>");
+    AboutDialog dialog(this);
+    dialog.exec();
 }
 
 void MainWindow::updateUI() {
@@ -257,6 +332,20 @@ void MainWindow::updateUI() {
     exportBitrateAction->setEnabled(hasAnalyzedData);
     exportGOPAction->setEnabled(hasAnalyzedData);
     saveScreenshotAction->setEnabled(videoPlayer->isVideoOpen());
+
+    // Enable macroblock visualization options when video player has video open
+    bool videoPlayerHasVideo = videoPlayer->isVideoOpen();
+    showMacroblockBoundariesAction->setEnabled(videoPlayerHasVideo);
+    showMotionVectorsAction->setEnabled(videoPlayerHasVideo);
+    showQPHeatmapAction->setEnabled(videoPlayerHasVideo);
+    showSizesAction->setEnabled(videoPlayerHasVideo);
+    showExtendedParamsAction->setEnabled(videoPlayerHasVideo);
+
+    // Enable quality heatmap options when video player has video open
+    showQualityHeatmapPSNRAction->setEnabled(videoPlayerHasVideo);
+    showQualityHeatmapSSIMAction->setEnabled(videoPlayerHasVideo);
+    showQualityHeatmapTemperatureAction->setEnabled(videoPlayerHasVideo);
+    showQualityHeatmapSubtractionAction->setEnabled(videoPlayerHasVideo);
 }
 
 void MainWindow::onFrameSelected(int frameIndex) {
@@ -451,4 +540,132 @@ void MainWindow::saveScreenshot() {
     } else {
         QMessageBox::critical(this, "错误", "保存截图失败");
     }
+}
+
+void MainWindow::toggleMacroblockBoundaries(bool checked) {
+    if (videoPlayer) {
+        videoPlayer->setShowMacroblockBoundaries(checked);
+    }
+}
+
+void MainWindow::toggleMotionVectors(bool checked) {
+    if (videoPlayer) {
+        videoPlayer->setShowMotionVectors(checked);
+    }
+}
+
+void MainWindow::toggleQPHeatmap(bool checked) {
+    if (videoPlayer) {
+        videoPlayer->setShowQPHeatmap(checked);
+    }
+}
+
+void MainWindow::toggleSizes(bool checked) {
+    if (videoPlayer) {
+        videoPlayer->setShowSizes(checked);
+    }
+}
+
+void MainWindow::toggleExtendedParams(bool checked) {
+    if (videoPlayer) {
+        videoPlayer->setShowExtendedParams(checked);
+    }
+}
+
+void MainWindow::toggleQualityHeatmapPSNR(bool checked) {
+    if (videoPlayer) {
+        if (checked) {
+            // Uncheck other heatmap modes
+            showQualityHeatmapSSIMAction->setChecked(false);
+            showQualityHeatmapTemperatureAction->setChecked(false);
+            showQualityHeatmapSubtractionAction->setChecked(false);
+            videoPlayer->setShowQualityHeatmap(true, QualityHeatmapOverlay::PSNR);
+        } else {
+            videoPlayer->setShowQualityHeatmap(false, QualityHeatmapOverlay::None);
+        }
+    }
+}
+
+void MainWindow::toggleQualityHeatmapSSIM(bool checked) {
+    if (videoPlayer) {
+        if (checked) {
+            // Uncheck other heatmap modes
+            showQualityHeatmapPSNRAction->setChecked(false);
+            showQualityHeatmapTemperatureAction->setChecked(false);
+            showQualityHeatmapSubtractionAction->setChecked(false);
+            videoPlayer->setShowQualityHeatmap(true, QualityHeatmapOverlay::SSIM);
+        } else {
+            videoPlayer->setShowQualityHeatmap(false, QualityHeatmapOverlay::None);
+        }
+    }
+}
+
+void MainWindow::toggleQualityHeatmapTemperature(bool checked) {
+    if (videoPlayer) {
+        if (checked) {
+            // Uncheck other heatmap modes
+            showQualityHeatmapPSNRAction->setChecked(false);
+            showQualityHeatmapSSIMAction->setChecked(false);
+            showQualityHeatmapSubtractionAction->setChecked(false);
+            videoPlayer->setShowQualityHeatmap(true, QualityHeatmapOverlay::Temperature);
+        } else {
+            videoPlayer->setShowQualityHeatmap(false, QualityHeatmapOverlay::None);
+        }
+    }
+}
+
+void MainWindow::toggleQualityHeatmapSubtraction(bool checked) {
+    if (videoPlayer) {
+        if (checked) {
+            // Uncheck other heatmap modes
+            showQualityHeatmapPSNRAction->setChecked(false);
+            showQualityHeatmapSSIMAction->setChecked(false);
+            showQualityHeatmapTemperatureAction->setChecked(false);
+            videoPlayer->setShowQualityHeatmap(true, QualityHeatmapOverlay::Subtraction);
+        } else {
+            videoPlayer->setShowQualityHeatmap(false, QualityHeatmapOverlay::None);
+        }
+    }
+}
+
+void MainWindow::onReferenceVideoSelected(const QString& filePath) {
+    qualityAnalyzer->setReferenceVideo(filePath);
+    // Also set reference video for the video player's heatmap
+    if (videoPlayer) {
+        videoPlayer->setReferenceVideo(filePath);
+    }
+}
+
+void MainWindow::onQualityAnalyzeRequested() {
+    if (currentFilePath.isEmpty()) {
+        QMessageBox::warning(this, "警告", "请先打开测试视频");
+        return;
+    }
+
+    qualityAnalyzer->setTestVideo(currentFilePath);
+
+    progressDialog = new QProgressDialog("正在分析视频质量...", "取消", 0, 100, this);
+    progressDialog->setWindowModality(Qt::WindowModal);
+    progressDialog->setMinimumDuration(500);
+    progressDialog->setValue(0);
+
+    QTimer::singleShot(100, this, [this]() {
+        bool success = qualityAnalyzer->analyze();
+
+        if (progressDialog) {
+            progressDialog->setValue(100);
+            progressDialog->close();
+            delete progressDialog;
+            progressDialog = nullptr;
+        }
+
+        if (success) {
+            qualityChart->setQualityData(qualityAnalyzer->getMetrics());
+            qualityChart->setStats(qualityAnalyzer->getStats());
+            QMessageBox::information(this, "成功", "质量分析完成");
+        } else {
+            QMessageBox::critical(this, "错误",
+                QString("质量分析失败: %1").arg(qualityAnalyzer->getErrorMessage()));
+        }
+    });
 }

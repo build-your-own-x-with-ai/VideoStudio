@@ -9,7 +9,7 @@ set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_PREFIX_PATH "/Users/i/Qt/6.11.0/macos")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Charts)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Charts Network)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FFMPEG REQUIRED
     libavformat
@@ -26,6 +26,11 @@ set(SOURCES
     src/core/BitrateAnalyzer.cpp
     src/core/GOPAnalyzer.cpp
     src/core/Exporter.cpp
+    src/core/TimestampAnalyzer.cpp
+    src/core/VBVAnalyzer.cpp
+    src/core/MacroblockAnalyzer.cpp
+    src/core/QualityAnalyzer.cpp
+    src/core/QualityHeatmapAnalyzer.cpp
     src/ui/MainWindow.cpp
     src/ui/StreamInfoPanel.cpp
     src/ui/FrameListView.cpp
@@ -33,6 +38,13 @@ set(SOURCES
     src/ui/GOPViewer.cpp
     src/ui/VideoPlayer.cpp
     src/ui/FrameSizeChart.cpp
+    src/ui/QPChart.cpp
+    src/ui/TimestampChart.cpp
+    src/ui/VBVChart.cpp
+    src/ui/MacroblockOverlay.cpp
+    src/ui/QualityChart.cpp
+    src/ui/QualityHeatmapOverlay.cpp
+    src/ui/AboutDialog.cpp
 )
 
 set(HEADERS
@@ -44,6 +56,11 @@ set(HEADERS
     src/core/BitrateAnalyzer.h
     src/core/GOPAnalyzer.h
     src/core/Exporter.h
+    src/core/TimestampAnalyzer.h
+    src/core/VBVAnalyzer.h
+    src/core/MacroblockAnalyzer.h
+    src/core/QualityAnalyzer.h
+    src/core/QualityHeatmapAnalyzer.h
     src/ui/MainWindow.h
     src/ui/StreamInfoPanel.h
     src/ui/FrameListView.h
@@ -51,6 +68,13 @@ set(HEADERS
     src/ui/GOPViewer.h
     src/ui/VideoPlayer.h
     src/ui/FrameSizeChart.h
+    src/ui/QPChart.h
+    src/ui/TimestampChart.h
+    src/ui/VBVChart.h
+    src/ui/MacroblockOverlay.h
+    src/ui/QualityChart.h
+    src/ui/QualityHeatmapOverlay.h
+    src/ui/AboutDialog.h
 )
 
 add_executable(VideoStudio ${SOURCES} ${HEADERS})
@@ -64,6 +88,7 @@ target_link_libraries(VideoStudio
     Qt6::Core
     Qt6::Widgets
     Qt6::Charts
+    Qt6::Network
     ${FFMPEG_LIBRARIES}
 )
 

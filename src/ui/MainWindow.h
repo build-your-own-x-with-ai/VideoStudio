@@ -15,12 +15,17 @@
 #include "core/BitrateAnalyzer.h"
 #include "core/GOPAnalyzer.h"
 #include "core/Exporter.h"
+#include "core/QualityAnalyzer.h"
 #include "StreamInfoPanel.h"
 #include "FrameListView.h"
 #include "BitrateChart.h"
 #include "GOPViewer.h"
 #include "VideoPlayer.h"
 #include "FrameSizeChart.h"
+#include "QPChart.h"
+#include "TimestampChart.h"
+#include "VBVChart.h"
+#include "QualityChart.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -42,6 +47,17 @@ private slots:
     void exportBitrateCSV();
     void exportGOPCSV();
     void saveScreenshot();
+    void toggleMacroblockBoundaries(bool checked);
+    void toggleMotionVectors(bool checked);
+    void toggleQPHeatmap(bool checked);
+    void toggleSizes(bool checked);
+    void toggleExtendedParams(bool checked);
+    void toggleQualityHeatmapPSNR(bool checked);
+    void toggleQualityHeatmapSSIM(bool checked);
+    void toggleQualityHeatmapTemperature(bool checked);
+    void toggleQualityHeatmapSubtraction(bool checked);
+    void onReferenceVideoSelected(const QString& filePath);
+    void onQualityAnalyzeRequested();
 
 private:
     void setupUI();
@@ -55,12 +71,17 @@ private:
     VideoAnalyzerThread* analyzerThread;
     BitrateAnalyzer* bitrateAnalyzer;
     GOPAnalyzer* gopAnalyzer;
+    QualityAnalyzer* qualityAnalyzer;
     StreamInfoPanel* streamInfoPanel;
     FrameListView* frameListView;
     BitrateChart* bitrateChart;
     GOPViewer* gopViewer;
     VideoPlayer* videoPlayer;
     FrameSizeChart* frameSizeChart;
+    QPChart* qpChart;
+    TimestampChart* timestampChart;
+    VBVChart* vbvChart;
+    QualityChart* qualityChart;
     QTabWidget* tabWidget;
     QStatusBar* statusBar;
     QLabel* statusLabel;
@@ -71,6 +92,15 @@ private:
     QAction* exitAction;
     QAction* aboutAction;
     QAction* exportHTMLAction;
+    QAction* showMacroblockBoundariesAction;
+    QAction* showMotionVectorsAction;
+    QAction* showQPHeatmapAction;
+    QAction* showSizesAction;
+    QAction* showExtendedParamsAction;
+    QAction* showQualityHeatmapPSNRAction;
+    QAction* showQualityHeatmapSSIMAction;
+    QAction* showQualityHeatmapTemperatureAction;
+    QAction* showQualityHeatmapSubtractionAction;
     QAction* exportFrameListAction;
     QAction* exportBitrateAction;
     QAction* exportGOPAction;

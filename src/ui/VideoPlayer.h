@@ -10,6 +10,10 @@
 #include <QVBoxLayout>
 #include <QComboBox>
 #include "core/VideoDecoder.h"
+#include "core/MacroblockAnalyzer.h"
+#include "core/QualityHeatmapAnalyzer.h"
+#include "MacroblockOverlay.h"
+#include "QualityHeatmapOverlay.h"
 
 class VideoPlayer : public QWidget {
     Q_OBJECT
@@ -41,6 +45,19 @@ public:
 
     QPixmap getCurrentFramePixmap() const;
 
+    void setShowMacroblockBoundaries(bool show);
+    void setShowMotionVectors(bool show);
+    void setShowQPHeatmap(bool show);
+    void setShowSizes(bool show);
+    void setShowExtendedParams(bool show);
+
+    void setShowQualityHeatmap(bool show, QualityHeatmapOverlay::HeatmapMode mode);
+    void setReferenceVideo(const QString& filePath);
+    void updateQualityHeatmap();
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+
 signals:
     void frameChanged(int frameNumber);
     void playbackStateChanged(bool playing);
@@ -64,7 +81,12 @@ private:
 
     // Video components
     VideoDecoder* decoder;
+    MacroblockAnalyzer* macroblockAnalyzer;
+    QualityHeatmapAnalyzer* qualityHeatmapAnalyzer;
     QLabel* videoDisplay;
+    MacroblockOverlay* macroblockOverlay;
+    QualityHeatmapOverlay* qualityHeatmapOverlay;
+    VideoDecoder* referenceDecoder;
     bool videoOpen;
     bool playing;
     int currentFrameNumber;

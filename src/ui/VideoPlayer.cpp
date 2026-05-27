@@ -1,12 +1,19 @@
 #include "VideoPlayer.h"
 #include <QComboBox>
 #include <QDateTime>
+#include <QResizeEvent>
+#include <QSizePolicy>
 
 VideoPlayer::VideoPlayer(QWidget* parent)
-    : QWidget(parent), decoder(nullptr), videoOpen(false), playing(false),
+    : QWidget(parent), decoder(nullptr), macroblockAnalyzer(nullptr),
+      qualityHeatmapAnalyzer(nullptr), referenceDecoder(nullptr),
+      videoOpen(false), playing(false),
       currentFrameNumber(0), totalFrames(0), frameRate(0.0), playbackSpeed(1.0),
       lastFrameTime(0) {
     decoder = new VideoDecoder();
+    macroblockAnalyzer = new MacroblockAnalyzer();
+    qualityHeatmapAnalyzer = new QualityHeatmapAnalyzer();
+    referenceDecoder = new VideoDecoder();
     playbackTimer = new QTimer(this);
     connect(playbackTimer, &QTimer::timeout, this, &VideoPlayer::onPlaybackTimer);
     setupUI();
@@ -15,20 +22,40 @@ VideoPlayer::VideoPlayer(QWidget* parent)
 VideoPlayer::~VideoPlayer() {
     closeVideo();
     delete decoder;
+    delete macroblockAnalyzer;
+    delete qualityHeatmapAnalyzer;
+    delete referenceDecoder;
 }
 
 void VideoPlayer::setupUI() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
-    // Video display area
-    videoDisplay = new QLabel(this);
+    // Video display area with overlay
+    QWidget* videoContainer = new QWidget(this);
+    videoContainer->setMinimumSize(640, 360);
+
+    // Use a layout for the video container to make videoDisplay fill it
+    QVBoxLayout* containerLayout = new QVBoxLayout(videoContainer);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+
+    videoDisplay = new QLabel(videoContainer);
     videoDisplay->setAlignment(Qt::AlignCenter);
-    videoDisplay->setMinimumSize(640, 360);
     videoDisplay->setStyleSheet("QLabel { background-color: #2b2b2b; color: #888; border: 1px solid #555; }");
     videoDisplay->setText("未打开视频文件");
     videoDisplay->setScaledContents(false);
-    mainLayout->addWidget(videoDisplay, 1);
+    videoDisplay->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    containerLayout->addWidget(videoDisplay);
+
+    // Create macroblock overlay on top of video display
+    macroblockOverlay = new MacroblockOverlay(videoContainer);
+    macroblockOverlay->raise();
+
+    // Create quality heatmap overlay on top of macroblock overlay
+    qualityHeatmapOverlay = new QualityHeatmapOverlay(videoContainer);
+    qualityHeatmapOverlay->raise();
+
+    mainLayout->addWidget(videoContainer, 1);
 
     // Control panel
     QWidget* controlPanel = new QWidget(this);
@@ -310,6 +337,28 @@ void VideoPlayer::updateFrame() {
     if (!image.isNull()) {
         videoDisplay->setPixmap(QPixmap::fromImage(image).scaled(
             videoDisplay->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+
+        // Update macroblock overlay position and size
+        if (macroblockOverlay) {
+            macroblockOverlay->setGeometry(videoDisplay->geometry());
+
+            // Update macroblock data if any overlay is enabled
+            if (macroblockOverlay->isShowingBoundaries() ||
+                macroblockOverlay->isShowingMotionVectors() ||
+                macroblockOverlay->isShowingQPHeatmap()) {
+                AVFrame* frame = decoder->getCurrentFrame();
+                if (frame) {
+                    QVector<MacroblockInfo> mbs = macroblockAnalyzer->extractMacroblocks(frame);
+                    macroblockOverlay->setMacroblocks(mbs);
+                }
+            }
+        }
+
+        // Update quality heatmap overlay
+        if (qualityHeatmapOverlay && qualityHeatmapOverlay->getHeatmapMode() != QualityHeatmapOverlay::None) {
+            qualityHeatmapOverlay->setGeometry(videoDisplay->geometry());
+            updateQualityHeatmap();
+        }
     }
 }
 
@@ -341,5 +390,203 @@ QString VideoPlayer::formatTime(double seconds) {
         return QString("%1:%2")
             .arg(minutes)
             .arg(secs, 2, 10, QChar('0'));
+    }
+}
+
+void VideoPlayer::setShowMacroblockBoundaries(bool show) {
+    if (macroblockOverlay) {
+        macroblockOverlay->setShowBoundaries(show);
+        if (show && decoder->isOpen()) {
+            // Extract and update macroblocks for current frame
+            AVFrame* frame = decoder->getCurrentFrame();
+            if (frame) {
+                QVector<MacroblockInfo> mbs = macroblockAnalyzer->extractMacroblocks(frame);
+                macroblockOverlay->setMacroblocks(mbs);
+            }
+        }
+    }
+}
+
+void VideoPlayer::setShowMotionVectors(bool show) {
+    if (macroblockOverlay) {
+        macroblockOverlay->setShowMotionVectors(show);
+        if (show && decoder->isOpen()) {
+            // Extract and update macroblocks for current frame
+            AVFrame* frame = decoder->getCurrentFrame();
+            if (frame) {
+                QVector<MacroblockInfo> mbs = macroblockAnalyzer->extractMacroblocks(frame);
+                macroblockOverlay->setMacroblocks(mbs);
+            }
+        }
+    }
+}
+
+void VideoPlayer::setShowQPHeatmap(bool show) {
+    if (macroblockOverlay) {
+        macroblockOverlay->setShowQPHeatmap(show);
+        if (show && decoder->isOpen()) {
+            // Extract and update macroblocks for current frame
+            AVFrame* frame = decoder->getCurrentFrame();
+            if (frame) {
+                QVector<MacroblockInfo> mbs = macroblockAnalyzer->extractMacroblocks(frame);
+                macroblockOverlay->setMacroblocks(mbs);
+            }
+        }
+    }
+}
+
+void VideoPlayer::setShowSizes(bool show) {
+    if (macroblockOverlay) {
+        macroblockOverlay->setShowSizes(show);
+        if (show && decoder->isOpen()) {
+            // Extract and update macroblocks for current frame
+            AVFrame* frame = decoder->getCurrentFrame();
+            if (frame) {
+                QVector<MacroblockInfo> mbs = macroblockAnalyzer->extractMacroblocks(frame);
+                macroblockOverlay->setMacroblocks(mbs);
+            }
+        }
+    }
+}
+
+void VideoPlayer::setShowExtendedParams(bool show) {
+    if (macroblockOverlay) {
+        macroblockOverlay->setShowExtendedParams(show);
+        if (show && decoder->isOpen()) {
+            // Extract and update macroblocks for current frame
+            AVFrame* frame = decoder->getCurrentFrame();
+            if (frame) {
+                QVector<MacroblockInfo> mbs = macroblockAnalyzer->extractMacroblocks(frame);
+                macroblockOverlay->setMacroblocks(mbs);
+            }
+        }
+    }
+}
+
+void VideoPlayer::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+
+    // Update overlay geometry to match video display
+    if (macroblockOverlay && videoDisplay) {
+        macroblockOverlay->setGeometry(videoDisplay->geometry());
+    }
+    if (qualityHeatmapOverlay && videoDisplay) {
+        qualityHeatmapOverlay->setGeometry(videoDisplay->geometry());
+    }
+}
+
+void VideoPlayer::setShowQualityHeatmap(bool show, QualityHeatmapOverlay::HeatmapMode mode) {
+    if (!qualityHeatmapOverlay) {
+        return;
+    }
+
+    if (show) {
+        qualityHeatmapOverlay->setHeatmapMode(mode);
+        qualityHeatmapOverlay->show();
+        updateQualityHeatmap();
+    } else {
+        qualityHeatmapOverlay->setHeatmapMode(QualityHeatmapOverlay::None);
+        qualityHeatmapOverlay->hide();
+    }
+}
+
+void VideoPlayer::setReferenceVideo(const QString& filePath) {
+    if (referenceDecoder->isOpen()) {
+        referenceDecoder->close();
+    }
+
+    if (!filePath.isEmpty()) {
+        referenceDecoder->open(filePath);
+    }
+}
+
+void VideoPlayer::updateQualityHeatmap() {
+    if (!qualityHeatmapOverlay || !decoder->isOpen()) {
+        return;
+    }
+
+    QualityHeatmapOverlay::HeatmapMode mode = qualityHeatmapOverlay->getHeatmapMode();
+    if (mode == QualityHeatmapOverlay::None) {
+        return;
+    }
+
+    // For PSNR/SSIM modes, need reference video
+    if ((mode == QualityHeatmapOverlay::PSNR || mode == QualityHeatmapOverlay::SSIM) &&
+        !referenceDecoder->isOpen()) {
+        return;
+    }
+
+    AVFrame* testFrame = decoder->getCurrentFrame();
+    if (!testFrame) {
+        return;
+    }
+
+    if (mode == QualityHeatmapOverlay::PSNR || mode == QualityHeatmapOverlay::SSIM) {
+        // Seek reference decoder to same frame
+        referenceDecoder->close();
+        referenceDecoder->open(referenceDecoder->getFilePath());
+        FrameInfo frameInfo;
+        for (int i = 0; i <= currentFrameNumber; i++) {
+            if (!referenceDecoder->readNextFrame(frameInfo)) {
+                break;
+            }
+        }
+
+        AVFrame* refFrame = referenceDecoder->getCurrentFrame();
+        if (!refFrame) {
+            return;
+        }
+
+        if (mode == QualityHeatmapOverlay::PSNR) {
+            QVector<double> psnrData = qualityHeatmapAnalyzer->calculatePSNRPerMacroblock(refFrame, testFrame);
+            qualityHeatmapOverlay->setHeatmapData(psnrData,
+                                                   qualityHeatmapAnalyzer->getBlockRows(),
+                                                   qualityHeatmapAnalyzer->getBlockCols());
+        } else if (mode == QualityHeatmapOverlay::SSIM) {
+            QVector<double> ssimData = qualityHeatmapAnalyzer->calculateSSIMPerMacroblock(refFrame, testFrame);
+            qualityHeatmapOverlay->setHeatmapData(ssimData,
+                                                   qualityHeatmapAnalyzer->getBlockRows(),
+                                                   qualityHeatmapAnalyzer->getBlockCols());
+        }
+    } else if (mode == QualityHeatmapOverlay::Temperature) {
+        // For Temperature mode, use previous frame as reference
+        if (currentFrameNumber > 0) {
+            decoder->close();
+            decoder->open(decoder->getFilePath());
+            FrameInfo frameInfo;
+            for (int i = 0; i < currentFrameNumber; i++) {
+                if (!decoder->readNextFrame(frameInfo)) {
+                    break;
+                }
+            }
+            AVFrame* prevFrame = decoder->getCurrentFrame();
+            decoder->readNextFrame(frameInfo);
+            AVFrame* currFrame = decoder->getCurrentFrame();
+
+            if (prevFrame && currFrame) {
+                QImage heatmap = qualityHeatmapAnalyzer->generateTemperatureMap(prevFrame, currFrame);
+                qualityHeatmapOverlay->setHeatmapImage(heatmap);
+            }
+        }
+    } else if (mode == QualityHeatmapOverlay::Subtraction) {
+        // For Subtraction mode, use previous frame as reference
+        if (currentFrameNumber > 0) {
+            decoder->close();
+            decoder->open(decoder->getFilePath());
+            FrameInfo frameInfo;
+            for (int i = 0; i < currentFrameNumber; i++) {
+                if (!decoder->readNextFrame(frameInfo)) {
+                    break;
+                }
+            }
+            AVFrame* prevFrame = decoder->getCurrentFrame();
+            decoder->readNextFrame(frameInfo);
+            AVFrame* currFrame = decoder->getCurrentFrame();
+
+            if (prevFrame && currFrame) {
+                QImage heatmap = qualityHeatmapAnalyzer->generateSubtractionMap(prevFrame, currFrame);
+                qualityHeatmapOverlay->setHeatmapImage(heatmap);
+            }
+        }
     }
 }

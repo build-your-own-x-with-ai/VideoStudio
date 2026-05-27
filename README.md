@@ -2,6 +2,10 @@
 
 专业视频编解码分析工具
 
+**作者**: AIDevLog  
+**GitHub**: [https://github.com/build-your-own-x-with-ai/VideoStudio](https://github.com/build-your-own-x-with-ai/VideoStudio)  
+**微信公众号**: AI开发日志
+
 ## 简介
 
 VideoStudio 是一个基于 Qt/C++ 和 FFmpeg 开发的专业视频编解码分析工具，面向视频工程师和质量分析师。它能够深度分析视频流的编解码参数、比特率、帧类型、GOP 结构等专业指标。
@@ -40,11 +44,44 @@ VideoStudio 是一个基于 Qt/C++ 和 FFmpeg 开发的专业视频编解码分�
   - 截图保存功能
 - ✅ 现代化的用户界面
 - ✅ 多线程异步分析（支持大文件）
+- ✅ **帧大小分布分析**
+  - 帧大小直方图
+  - 按帧类型分类统计
+  - 大小范围分布
+- ✅ **QP 值分析**
+  - QP 值曲线图
+  - 按帧类型分类显示
+  - QP 统计信息
+- ✅ **时间戳分析**
+  - PTS/DTS 曲线图
+  - 时间戳差异分析
+  - 帧间隔统计
+- ✅ **VBV 缓冲区分析**
+  - 缓冲区占用率曲线
+  - 上溢/下溢检测
+  - 缓冲区统计
+- ✅ **宏块可视化**
+  - 宏块边界显示
+  - 运动矢量显示
+  - QP 热力图
+  - 块大小显示
+  - 扩展参数显示
+- ✅ **质量评估**
+  - PSNR/SSIM 计算
+  - 质量曲线图
+  - 参考视频对比
+- ✅ **质量热力图**
+  - PSNR 热力图（按宏块）
+  - SSIM 热力图（按宏块）
+  - Temperature 模式（像素差异）
+  - Subtraction 模式（有符号差值）
 
 ### 计划功能
-- 📊 质量指标分析（PSNR、SSIM）
-- 🔄 多视频对比分析
-- 📈 更多图表类型（帧大小分布、QP 值分析）
+- 📊 Slice/Tile 边界显示
+- 🔄 Partitions 显示（CU/PU/TU）
+- 📈 码流结构查看器
+- 🔍 十六进制查看器
+- ✅ 符合性验证
 
 ## 技术栈
 
@@ -99,7 +136,23 @@ open VideoStudio.app
      - 点击帧查看详细信息和预览画面
    - **比特率分析**标签页：查看比特率曲线和统计数据
    - **GOP 分析**标签页：查看 GOP 结构可视化
-6. 导出分析结果：
+   - **帧大小分布**标签页：查看帧大小直方图
+   - **QP 分析**标签页：查看 QP 值曲线
+   - **时间戳分析**标签页：查看 PTS/DTS 曲线
+   - **缓冲区分析**标签页：查看 VBV 缓冲区占用率
+   - **质量评估**标签页：选择参考视频进行 PSNR/SSIM 分析
+6. 使用视图菜单启用可视化叠加层：
+   - **显示宏块边界**：显示 16x16 宏块网格
+   - **显示运动矢量**：显示运动补偿矢量
+   - **显示 QP 热力图**：显示量化参数热力图
+   - **显示块大小**：显示编码块大小
+   - **显示扩展参数**：显示量化参数等扩展信息
+   - **质量热力图**：
+     - PSNR 热力图（需要参考视频）
+     - SSIM 热力图（需要参考视频）
+     - Temperature 模式（帧间差异）
+     - Subtraction 模式（有符号差值）
+7. 导出分析结果：
    - 点击"导出" → "导出 HTML 报告"生成完整报告
    - 导出 CSV 格式的帧列表、比特率数据、GOP 数据
    - 保存当前预览画面为截图
@@ -138,7 +191,30 @@ VideoStudio/
 - [x] Phase 3: 比特率分析
 - [x] Phase 4: GOP 结构分析
 - [x] Phase 5: 导出功能
-- [ ] Phase 6: 高级功能（质量指标、多视频对比）
+- [x] Phase 6: 帧大小分布分析
+- [x] Phase 7: QP 值分析
+- [x] Phase 8: 时间戳分析
+- [x] Phase 9: VBV 缓冲区分析
+- [x] Phase 10: 宏块边界显示
+- [x] Phase 11: 运动矢量显示
+- [x] Phase 12: QP 热力图
+- [x] Phase 13: 块大小显示
+- [x] Phase 14: 扩展参数显示
+- [x] Phase 15: 质量评估（PSNR/SSIM）
+- [x] Phase 16: 质量热力图
+- [ ] Phase 17: 码流结构查看器
+- [ ] Phase 18: 十六进制查看器
+- [ ] Phase 19: 符合性验证
+- [ ] Phase 20: Slice/Tile 边界显示
+
+## 作者
+
+**AIDevLog**  
+GitHub: [https://github.com/build-your-own-x-with-ai/VideoStudio](https://github.com/build-your-own-x-with-ai/VideoStudio)
+
+![AIDevLog](https://2019.iosdevlog.com/uploads/AIDevLog.jpg)
+
+**微信公众号**: AI开发日志
 
 ## 许可证
 

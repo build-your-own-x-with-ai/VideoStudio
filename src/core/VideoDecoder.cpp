@@ -57,6 +57,9 @@ bool VideoDecoder::open(const QString& filePath) {
         return false;
     }
 
+    // Enable motion vector export
+    codecCtx->flags2 |= AV_CODEC_FLAG2_EXPORT_MVS;
+
     if (avcodec_open2(codecCtx, codec, nullptr) < 0) {
         qWarning() << "无法打开编码器";
         close();
@@ -100,6 +103,27 @@ bool VideoDecoder::readNextFrame(FrameInfo& frameInfo) {
                     case AV_PICTURE_TYPE_P: frameInfo.frameType = 'P'; break;
                     case AV_PICTURE_TYPE_B: frameInfo.frameType = 'B'; break;
                     default: frameInfo.frameType = '?'; break;
+                }
+
+                // Extract QP value from frame
+                frameInfo.qp = -1;
+
+                // Try to get QP from frame quality field
+                if (frame->quality > 0) {
+                    frameInfo.qp = frame->quality / FF_QP2LAMBDA;
+                }
+
+                // Alternative: try to get average QP from codec context
+                if (frameInfo.qp < 0 && codecCtx->qmax > 0) {
+                    // Estimate QP based on frame size and type
+                    // This is a rough estimation when direct QP is not available
+                    if (frameInfo.frameType == 'I') {
+                        frameInfo.qp = codecCtx->qmin + (codecCtx->qmax - codecCtx->qmin) / 4;
+                    } else if (frameInfo.frameType == 'P') {
+                        frameInfo.qp = codecCtx->qmin + (codecCtx->qmax - codecCtx->qmin) / 2;
+                    } else if (frameInfo.frameType == 'B') {
+                        frameInfo.qp = codecCtx->qmin + (codecCtx->qmax - codecCtx->qmin) * 3 / 4;
+                    }
                 }
 
                 av_packet_unref(packet);

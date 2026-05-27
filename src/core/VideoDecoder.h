@@ -27,6 +27,7 @@ public:
 
     bool isOpen() const { return formatCtx != nullptr; }
     QString getFilePath() const { return currentFilePath; }
+    AVFrame* getCurrentFrame() const { return frame; }
 
 private:
     AVFormatContext* formatCtx;
