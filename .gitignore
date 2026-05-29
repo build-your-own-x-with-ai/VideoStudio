@@ -1,0 +1,43 @@
+# Build directories
+build/
+build-*/
+*.app/
+*.o
+*.a
+*.dylib
+*.so
+*.dll
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Qt
+*.pro.user
+*.pro.user.*
+*.qmlc
+*.jsc
+.qmake.stash
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Compiled binaries
+VideoStudio
+*.exe
+
+# Generated files
+*.autosave
