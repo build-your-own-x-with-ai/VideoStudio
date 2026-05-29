@@ -44,18 +44,23 @@ add_executable(VideoStudio MACOSX_BUNDLE
     ${HEADERS}
 )
 
+# Include directories
+target_include_directories(VideoStudio PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${FFMPEG_INCLUDE_DIRS}
+)
+
+# Link directories
+target_link_directories(VideoStudio PRIVATE
+    ${FFMPEG_LIBRARY_DIRS}
+)
+
 # Link libraries
 target_link_libraries(VideoStudio PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
     ${FFMPEG_LIBRARIES}
-)
-
-# Include directories
-target_include_directories(VideoStudio PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${FFMPEG_INCLUDE_DIRS}
 )
 
 # Compiler flags
@@ -68,5 +73,4 @@ set_target_properties(VideoStudio PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.videostudio.app"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/resources/Info.plist.in
 )

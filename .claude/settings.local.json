@@ -4,7 +4,10 @@
       "Bash(qmake --version)",
       "Bash(brew list *)",
       "Bash(pkg-config --cflags --libs libavcodec libavformat libavutil libswscale)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(mkdir -p build)",
+      "Bash(cmake .. -DCMAKE_PREFIX_PATH=~/Qt/6.11.0/macos)",
+      "Bash(cmake *)"
     ]
   }
 }
