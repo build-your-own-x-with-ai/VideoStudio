@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(qmake --version)",
+      "Bash(brew list *)",
+      "Bash(pkg-config --cflags --libs libavcodec libavformat libavutil libswscale)",
+      "Bash(git *)"
+    ]
+  }
+}
