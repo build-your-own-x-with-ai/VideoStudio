@@ -9,7 +9,7 @@ set(CMAKE_AUTOUIC ON)
 
 # Find Qt6
 set(CMAKE_PREFIX_PATH "$ENV{HOME}/Qt/6.11.0/macos" ${CMAKE_PREFIX_PATH})
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent Network)
 
 # Find FFmpeg using pkg-config
 find_package(PkgConfig REQUIRED)
@@ -26,16 +26,82 @@ set(SOURCES
     src/mainwindow.cpp
     src/core/videodecoder.cpp
     src/core/framedata.cpp
+    src/core/tsparser.cpp
+    src/core/mp4parser.cpp
+    src/core/mkvparser.cpp
+    src/core/aviparser.cpp
+    src/core/flvparser.cpp
+    src/core/yuvreader.cpp
+    src/core/timinganalyzer.cpp
     src/widgets/videooutput.cpp
     src/widgets/barchart.cpp
+    src/widgets/thumbnailbar.cpp
+    src/widgets/areachart.cpp
+    src/widgets/gopviewer.cpp
+    src/widgets/packetview.cpp
+    src/widgets/logviewer.cpp
+    src/panels/streampanel.cpp
+    src/panels/overlaypanel.cpp
+    src/panels/explorerpanel.cpp
+    src/panels/propertypanel.cpp
+    src/panels/hexviewerpanel.cpp
+    src/panels/messagespanel.cpp
+    src/panels/tr101290panel.cpp
+    src/panels/timedynamicspanel.cpp
+    src/panels/bitratepanel.cpp
+    src/panels/bufferpanel.cpp
+    src/panels/graphicspanel.cpp
+    src/panels/commentspanel.cpp
+    src/panels/epgpanel.cpp
+    src/dialogs/savestreaminfodialog.cpp
+    src/dialogs/qualitymetricsdialog.cpp
+    src/dialogs/aboutdialog.cpp
+    src/dialogs/csvexportdialog.cpp
+    src/dialogs/referencecomparisondialog.cpp
+    src/dialogs/yuvexportdialog.cpp
+    src/dialogs/yuvviewerdialog.cpp
 )
 
 set(HEADERS
     src/mainwindow.h
     src/core/videodecoder.h
     src/core/framedata.h
+    src/core/tsdata.h
+    src/core/tsparser.h
+    src/core/mp4parser.h
+    src/core/mkvparser.h
+    src/core/aviparser.h
+    src/core/flvparser.h
+    src/core/yuvreader.h
+    src/core/tr101290data.h
+    src/core/timinganalyzer.h
     src/widgets/videooutput.h
     src/widgets/barchart.h
+    src/widgets/thumbnailbar.h
+    src/widgets/areachart.h
+    src/widgets/gopviewer.h
+    src/widgets/packetview.h
+    src/widgets/logviewer.h
+    src/panels/streampanel.h
+    src/panels/overlaypanel.h
+    src/panels/explorerpanel.h
+    src/panels/propertypanel.h
+    src/panels/hexviewerpanel.h
+    src/panels/messagespanel.h
+    src/panels/tr101290panel.h
+    src/panels/timedynamicspanel.h
+    src/panels/bitratepanel.h
+    src/panels/bufferpanel.h
+    src/panels/graphicspanel.h
+    src/panels/commentspanel.h
+    src/panels/epgpanel.h
+    src/dialogs/savestreaminfodialog.h
+    src/dialogs/qualitymetricsdialog.h
+    src/dialogs/aboutdialog.h
+    src/dialogs/csvexportdialog.h
+    src/dialogs/referencecomparisondialog.h
+    src/dialogs/yuvexportdialog.h
+    src/dialogs/yuvviewerdialog.h
 )
 
 # Create executable
@@ -60,6 +126,8 @@ target_link_libraries(VideoStudio PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::Concurrent
+    Qt6::Network
     ${FFMPEG_LIBRARIES}
 )
 

@@ -1,6 +1,7 @@
 #include "widgets/barchart.h"
 #include <QPainter>
 #include <QMouseEvent>
+#include <QWheelEvent>
 #include <QToolTip>
 #include <cmath>
 
@@ -11,6 +12,9 @@ BarChart::BarChart(QWidget* parent)
     , m_frameIndex(nullptr)
     , m_currentFrame(0)
     , m_maxFrameSize(0)
+    , m_viewStartFrame(0)
+    , m_viewEndFrame(0)
+    , m_zoomLevel(1.0)
 {
     setMinimumHeight(100);
     setMaximumHeight(200);
@@ -24,6 +28,8 @@ void BarChart::setFrameIndex(const FrameIndex* frameIndex) {
     m_frameIndex = frameIndex;
     if (m_frameIndex) {
         m_maxFrameSize = m_frameIndex->getMaxFrameSize();
+        m_viewStartFrame = 0;
+        m_viewEndFrame = m_frameIndex->frameCount() - 1;
     }
     update();
 }
@@ -43,11 +49,11 @@ void BarChart::paintEvent(QPaintEvent* event) {
         return;
     }
 
-    int frameCount = m_frameIndex->frameCount();
-    double barWidth = static_cast<double>(width()) / frameCount;
+    int visibleFrameCount = m_viewEndFrame - m_viewStartFrame + 1;
+    double barWidth = static_cast<double>(width()) / visibleFrameCount;
 
-    // Draw bars for each frame
-    for (int i = 0; i < frameCount; ++i) {
+    // Draw bars for each frame in view
+    for (int i = m_viewStartFrame; i <= m_viewEndFrame; ++i) {
         const FrameInfo* frame = m_frameIndex->getFrame(i);
         if (!frame) continue;
 
@@ -66,7 +72,7 @@ void BarChart::paintEvent(QPaintEvent* event) {
         }
 
         // Draw bar
-        int x = static_cast<int>(i * barWidth);
+        int x = static_cast<int>((i - m_viewStartFrame) * barWidth);
         int y = height() - barHeight - 10;
         int w = std::max(1, static_cast<int>(std::ceil(barWidth)));
 
@@ -80,8 +86,8 @@ void BarChart::paintEvent(QPaintEvent* event) {
     }
 
     // Draw current frame marker
-    if (m_currentFrame >= 0 && m_currentFrame < frameCount) {
-        int x = static_cast<int>(m_currentFrame * barWidth);
+    if (m_currentFrame >= m_viewStartFrame && m_currentFrame <= m_viewEndFrame) {
+        int x = static_cast<int>((m_currentFrame - m_viewStartFrame) * barWidth);
         painter.setPen(QPen(Qt::red, 2));
         painter.drawLine(x, 0, x, height());
     }
@@ -125,9 +131,80 @@ int BarChart::frameNumberAtPosition(int x) const {
         return -1;
     }
 
-    int frameCount = m_frameIndex->frameCount();
-    double barWidth = static_cast<double>(width()) / frameCount;
-    return static_cast<int>(x / barWidth);
+    int visibleFrameCount = m_viewEndFrame - m_viewStartFrame + 1;
+    double barWidth = static_cast<double>(width()) / visibleFrameCount;
+    int relativeFrame = static_cast<int>(x / barWidth);
+    return m_viewStartFrame + relativeFrame;
+}
+
+void BarChart::zoomIn() {
+    if (!m_frameIndex) return;
+
+    int centerFrame = (m_viewStartFrame + m_viewEndFrame) / 2;
+    int currentRange = m_viewEndFrame - m_viewStartFrame + 1;
+    int newRange = currentRange / 2;
+
+    if (newRange < 10) newRange = 10;
+
+    m_viewStartFrame = centerFrame - newRange / 2;
+    m_viewEndFrame = centerFrame + newRange / 2;
+
+    // Clamp to valid range
+    if (m_viewStartFrame < 0) {
+        m_viewStartFrame = 0;
+        m_viewEndFrame = newRange - 1;
+    }
+    if (m_viewEndFrame >= m_frameIndex->frameCount()) {
+        m_viewEndFrame = m_frameIndex->frameCount() - 1;
+        m_viewStartFrame = m_viewEndFrame - newRange + 1;
+        if (m_viewStartFrame < 0) m_viewStartFrame = 0;
+    }
+
+    update();
+}
+
+void BarChart::zoomOut() {
+    if (!m_frameIndex) return;
+
+    int centerFrame = (m_viewStartFrame + m_viewEndFrame) / 2;
+    int currentRange = m_viewEndFrame - m_viewStartFrame + 1;
+    int newRange = currentRange * 2;
+
+    if (newRange > m_frameIndex->frameCount()) {
+        newRange = m_frameIndex->frameCount();
+    }
+
+    m_viewStartFrame = centerFrame - newRange / 2;
+    m_viewEndFrame = centerFrame + newRange / 2;
+
+    // Clamp to valid range
+    if (m_viewStartFrame < 0) {
+        m_viewStartFrame = 0;
+        m_viewEndFrame = newRange - 1;
+    }
+    if (m_viewEndFrame >= m_frameIndex->frameCount()) {
+        m_viewEndFrame = m_frameIndex->frameCount() - 1;
+        m_viewStartFrame = m_viewEndFrame - newRange + 1;
+        if (m_viewStartFrame < 0) m_viewStartFrame = 0;
+    }
+
+    update();
+}
+
+void BarChart::zoomFit() {
+    if (!m_frameIndex) return;
+
+    m_viewStartFrame = 0;
+    m_viewEndFrame = m_frameIndex->frameCount() - 1;
+    update();
+}
+
+void BarChart::wheelEvent(QWheelEvent* event) {
+    if (event->angleDelta().y() > 0) {
+        zoomIn();
+    } else {
+        zoomOut();
+    }
 }
 
 } // namespace VideoStudio

@@ -40,15 +40,23 @@ public:
     int getFrameCount() const { return m_frameIndex.frameCount(); }
     double getDuration() const;
     double getFrameRate() const;
+    int64_t getBitrate() const;
+    int64_t getFrameSize(int frameNumber) const;
     QString getCodecName() const;
     QString getPixelFormat() const;
+    QString getFileName() const { return m_fileName; }
 
     int getCurrentFrameNumber() const { return m_currentFrameNumber; }
+
+    // Export functions
+    bool exportFrameAsYUV(int frameNumber, const QString& filePath);
+    bool exportFrameRangeAsYUV(int startFrame, int endFrame, const QString& outputDir);
 
 signals:
     void indexingProgress(int current, int total);
     void indexingComplete();
     void error(const QString& message);
+    void logMessage(const QString& message);  // New signal for log messages
 
 private:
     bool buildFrameIndex();
@@ -59,6 +67,7 @@ private:
     AVFrame* m_frame;
     AVPacket* m_packet;
     int m_videoStreamIndex;
+    QString m_fileName;
 
     FrameIndex m_frameIndex;
     int m_currentFrameNumber;

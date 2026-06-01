@@ -1,0 +1,68 @@
+#ifndef GOPVIEWER_H
+#define GOPVIEWER_H
+
+#include <QWidget>
+#include <QVector>
+
+namespace VideoStudio {
+
+class FrameIndex;
+
+struct GOPInfo {
+    int startFrame;
+    int endFrame;
+    int iFrameIndex;
+    QVector<int> pFrames;
+    QVector<int> bFrames;
+};
+
+class GOPViewer : public QWidget {
+    Q_OBJECT
+
+public:
+    explicit GOPViewer(QWidget* parent = nullptr);
+    ~GOPViewer();
+
+    void setFrameIndex(const FrameIndex* frameIndex);
+    void setCurrentFrame(int frameNumber);
+    void clear();
+
+signals:
+    void frameClicked(int frameNumber);
+
+protected:
+    void paintEvent(QPaintEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
+
+private:
+    void analyzeGOPStructure();
+    void drawGOPStructure(QPainter& painter);
+    void drawFrame(QPainter& painter, int frameNumber, int x, int y, int width, int height);
+    void drawDependencyArrow(QPainter& painter, int fromX, int fromY, int toX, int toY);
+
+    int frameToX(int frameNumber) const;
+    int frameToY(int frameNumber) const;
+    int pixelToFrame(int x, int y) const;
+
+    const FrameIndex* m_frameIndex;
+    QVector<GOPInfo> m_gops;
+    int m_currentFrame;
+    int m_viewStartFrame;
+    int m_viewEndFrame;
+    int m_framesPerRow;
+    bool m_autoScroll;  // Flag to control auto-scrolling
+
+    // Layout parameters
+    int m_frameWidth;
+    int m_frameHeight;
+    int m_horizontalSpacing;
+    int m_verticalSpacing;
+    int m_leftMargin;
+    int m_topMargin;
+};
+
+} // namespace VideoStudio
+
+#endif // GOPVIEWER_H
