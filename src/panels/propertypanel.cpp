@@ -684,6 +684,11 @@ void PropertyPanel::displayAtomSync(const MP4Atom* atom) {
         return;
     }
 
+    // Set 2 columns for sync mode
+    m_treeWidget->setColumnCount(2);
+    m_treeWidget->setHeaderLabels(QStringList() << "Property" << "Value");
+    m_treeWidget->setColumnWidth(0, 200);
+
     // Root item: Atom info
     QTreeWidgetItem* rootItem = new QTreeWidgetItem(m_treeWidget);
     rootItem->setText(0, QString("Atom: %1").arg(atom->type));
@@ -694,9 +699,117 @@ void PropertyPanel::displayAtomSync(const MP4Atom* atom) {
 }
 
 void PropertyPanel::displayAtomCompare(const MP4Atom* atom) {
-    // For now, just display sync mode
-    // TODO: Implement comparison with previous atom of same type
-    displayAtomSync(atom);
+    m_treeWidget->clear();
+
+    if (!atom || !m_mp4Parser) {
+        return;
+    }
+
+    // Find previous atom by offset
+    const MP4Atom* prevAtom = nullptr;
+    if (m_lastAtomOffset >= 0) {
+        std::function<const MP4Atom*(const QVector<MP4Atom>&, int64_t)> findAtom;
+        findAtom = [&](const QVector<MP4Atom>& atoms, int64_t offset) -> const MP4Atom* {
+            for (const auto& a : atoms) {
+                if (a.offset == offset) return &a;
+                if (!a.children.isEmpty()) {
+                    const MP4Atom* found = findAtom(a.children, offset);
+                    if (found) return found;
+                }
+            }
+            return nullptr;
+        };
+        prevAtom = findAtom(m_mp4Parser->getAtoms(), m_lastAtomOffset);
+    }
+
+    if (!prevAtom) {
+        // No previous atom to compare, just display current
+        displayAtomSync(atom);
+        return;
+    }
+
+    // Set 3 columns for compare mode
+    m_treeWidget->setColumnCount(3);
+    m_treeWidget->setHeaderLabels(QStringList() << "Property" << "Previous" << "Current");
+    m_treeWidget->setColumnWidth(0, 150);
+    m_treeWidget->setColumnWidth(1, 200);
+    m_treeWidget->setColumnWidth(2, 200);
+
+    // Create side-by-side comparison
+    QTreeWidgetItem* headerItem = new QTreeWidgetItem(m_treeWidget);
+    headerItem->setText(0, "Comparison");
+    headerItem->setText(1, QString("Previous (%1)").arg(prevAtom->type));
+    headerItem->setText(2, QString("Current (%1)").arg(atom->type));
+    headerItem->setExpanded(true);
+    headerItem->setBackground(0, QBrush(QColor(240, 240, 240)));
+    headerItem->setBackground(1, QBrush(QColor(240, 240, 240)));
+    headerItem->setBackground(2, QBrush(QColor(240, 240, 240)));
+
+    // Compare fields
+    addCompareRow(headerItem, "Type", prevAtom->type, atom->type);
+    addCompareRow(headerItem, "Offset",
+                  QString("0x%1 (%2)").arg(prevAtom->offset, 0, 16).arg(prevAtom->offset),
+                  QString("0x%1 (%2)").arg(atom->offset, 0, 16).arg(atom->offset));
+    addCompareRow(headerItem, "Size",
+                  QString("%1 bytes").arg(prevAtom->size),
+                  QString("%1 bytes").arg(atom->size));
+    addCompareRow(headerItem, "Header Size",
+                  QString("%1 bytes").arg(prevAtom->headerSize),
+                  QString("%1 bytes").arg(atom->headerSize));
+    addCompareRow(headerItem, "Data Size",
+                  QString("%1 bytes").arg(prevAtom->dataSize),
+                  QString("%1 bytes").arg(atom->dataSize));
+    addCompareRow(headerItem, "Percentage",
+                  QString("%1%").arg(prevAtom->percentage, 0, 'f', 2),
+                  QString("%1%").arg(atom->percentage, 0, 'f', 2));
+    addCompareRow(headerItem, "Level",
+                  QString::number(prevAtom->level),
+                  QString::number(atom->level));
+
+    // Type-specific fields
+    if (atom->type == "ftyp" && prevAtom->type == "ftyp") {
+        addCompareRow(headerItem, "Major Brand", prevAtom->majorBrand, atom->majorBrand);
+        addCompareRow(headerItem, "Compatible Brands",
+                      prevAtom->compatibleBrands.join(", "),
+                      atom->compatibleBrands.join(", "));
+    } else if (atom->type == "tkhd" && prevAtom->type == "tkhd") {
+        addCompareRow(headerItem, "Track ID",
+                      QString::number(prevAtom->trackId),
+                      QString::number(atom->trackId));
+        if (atom->width > 0 && atom->height > 0) {
+            addCompareRow(headerItem, "Width",
+                          QString::number(prevAtom->width),
+                          QString::number(atom->width));
+            addCompareRow(headerItem, "Height",
+                          QString::number(prevAtom->height),
+                          QString::number(atom->height));
+        }
+    } else if (atom->type == "hdlr" && prevAtom->type == "hdlr") {
+        addCompareRow(headerItem, "Handler Type", prevAtom->handlerType, atom->handlerType);
+    } else if (atom->type == "stsd" && prevAtom->type == "stsd") {
+        addCompareRow(headerItem, "Codec", prevAtom->codecType, atom->codecType);
+        if (atom->width > 0 && atom->height > 0) {
+            addCompareRow(headerItem, "Width",
+                          QString::number(prevAtom->width),
+                          QString::number(atom->width));
+            addCompareRow(headerItem, "Height",
+                          QString::number(prevAtom->height),
+                          QString::number(atom->height));
+        }
+    }
+}
+
+void PropertyPanel::addCompareRow(QTreeWidgetItem* parent, const QString& property, const QString& prevValue, const QString& currValue) {
+    QTreeWidgetItem* item = new QTreeWidgetItem(parent);
+    item->setText(0, property);
+    item->setText(1, prevValue);
+    item->setText(2, currValue);
+
+    // Highlight differences in blue
+    if (prevValue != currValue) {
+        item->setForeground(1, QBrush(QColor(0, 0, 255)));
+        item->setForeground(2, QBrush(QColor(0, 0, 255)));
+    }
 }
 
 void PropertyPanel::addAtomFields(QTreeWidgetItem* parent, const MP4Atom& atom) {
@@ -848,6 +961,11 @@ void PropertyPanel::displayElementSync(const EBMLElement* element) {
         return;
     }
 
+    // Set 2 columns for sync mode
+    m_treeWidget->setColumnCount(2);
+    m_treeWidget->setHeaderLabels(QStringList() << "Property" << "Value");
+    m_treeWidget->setColumnWidth(0, 200);
+
     // Root item: Element info
     QTreeWidgetItem* rootItem = new QTreeWidgetItem(m_treeWidget);
     rootItem->setText(0, QString("Element: %1").arg(element->name));
@@ -858,9 +976,110 @@ void PropertyPanel::displayElementSync(const EBMLElement* element) {
 }
 
 void PropertyPanel::displayElementCompare(const EBMLElement* element) {
-    // For now, just display sync mode
-    // TODO: Implement comparison with previous element of same type
-    displayElementSync(element);
+    m_treeWidget->clear();
+
+    if (!element || !m_mkvParser) {
+        return;
+    }
+
+    // Find previous element by offset
+    const EBMLElement* prevElement = nullptr;
+    if (m_lastElementOffset >= 0) {
+        std::function<const EBMLElement*(const QVector<EBMLElement>&, int64_t)> findElement;
+        findElement = [&](const QVector<EBMLElement>& elements, int64_t offset) -> const EBMLElement* {
+            for (const auto& e : elements) {
+                if (e.offset == offset) return &e;
+                if (!e.children.isEmpty()) {
+                    const EBMLElement* found = findElement(e.children, offset);
+                    if (found) return found;
+                }
+            }
+            return nullptr;
+        };
+        prevElement = findElement(m_mkvParser->getElements(), m_lastElementOffset);
+    }
+
+    if (!prevElement) {
+        // No previous element to compare, just display current
+        displayElementSync(element);
+        return;
+    }
+
+    // Set 3 columns for compare mode
+    m_treeWidget->setColumnCount(3);
+    m_treeWidget->setHeaderLabels(QStringList() << "Property" << "Previous" << "Current");
+    m_treeWidget->setColumnWidth(0, 150);
+    m_treeWidget->setColumnWidth(1, 200);
+    m_treeWidget->setColumnWidth(2, 200);
+
+    // Create side-by-side comparison
+    QTreeWidgetItem* headerItem = new QTreeWidgetItem(m_treeWidget);
+    headerItem->setText(0, "Comparison");
+    headerItem->setText(1, QString("Previous (%1)").arg(prevElement->name));
+    headerItem->setText(2, QString("Current (%1)").arg(element->name));
+    headerItem->setExpanded(true);
+    headerItem->setBackground(0, QBrush(QColor(240, 240, 240)));
+    headerItem->setBackground(1, QBrush(QColor(240, 240, 240)));
+    headerItem->setBackground(2, QBrush(QColor(240, 240, 240)));
+
+    // Compare fields
+    addCompareRow(headerItem, "Element ID",
+                  QString("0x%1").arg(static_cast<uint32_t>(prevElement->id), 0, 16),
+                  QString("0x%1").arg(static_cast<uint32_t>(element->id), 0, 16));
+    addCompareRow(headerItem, "Offset",
+                  QString("0x%1 (%2)").arg(prevElement->offset, 0, 16).arg(prevElement->offset),
+                  QString("0x%1 (%2)").arg(element->offset, 0, 16).arg(element->offset));
+    addCompareRow(headerItem, "Header Size",
+                  QString("%1 bytes").arg(prevElement->headerSize),
+                  QString("%1 bytes").arg(element->headerSize));
+    addCompareRow(headerItem, "Data Size",
+                  QString("%1 bytes").arg(prevElement->dataSize),
+                  QString("%1 bytes").arg(element->dataSize));
+    addCompareRow(headerItem, "Total Size",
+                  QString("%1 bytes").arg(prevElement->totalSize),
+                  QString("%1 bytes").arg(element->totalSize));
+    addCompareRow(headerItem, "Percentage",
+                  QString("%1%").arg(prevElement->percentage, 0, 'f', 2),
+                  QString("%1%").arg(element->percentage, 0, 'f', 2));
+    addCompareRow(headerItem, "Level",
+                  QString::number(prevElement->level),
+                  QString::number(element->level));
+
+    // Element-specific data
+    if (!element->stringValue.isEmpty() || !prevElement->stringValue.isEmpty()) {
+        addCompareRow(headerItem, "String Value", prevElement->stringValue, element->stringValue);
+    }
+
+    if (element->uintValue > 0 || prevElement->uintValue > 0) {
+        addCompareRow(headerItem, "UInt Value",
+                      QString::number(prevElement->uintValue),
+                      QString::number(element->uintValue));
+    }
+
+    if (element->floatValue > 0 || prevElement->floatValue > 0) {
+        addCompareRow(headerItem, "Float Value",
+                      QString::number(prevElement->floatValue, 'f', 6),
+                      QString::number(element->floatValue, 'f', 6));
+    }
+
+    if (!element->binaryValue.isEmpty() || !prevElement->binaryValue.isEmpty()) {
+        addCompareRow(headerItem, "Binary Value",
+                      QString("%1 bytes").arg(prevElement->binaryValue.size()),
+                      QString("%1 bytes").arg(element->binaryValue.size()));
+    }
+
+    // Track-specific fields
+    if (element->trackNumber > 0 || prevElement->trackNumber > 0) {
+        addCompareRow(headerItem, "Track Number",
+                      QString::number(prevElement->trackNumber),
+                      QString::number(element->trackNumber));
+    }
+
+    if (element->trackUID > 0 || prevElement->trackUID > 0) {
+        addCompareRow(headerItem, "Track UID",
+                      QString::number(prevElement->trackUID),
+                      QString::number(element->trackUID));
+    }
 }
 
 void PropertyPanel::addElementFields(QTreeWidgetItem* parent, const EBMLElement& element) {
@@ -1060,6 +1279,11 @@ void PropertyPanel::displayChunkSync(const AVIChunk* chunk) {
         return;
     }
 
+    // Set 2 columns for sync mode
+    m_treeWidget->setColumnCount(2);
+    m_treeWidget->setHeaderLabels(QStringList() << "Property" << "Value");
+    m_treeWidget->setColumnWidth(0, 200);
+
     // Root item: Chunk info
     QTreeWidgetItem* rootItem = new QTreeWidgetItem(m_treeWidget);
     rootItem->setText(0, QString("Chunk: %1").arg(chunk->fourCC));
@@ -1070,9 +1294,120 @@ void PropertyPanel::displayChunkSync(const AVIChunk* chunk) {
 }
 
 void PropertyPanel::displayChunkCompare(const AVIChunk* chunk) {
-    // For now, just display sync mode
-    // TODO: Implement comparison with previous chunk of same type
-    displayChunkSync(chunk);
+    m_treeWidget->clear();
+
+    if (!chunk || !m_aviParser) {
+        return;
+    }
+
+    // Find previous chunk by offset
+    const AVIChunk* prevChunk = nullptr;
+    if (m_lastChunkOffset >= 0) {
+        std::function<const AVIChunk*(const QVector<AVIChunk>&, int64_t)> findChunk;
+        findChunk = [&](const QVector<AVIChunk>& chunks, int64_t offset) -> const AVIChunk* {
+            for (const auto& c : chunks) {
+                if (c.offset == offset) return &c;
+                if (!c.children.isEmpty()) {
+                    const AVIChunk* found = findChunk(c.children, offset);
+                    if (found) return found;
+                }
+            }
+            return nullptr;
+        };
+        prevChunk = findChunk(m_aviParser->getChunks(), m_lastChunkOffset);
+    }
+
+    if (!prevChunk) {
+        // No previous chunk to compare, just display current
+        displayChunkSync(chunk);
+        return;
+    }
+
+    // Set 3 columns for compare mode
+    m_treeWidget->setColumnCount(3);
+    m_treeWidget->setHeaderLabels(QStringList() << "Property" << "Previous" << "Current");
+    m_treeWidget->setColumnWidth(0, 150);
+    m_treeWidget->setColumnWidth(1, 200);
+    m_treeWidget->setColumnWidth(2, 200);
+
+    // Create side-by-side comparison
+    QTreeWidgetItem* headerItem = new QTreeWidgetItem(m_treeWidget);
+    headerItem->setText(0, "Comparison");
+    headerItem->setText(1, QString("Previous (%1)").arg(prevChunk->fourCC));
+    headerItem->setText(2, QString("Current (%1)").arg(chunk->fourCC));
+    headerItem->setExpanded(true);
+    headerItem->setBackground(0, QBrush(QColor(240, 240, 240)));
+    headerItem->setBackground(1, QBrush(QColor(240, 240, 240)));
+    headerItem->setBackground(2, QBrush(QColor(240, 240, 240)));
+
+    // Compare fields
+    addCompareRow(headerItem, "FourCC", prevChunk->fourCC, chunk->fourCC);
+    addCompareRow(headerItem, "Offset",
+                  QString("0x%1").arg(prevChunk->offset, 0, 16),
+                  QString("0x%1").arg(chunk->offset, 0, 16));
+    addCompareRow(headerItem, "Size",
+                  QString("%1 bytes").arg(prevChunk->size),
+                  QString("%1 bytes").arg(chunk->size));
+    addCompareRow(headerItem, "Total Size",
+                  QString("%1 bytes").arg(prevChunk->totalSize),
+                  QString("%1 bytes").arg(chunk->totalSize));
+    addCompareRow(headerItem, "Percentage",
+                  QString("%1%").arg(prevChunk->percentage, 0, 'f', 2),
+                  QString("%1%").arg(chunk->percentage, 0, 'f', 2));
+    addCompareRow(headerItem, "Level",
+                  QString::number(prevChunk->level),
+                  QString::number(chunk->level));
+
+    // List Type (for RIFF/LIST chunks)
+    if (!chunk->listType.isEmpty() || !prevChunk->listType.isEmpty()) {
+        addCompareRow(headerItem, "List Type", prevChunk->listType, chunk->listType);
+    }
+
+    // Main AVI Header (avih) fields
+    if (chunk->fourCC == "avih" && prevChunk->fourCC == "avih") {
+        if (chunk->microSecPerFrame > 0 || prevChunk->microSecPerFrame > 0) {
+            addCompareRow(headerItem, "MicroSec Per Frame",
+                          QString::number(prevChunk->microSecPerFrame),
+                          QString::number(chunk->microSecPerFrame));
+
+            // Calculate FPS
+            double prevFps = prevChunk->microSecPerFrame > 0 ? 1000000.0 / prevChunk->microSecPerFrame : 0;
+            double currFps = chunk->microSecPerFrame > 0 ? 1000000.0 / chunk->microSecPerFrame : 0;
+            addCompareRow(headerItem, "Frame Rate",
+                          QString("%1 fps").arg(prevFps, 0, 'f', 2),
+                          QString("%1 fps").arg(currFps, 0, 'f', 2));
+        }
+
+        if (chunk->maxBytesPerSec > 0 || prevChunk->maxBytesPerSec > 0) {
+            addCompareRow(headerItem, "Max Bytes Per Sec",
+                          QString::number(prevChunk->maxBytesPerSec),
+                          QString::number(chunk->maxBytesPerSec));
+        }
+
+        if (chunk->totalFrames > 0 || prevChunk->totalFrames > 0) {
+            addCompareRow(headerItem, "Total Frames",
+                          QString::number(prevChunk->totalFrames),
+                          QString::number(chunk->totalFrames));
+        }
+
+        if (chunk->streams > 0 || prevChunk->streams > 0) {
+            addCompareRow(headerItem, "Streams",
+                          QString::number(prevChunk->streams),
+                          QString::number(chunk->streams));
+        }
+
+        if (chunk->width > 0 || prevChunk->width > 0) {
+            addCompareRow(headerItem, "Width",
+                          QString::number(prevChunk->width),
+                          QString::number(chunk->width));
+        }
+
+        if (chunk->height > 0 || prevChunk->height > 0) {
+            addCompareRow(headerItem, "Height",
+                          QString::number(prevChunk->height),
+                          QString::number(chunk->height));
+        }
+    }
 }
 
 void PropertyPanel::addChunkFields(QTreeWidgetItem* parent, const AVIChunk& chunk) {
@@ -1246,6 +1581,11 @@ void PropertyPanel::displayTagSync(const FLVTag* tag) {
         return;
     }
 
+    // Set 2 columns for sync mode
+    m_treeWidget->setColumnCount(2);
+    m_treeWidget->setHeaderLabels(QStringList() << "Property" << "Value");
+    m_treeWidget->setColumnWidth(0, 200);
+
     // Root item: Tag info
     QTreeWidgetItem* rootItem = new QTreeWidgetItem(m_treeWidget);
     rootItem->setText(0, QString("FLV Tag: %1").arg(FLVParser::tagTypeToString(tag->type)));
@@ -1256,9 +1596,132 @@ void PropertyPanel::displayTagSync(const FLVTag* tag) {
 }
 
 void PropertyPanel::displayTagCompare(const FLVTag* tag) {
-    // For now, just display sync mode
-    // TODO: Implement comparison with previous tag
-    displayTagSync(tag);
+    m_treeWidget->clear();
+
+    if (!tag || !m_flvParser) {
+        return;
+    }
+
+    // Find previous tag by offset
+    const FLVTag* prevTag = nullptr;
+    if (m_lastTagOffset >= 0) {
+        const auto& tags = m_flvParser->getTags();
+        for (const auto& t : tags) {
+            if (t.offset == m_lastTagOffset) {
+                prevTag = &t;
+                break;
+            }
+        }
+    }
+
+    if (!prevTag) {
+        // No previous tag to compare, just display current
+        displayTagSync(tag);
+        return;
+    }
+
+    // Set 3 columns for compare mode
+    m_treeWidget->setColumnCount(3);
+    m_treeWidget->setHeaderLabels(QStringList() << "Property" << "Previous" << "Current");
+    m_treeWidget->setColumnWidth(0, 150);
+    m_treeWidget->setColumnWidth(1, 200);
+    m_treeWidget->setColumnWidth(2, 200);
+
+    // Create side-by-side comparison
+    QTreeWidgetItem* headerItem = new QTreeWidgetItem(m_treeWidget);
+    headerItem->setText(0, "Comparison");
+    headerItem->setText(1, QString("Previous (%1)").arg(FLVParser::tagTypeToString(prevTag->type)));
+    headerItem->setText(2, QString("Current (%1)").arg(FLVParser::tagTypeToString(tag->type)));
+    headerItem->setExpanded(true);
+    headerItem->setBackground(0, QBrush(QColor(240, 240, 240)));
+    headerItem->setBackground(1, QBrush(QColor(240, 240, 240)));
+    headerItem->setBackground(2, QBrush(QColor(240, 240, 240)));
+
+    // Compare fields
+    addCompareRow(headerItem, "Tag Type",
+                  FLVParser::tagTypeToString(prevTag->type),
+                  FLVParser::tagTypeToString(tag->type));
+    addCompareRow(headerItem, "Offset",
+                  QString("0x%1").arg(prevTag->offset, 0, 16),
+                  QString("0x%1").arg(tag->offset, 0, 16));
+    addCompareRow(headerItem, "Data Size",
+                  QString("%1 bytes").arg(prevTag->dataSize),
+                  QString("%1 bytes").arg(tag->dataSize));
+    addCompareRow(headerItem, "Total Size",
+                  QString("%1 bytes").arg(prevTag->totalSize),
+                  QString("%1 bytes").arg(tag->totalSize));
+    addCompareRow(headerItem, "Percentage",
+                  QString("%1%").arg(prevTag->percentage, 0, 'f', 2),
+                  QString("%1%").arg(tag->percentage, 0, 'f', 2));
+    addCompareRow(headerItem, "Timestamp",
+                  QString("%1 ms").arg(prevTag->timestamp),
+                  QString("%1 ms").arg(tag->timestamp));
+    addCompareRow(headerItem, "Stream ID",
+                  QString::number(prevTag->streamID),
+                  QString::number(tag->streamID));
+
+    // Video-specific fields
+    if (tag->type == FLVTagType::Video && prevTag->type == FLVTagType::Video) {
+        addCompareRow(headerItem, "Frame Type",
+                      FLVParser::frameTypeToString(prevTag->frameType),
+                      FLVParser::frameTypeToString(tag->frameType));
+        addCompareRow(headerItem, "Video Codec",
+                      FLVParser::videoCodecToString(prevTag->videoCodec),
+                      FLVParser::videoCodecToString(tag->videoCodec));
+
+        if ((tag->videoCodec == FLVVideoCodec::AVC || tag->videoCodec == FLVVideoCodec::HEVC) &&
+            (prevTag->videoCodec == FLVVideoCodec::AVC || prevTag->videoCodec == FLVVideoCodec::HEVC)) {
+            QString prevAvcType, currAvcType;
+            switch (prevTag->avcPacketType) {
+                case 0: prevAvcType = "0 (Sequence Header)"; break;
+                case 1: prevAvcType = "1 (NALU)"; break;
+                case 2: prevAvcType = "2 (End of Sequence)"; break;
+                default: prevAvcType = QString::number(prevTag->avcPacketType); break;
+            }
+            switch (tag->avcPacketType) {
+                case 0: currAvcType = "0 (Sequence Header)"; break;
+                case 1: currAvcType = "1 (NALU)"; break;
+                case 2: currAvcType = "2 (End of Sequence)"; break;
+                default: currAvcType = QString::number(tag->avcPacketType); break;
+            }
+            addCompareRow(headerItem, "AVC Packet Type", prevAvcType, currAvcType);
+            addCompareRow(headerItem, "Composition Time",
+                          QString("%1 ms").arg(prevTag->compositionTime),
+                          QString("%1 ms").arg(tag->compositionTime));
+        }
+    }
+
+    // Audio-specific fields
+    if (tag->type == FLVTagType::Audio && prevTag->type == FLVTagType::Audio) {
+        addCompareRow(headerItem, "Audio Format",
+                      FLVParser::audioFormatToString(prevTag->audioFormat),
+                      FLVParser::audioFormatToString(tag->audioFormat));
+
+        // Sound Rate
+        QString prevRate, currRate;
+        switch (prevTag->soundRate) {
+            case 0: prevRate = "5.5 kHz"; break;
+            case 1: prevRate = "11 kHz"; break;
+            case 2: prevRate = "22 kHz"; break;
+            case 3: prevRate = "44 kHz"; break;
+            default: prevRate = QString::number(prevTag->soundRate); break;
+        }
+        switch (tag->soundRate) {
+            case 0: currRate = "5.5 kHz"; break;
+            case 1: currRate = "11 kHz"; break;
+            case 2: currRate = "22 kHz"; break;
+            case 3: currRate = "44 kHz"; break;
+            default: currRate = QString::number(tag->soundRate); break;
+        }
+        addCompareRow(headerItem, "Sample Rate", prevRate, currRate);
+
+        addCompareRow(headerItem, "Sample Size",
+                      prevTag->soundSize == 1 ? "16-bit" : "8-bit",
+                      tag->soundSize == 1 ? "16-bit" : "8-bit");
+        addCompareRow(headerItem, "Channels",
+                      prevTag->soundType == 1 ? "Stereo" : "Mono",
+                      tag->soundType == 1 ? "Stereo" : "Mono");
+    }
 }
 
 void PropertyPanel::addTagFields(QTreeWidgetItem* parent, const FLVTag& tag) {

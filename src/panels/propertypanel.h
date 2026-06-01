@@ -83,6 +83,7 @@ private:
     const AVIChunk* findChunkByOffset(const QVector<AVIChunk>& chunks, int64_t offset);
     const FLVTag* findTagByOffset(const QVector<FLVTag>& tags, int64_t offset);
     QString formatTimestamp(int64_t timestamp);
+    void addCompareRow(QTreeWidgetItem* parent, const QString& property, const QString& prevValue, const QString& currValue);
 
     QTreeWidget* m_treeWidget;
     QToolBar* m_toolbar;
