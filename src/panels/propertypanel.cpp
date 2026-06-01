@@ -191,17 +191,19 @@ void PropertyPanel::displayAtom(int64_t offset) {
         return;
     }
 
-    m_lastAtomOffset = offset;
-
     switch (m_mode) {
     case PropertyMode::Sync:
         displayAtomSync(atom);
+        m_lastAtomOffset = offset;
         break;
     case PropertyMode::Compare:
         displayAtomCompare(atom);
+        // Update last offset AFTER comparison so next click compares against this one
+        m_lastAtomOffset = offset;
         break;
     case PropertyMode::Dump:
         displayAtomSync(atom);
+        m_lastAtomOffset = offset;
         break;
     }
 }
@@ -741,9 +743,13 @@ void PropertyPanel::displayAtomCompare(const MP4Atom* atom) {
     headerItem->setText(1, QString("Previous (%1)").arg(prevAtom->type));
     headerItem->setText(2, QString("Current (%1)").arg(atom->type));
     headerItem->setExpanded(true);
-    headerItem->setBackground(0, QBrush(QColor(240, 240, 240)));
-    headerItem->setBackground(1, QBrush(QColor(240, 240, 240)));
-    headerItem->setBackground(2, QBrush(QColor(240, 240, 240)));
+    // Use darker background and white text for better visibility in dark theme
+    headerItem->setBackground(0, QBrush(QColor(60, 60, 60)));
+    headerItem->setBackground(1, QBrush(QColor(60, 60, 60)));
+    headerItem->setBackground(2, QBrush(QColor(60, 60, 60)));
+    headerItem->setForeground(0, QBrush(QColor(255, 255, 255)));
+    headerItem->setForeground(1, QBrush(QColor(255, 255, 255)));
+    headerItem->setForeground(2, QBrush(QColor(255, 255, 255)));
 
     // Compare fields
     addCompareRow(headerItem, "Type", prevAtom->type, atom->type);
@@ -933,23 +939,25 @@ void PropertyPanel::displayElement(int64_t offset) {
         return;
     }
 
-    m_lastElementOffset = offset;
-
     switch (m_mode) {
     case PropertyMode::Sync:
         {
             const EBMLElement* element = findElementByOffset(m_mkvParser->getElements(), offset);
             displayElementSync(element);
+            m_lastElementOffset = offset;
         }
         break;
     case PropertyMode::Compare:
         {
             const EBMLElement* element = findElementByOffset(m_mkvParser->getElements(), offset);
             displayElementCompare(element);
+            // Update last offset AFTER comparison so next click compares against this one
+            m_lastElementOffset = offset;
         }
         break;
     case PropertyMode::Dump:
         // Dump mode is handled by onDumpData()
+        m_lastElementOffset = offset;
         break;
     }
 }
@@ -1018,9 +1026,13 @@ void PropertyPanel::displayElementCompare(const EBMLElement* element) {
     headerItem->setText(1, QString("Previous (%1)").arg(prevElement->name));
     headerItem->setText(2, QString("Current (%1)").arg(element->name));
     headerItem->setExpanded(true);
-    headerItem->setBackground(0, QBrush(QColor(240, 240, 240)));
-    headerItem->setBackground(1, QBrush(QColor(240, 240, 240)));
-    headerItem->setBackground(2, QBrush(QColor(240, 240, 240)));
+    // Use darker background and white text for better visibility in dark theme
+    headerItem->setBackground(0, QBrush(QColor(60, 60, 60)));
+    headerItem->setBackground(1, QBrush(QColor(60, 60, 60)));
+    headerItem->setBackground(2, QBrush(QColor(60, 60, 60)));
+    headerItem->setForeground(0, QBrush(QColor(255, 255, 255)));
+    headerItem->setForeground(1, QBrush(QColor(255, 255, 255)));
+    headerItem->setForeground(2, QBrush(QColor(255, 255, 255)));
 
     // Compare fields
     addCompareRow(headerItem, "Element ID",
@@ -1252,18 +1264,20 @@ void PropertyPanel::displayChunk(int64_t offset) {
         return;
     }
 
-    m_lastChunkOffset = offset;
-
     switch (m_mode) {
     case PropertyMode::Sync:
         displayChunkSync(chunk);
+        m_lastChunkOffset = offset;
         break;
     case PropertyMode::Compare:
         displayChunkCompare(chunk);
+        // Update last offset AFTER comparison so next click compares against this one
+        m_lastChunkOffset = offset;
         break;
     case PropertyMode::Dump:
         // Dump mode is handled by onDumpData()
         displayChunkSync(chunk);
+        m_lastChunkOffset = offset;
         break;
     }
 }
@@ -1336,9 +1350,13 @@ void PropertyPanel::displayChunkCompare(const AVIChunk* chunk) {
     headerItem->setText(1, QString("Previous (%1)").arg(prevChunk->fourCC));
     headerItem->setText(2, QString("Current (%1)").arg(chunk->fourCC));
     headerItem->setExpanded(true);
-    headerItem->setBackground(0, QBrush(QColor(240, 240, 240)));
-    headerItem->setBackground(1, QBrush(QColor(240, 240, 240)));
-    headerItem->setBackground(2, QBrush(QColor(240, 240, 240)));
+    // Use darker background and white text for better visibility in dark theme
+    headerItem->setBackground(0, QBrush(QColor(60, 60, 60)));
+    headerItem->setBackground(1, QBrush(QColor(60, 60, 60)));
+    headerItem->setBackground(2, QBrush(QColor(60, 60, 60)));
+    headerItem->setForeground(0, QBrush(QColor(255, 255, 255)));
+    headerItem->setForeground(1, QBrush(QColor(255, 255, 255)));
+    headerItem->setForeground(2, QBrush(QColor(255, 255, 255)));
 
     // Compare fields
     addCompareRow(headerItem, "FourCC", prevChunk->fourCC, chunk->fourCC);
@@ -1563,11 +1581,12 @@ void PropertyPanel::displayTag(int64_t offset) {
 
     if (m_mode == PropertyMode::Sync) {
         displayTagSync(tag);
+        m_lastTagOffset = offset;
     } else if (m_mode == PropertyMode::Compare) {
         displayTagCompare(tag);
+        // Update last offset AFTER comparison so next click compares against this one
+        m_lastTagOffset = offset;
     }
-
-    m_lastTagOffset = offset;
 }
 
 void PropertyPanel::onTagSelected(int64_t offset) {
@@ -1633,9 +1652,13 @@ void PropertyPanel::displayTagCompare(const FLVTag* tag) {
     headerItem->setText(1, QString("Previous (%1)").arg(FLVParser::tagTypeToString(prevTag->type)));
     headerItem->setText(2, QString("Current (%1)").arg(FLVParser::tagTypeToString(tag->type)));
     headerItem->setExpanded(true);
-    headerItem->setBackground(0, QBrush(QColor(240, 240, 240)));
-    headerItem->setBackground(1, QBrush(QColor(240, 240, 240)));
-    headerItem->setBackground(2, QBrush(QColor(240, 240, 240)));
+    // Use darker background and white text for better visibility in dark theme
+    headerItem->setBackground(0, QBrush(QColor(60, 60, 60)));
+    headerItem->setBackground(1, QBrush(QColor(60, 60, 60)));
+    headerItem->setBackground(2, QBrush(QColor(60, 60, 60)));
+    headerItem->setForeground(0, QBrush(QColor(255, 255, 255)));
+    headerItem->setForeground(1, QBrush(QColor(255, 255, 255)));
+    headerItem->setForeground(2, QBrush(QColor(255, 255, 255)));
 
     // Compare fields
     addCompareRow(headerItem, "Tag Type",
