@@ -13,33 +13,59 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 
 ### Key Features
 
-- **Multi-Codec Support**: H.264/AVC, H.265/HEVC, VP9, AV1, MPEG-1/2
-- **Container Format Support**: MP4, MKV, AVI, FLV, TS/M2TS
-- **Transport Stream Analysis**: MPEG-TS packet inspection, TR 101-290 compliance, PSI/SI tables
-- **Bitrate Visualization**: Interactive bar chart showing frame sizes and types
-- **Frame-by-Frame Analysis**: Step through video frame by frame
+#### Video Analysis
+- **Multi-Codec Support**: H.264/AVC, H.265/HEVC, VP9, AV1, MPEG-1/2, MPEG-4, MJPEG, ProRes
+- **Container Format Support**: MP4, MKV, AVI, FLV, TS/M2TS, MOV, WebM
+- **Raw YUV Viewer**: Open and analyze raw YUV files with automatic format detection (I420, NV12, YV12, etc.)
+- **Frame-by-Frame Analysis**: Step through video frame by frame with precise navigation
 - **Video Playback**: Play, pause, seek with accurate frame positioning
-- **Frame Metadata**: Extract PTS, DTS, frame type, size, QP values
+- **Frame Metadata**: Extract PTS, DTS, frame type, size, QP values, GOP structure
+
+#### Quality & Export
 - **Quality Metrics**: PSNR/SSIM comparison between reference and distorted videos
 - **YUV Export**: Export single frames or frame ranges as raw YUV files
-- **Real-time Log Viewer**: Monitor file loading and parsing progress with live log display
-- **Container Structure Analysis**: Detailed MP4 atom, MKV element, AVI chunk, and TS packet inspection
+- **CSV Export**: Export frame metrics, statistics, GOP structure, and bitrate data
+- **Stream Info Export**: Save detailed stream information to text files
+
+#### Analysis Panels
+- **Bitrate Panel**: Interactive visualization showing frame sizes, types, and bitrate distribution
+- **Transport Stream Analysis**: MPEG-TS packet inspection, TR 101-290 compliance, PSI/SI tables
+- **Container Structure**: Detailed MP4 atom, MKV element, AVI chunk, and TS packet inspection
+- **Hex Viewer**: Raw byte-level inspection of video files
+- **Time Dynamics**: PTS/DTS/PCR timeline analysis
+- **GOP Viewer**: Group of Pictures structure visualization
+- **Thumbnail Bar**: Quick frame navigation with visual thumbnails
+- **Messages Panel**: Codec warnings, errors, and compliance issues
+- **EPG Panel**: Electronic Program Guide data from transport streams
+- **Buffer Analysis**: CPB (Coded Picture Buffer) monitoring
+
+#### User Interface
 - **Professional UI**: Qt-based interface with dockable panels and smooth animations
+- **Real-time Log Viewer**: Monitor file loading and parsing progress with live log display
+- **Context Menus**: Right-click frame analysis and export options
+- **Dark Theme**: Modern dark interface optimized for video analysis
 
 ### Planned Features
 
 - VMAF quality metric integration
 - Motion vector visualization
 - Block/partition information display
-- Reference stream comparison with difference modes
-- CSV metrics export
-- Compliance verification messages
-- Buffer analysis (CPB)
+- Reference stream comparison with side-by-side difference modes
 - Command-line tool for batch processing
+- Plugin system for custom analyzers
 
 ## Screenshots
 
-*Coming soon*
+### Main Interface
+![YUV Viewer](docs/screenshots/yuv_viewer.png)
+*Raw YUV file viewer with format detection and playback controls*
+
+### Features
+- Multi-format video analysis with comprehensive codec support
+- Raw YUV file viewing and frame export
+- Transport stream analysis with TR 101-290 compliance
+- Quality metrics comparison (PSNR/SSIM)
+- Professional dockable panel interface
 
 ## Requirements
 
@@ -67,7 +93,7 @@ brew install ffmpeg
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/VideoStudio.git
+git clone https://github.com/build-your-own-x-with-ai/VideoStudio.git
 cd VideoStudio
 
 # Create build directory
@@ -85,13 +111,25 @@ cmake --build .
 
 ## Usage
 
-### Opening a Video File
+### Opening Files
 
+#### Video Files
 1. Launch VideoStudio
 2. Click **File → Open** or press **Cmd+O**
-3. Select a video file (MP4, MKV, AVI, MOV, TS, H.264, H.265, etc.)
-4. Watch the **Log Viewer** in the center of the window showing real-time loading progress
-5. Once loaded, the Log Viewer animates to the bottom and the first frame is displayed
+3. Select a video file (MP4, MKV, AVI, MOV, TS, FLV, WebM, H.264, H.265, etc.)
+4. Watch the **Log Viewer** showing real-time loading progress
+5. Once loaded, the first frame is displayed with analysis panels available
+
+#### Raw YUV Files
+1. Click **File → Open YUV File** or press **Cmd+Y**
+2. Select a raw YUV file
+3. Configure format parameters:
+   - **Width** and **Height**: Video resolution
+   - **Format**: I420 (4:2:0 Planar), NV12, YV12, I422, I444, etc.
+   - **Frames**: Automatically calculated from file size
+4. Click **Open** to load the YUV file
+5. Use playback controls to navigate through frames
+6. Click **Export Frame** to save individual frames as PNG
 
 ### Log Viewer
 
@@ -171,21 +209,50 @@ The bar chart at the top shows:
 
 ### Core Components
 
+#### Decoders & Readers
 - **VideoDecoder** (`src/core/videodecoder.cpp`): FFmpeg integration for decoding with real-time progress signals
-- **FrameIndex** (`src/core/framedata.cpp`): Frame metadata storage and statistics
-- **VideoOutput** (`src/widgets/videooutput.cpp`): Video display with YUV to RGB conversion
-- **BarChart** (`src/widgets/barchart.cpp`): Bitrate visualization widget
-- **GOPViewer** (`src/widgets/gopviewer.cpp`): GOP structure visualization
-- **ThumbnailBar** (`src/widgets/thumbnailbar.cpp`): Frame thumbnail navigation
-- **LogViewer** (`src/widgets/logviewer.cpp`): Real-time log display with auto-scroll and animations
-- **QualityMetricsDialog** (`src/dialogs/qualitymetricsdialog.cpp`): PSNR/SSIM comparison tool
-- **CSVExportDialog** (`src/dialogs/csvexportdialog.cpp`): CSV metrics export tool
-- **AboutDialog** (`src/dialogs/aboutdialog.cpp`): About and help dialog
-- **MP4Parser** (`src/core/mp4parser.cpp`): MP4 container structure analysis
+- **YUVReader** (`src/core/yuvreader.cpp`): Raw YUV file reader with format detection and frame extraction
+
+#### Parsers
 - **TSParser** (`src/core/tsparser.cpp`): MPEG-TS stream analysis with TR 101-290 compliance
+- **MP4Parser** (`src/core/mp4parser.cpp`): MP4 container structure analysis
 - **MKVParser** (`src/core/mkvparser.cpp`): Matroska container analysis
 - **AVIParser** (`src/core/aviparser.cpp`): AVI RIFF chunk analysis
 - **FLVParser** (`src/core/flvparser.cpp`): FLV tag structure analysis
+- **TimingAnalyzer** (`src/core/timinganalyzer.cpp`): PTS/DTS/PCR timeline analysis
+
+#### Widgets
+- **VideoOutput** (`src/widgets/videooutput.cpp`): Video display with YUV to RGB conversion
+- **BarChart** (`src/widgets/barchart.cpp`): Bitrate visualization widget
+- **AreaChart** (`src/widgets/areachart.cpp`): Time-series data visualization
+- **GOPViewer** (`src/widgets/gopviewer.cpp`): GOP structure visualization
+- **ThumbnailBar** (`src/widgets/thumbnailbar.cpp`): Frame thumbnail navigation
+- **LogViewer** (`src/widgets/logviewer.cpp`): Real-time log display with auto-scroll
+- **PacketView** (`src/widgets/packetview.cpp`): TS packet hex viewer
+
+#### Panels
+- **BitratePanel** (`src/panels/bitratepanel.cpp`): Frame size and bitrate analysis
+- **BufferPanel** (`src/panels/bufferpanel.cpp`): CPB buffer monitoring
+- **TR101290Panel** (`src/panels/tr101290panel.cpp`): DVB compliance checking
+- **TimeDynamicsPanel** (`src/panels/timedynamicspanel.cpp`): PTS/DTS timeline
+- **HexViewerPanel** (`src/panels/hexviewerpanel.cpp`): Raw byte inspection
+- **ExplorerPanel** (`src/panels/explorerpanel.cpp`): Container structure tree
+- **PropertyPanel** (`src/panels/propertypanel.cpp`): Stream properties
+- **MessagesPanel** (`src/panels/messagespanel.cpp`): Warnings and errors
+- **EPGPanel** (`src/panels/epgpanel.cpp`): Electronic Program Guide
+- **GraphicsPanel** (`src/panels/graphicspanel.cpp`): Visual overlays
+- **CommentsPanel** (`src/panels/commentspanel.cpp`): User annotations
+
+#### Dialogs
+- **YUVViewerDialog** (`src/dialogs/yuvviewerdialog.cpp`): Raw YUV file viewer
+- **QualityMetricsDialog** (`src/dialogs/qualitymetricsdialog.cpp`): PSNR/SSIM comparison
+- **ReferenceComparisonDialog** (`src/dialogs/referencecomparisondialog.cpp`): Side-by-side comparison
+- **YUVExportDialog** (`src/dialogs/yuvexportdialog.cpp`): YUV frame export
+- **CSVExportDialog** (`src/dialogs/csvexportdialog.cpp`): CSV metrics export
+- **SaveStreamInfoDialog** (`src/dialogs/savestreaminfodialog.cpp`): Stream info export
+- **AboutDialog** (`src/dialogs/aboutdialog.cpp`): About and help
+
+#### Main
 - **MainWindow** (`src/mainwindow.cpp`): Main application window and UI coordination
 
 ### Technology Stack
@@ -276,11 +343,16 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [x] Time dynamics panel (PTS/DTS/PCR)
 - [x] Messages and error reporting
 
-### Version 1.2
+### Version 1.2 (Current)
+- [x] Raw YUV file viewer with format detection
+- [x] All analysis panels implemented (Bitrate, Buffer, TR 101-290, Time Dynamics, etc.)
+- [x] Stream info export functionality
+- [x] Reference comparison dialog
+- [x] CSV metrics export
+- [x] Context menu features for quick access
+- [x] Complete UI with dockable panels
 - [ ] Motion vector overlay
 - [ ] Block/partition visualization
-- [ ] Reference stream comparison
-- [x] CSV metrics export
 
 ### Version 2.0
 - [ ] VMAF quality metric
@@ -295,7 +367,7 @@ For questions, issues, or feature requests, please open an issue on GitHub.
 
 ## Contact
 
-- **Project**: [VideoStudio](https://github.com/yourusername/VideoStudio)
+- **Project**: [VideoStudio](https://github.com/build-your-own-x-with-ai/VideoStudio)
 - **Documentation**: See [CLAUDE.md](CLAUDE.md) for development guidelines
 
 ---
