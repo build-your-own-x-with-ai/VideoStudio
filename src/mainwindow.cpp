@@ -704,6 +704,10 @@ void MainWindow::openFile() {
         return;
     }
 
+    loadFile(fileName);
+}
+
+void MainWindow::loadFile(const QString& fileName) {
     // Add to recent files
     addToRecentFiles(fileName);
 
@@ -1843,22 +1847,7 @@ void MainWindow::openRecentFile() {
     if (action) {
         QString filePath = action->data().toString();
         if (QFile::exists(filePath)) {
-            // Reuse the existing openFile logic by setting the file path
-            m_currentFilePath = filePath;
-
-            // Add to recent files
-            addToRecentFiles(filePath);
-
-            // Update file path label in toolbar
-            QFileInfo fileInfo(filePath);
-            QString displayPath = fileInfo.fileName();
-            m_filePathLabel->setText(displayPath);
-            m_filePathLabel->setToolTip(filePath);
-
-            // TODO: Extract the file loading logic from openFile() into loadFile()
-            // For now, we'll just show a message
-            QMessageBox::information(this, tr("Open Recent"),
-                tr("Opening recent file: %1\n\nNote: Full implementation pending.").arg(filePath));
+            loadFile(filePath);
         } else {
             QMessageBox::warning(this, tr("File Not Found"),
                 tr("The file no longer exists:\n%1").arg(filePath));
@@ -1954,23 +1943,8 @@ void MainWindow::dropEvent(QDropEvent* event) {
                 }
 
                 if (isSupported) {
-                    // Add to recent files
-                    addToRecentFiles(filePath);
-
-                    // Store current file path
-                    m_currentFilePath = filePath;
-
-                    // Update file path label in toolbar
-                    QFileInfo fileInfo(filePath);
-                    QString displayPath = fileInfo.fileName();
-                    m_filePathLabel->setText(displayPath);
-                    m_filePathLabel->setToolTip(filePath);
-
-                    // TODO: Extract the file loading logic from openFile() into loadFile()
-                    // For now, show a message
-                    QMessageBox::information(this, tr("Drag & Drop"),
-                        tr("File dropped: %1\n\nNote: Full implementation pending.").arg(filePath));
-
+                    // Load the file
+                    loadFile(filePath);
                     event->acceptProposedAction();
                 } else {
                     QMessageBox::warning(this, tr("Unsupported File"),
