@@ -50,6 +50,8 @@ public:
 
 private slots:
     void openFile();
+    void openRecentFile();
+    void clearRecentFiles();
     void play();
     void pause();
     void stepForward();
@@ -91,6 +93,10 @@ private slots:
 public slots:
     void appendLog(const QString& message, QtMsgType type);
 
+protected:
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
+
 private:
     void animateLogViewerToDock();
     void createActions();
@@ -105,6 +111,9 @@ private:
     void updateMKVPanels(); // Update MKV analysis panels after parsing
     void updateAVIPanels(); // Update AVI analysis panels after parsing
     void updateFLVPanels(); // Update FLV analysis panels after parsing
+    void loadFile(const QString& filePath);
+    void updateRecentFilesMenu();
+    void addToRecentFiles(const QString& filePath);
 
     std::unique_ptr<VideoDecoder> m_decoder;
     std::unique_ptr<TSParser> m_tsParser;
@@ -186,6 +195,10 @@ private:
 
     QString m_currentFilePath;
     QLabel* m_filePathLabel;
+
+    QMenu* m_recentFilesMenu;
+    QList<QAction*> m_recentFileActions;
+    static const int MaxRecentFiles = 10;
 
     static MainWindow* s_instance;  // Singleton instance for message handler
 };

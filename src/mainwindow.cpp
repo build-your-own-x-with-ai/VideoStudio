@@ -48,6 +48,12 @@
 #include <QProgressDialog>
 #include <QPropertyAnimation>
 #include <QTimer>
+#include <QSettings>
+#include <QFileInfo>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
+#include <QUrl>
 #include <QSpinBox>
 #include <QLineEdit>
 #include <QPushButton>
@@ -57,6 +63,9 @@ namespace VideoStudio {
 
 // Static instance for message handler
 MainWindow* MainWindow::s_instance = nullptr;
+
+// Static constant for max recent files
+const int MainWindow::MaxRecentFiles;
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -159,6 +168,9 @@ MainWindow::MainWindow(QWidget* parent)
                 abort();
         }
     });
+
+    // Enable drag and drop
+    setAcceptDrops(true);
 }
 
 MainWindow::~MainWindow() {
@@ -380,6 +392,20 @@ void MainWindow::createMenus() {
     QAction* openAction = fileMenu->addAction(tr("&Open..."));
     openAction->setShortcut(QKeySequence::Open);
     connect(openAction, &QAction::triggered, this, &MainWindow::openFile);
+
+    // Recent Files submenu
+    m_recentFilesMenu = fileMenu->addMenu(tr("Open &Recent"));
+    for (int i = 0; i < MaxRecentFiles; ++i) {
+        QAction* action = new QAction(this);
+        action->setVisible(false);
+        connect(action, &QAction::triggered, this, &MainWindow::openRecentFile);
+        m_recentFileActions.append(action);
+        m_recentFilesMenu->addAction(action);
+    }
+    m_recentFilesMenu->addSeparator();
+    QAction* clearRecentAction = m_recentFilesMenu->addAction(tr("Clear Recent Files"));
+    connect(clearRecentAction, &QAction::triggered, this, &MainWindow::clearRecentFiles);
+    updateRecentFilesMenu();
 
     fileMenu->addSeparator();
 
@@ -677,6 +703,9 @@ void MainWindow::openFile() {
     if (fileName.isEmpty()) {
         return;
     }
+
+    // Add to recent files
+    addToRecentFiles(fileName);
 
     // Store current file path
     m_currentFilePath = fileName;
@@ -1807,6 +1836,152 @@ void MainWindow::exportCSVMetrics() {
 
     CSVExportDialog dialog(m_decoder.get(), this);
     dialog.exec();
+}
+
+void MainWindow::openRecentFile() {
+    QAction* action = qobject_cast<QAction*>(sender());
+    if (action) {
+        QString filePath = action->data().toString();
+        if (QFile::exists(filePath)) {
+            // Reuse the existing openFile logic by setting the file path
+            m_currentFilePath = filePath;
+
+            // Add to recent files
+            addToRecentFiles(filePath);
+
+            // Update file path label in toolbar
+            QFileInfo fileInfo(filePath);
+            QString displayPath = fileInfo.fileName();
+            m_filePathLabel->setText(displayPath);
+            m_filePathLabel->setToolTip(filePath);
+
+            // TODO: Extract the file loading logic from openFile() into loadFile()
+            // For now, we'll just show a message
+            QMessageBox::information(this, tr("Open Recent"),
+                tr("Opening recent file: %1\n\nNote: Full implementation pending.").arg(filePath));
+        } else {
+            QMessageBox::warning(this, tr("File Not Found"),
+                tr("The file no longer exists:\n%1").arg(filePath));
+            // Remove from recent files
+            QSettings settings("VideoStudio", "VideoStudio");
+            QStringList files = settings.value("recentFiles").toStringList();
+            files.removeAll(filePath);
+            settings.setValue("recentFiles", files);
+            updateRecentFilesMenu();
+        }
+    }
+}
+
+void MainWindow::clearRecentFiles() {
+    QSettings settings("VideoStudio", "VideoStudio");
+    settings.remove("recentFiles");
+    updateRecentFilesMenu();
+}
+
+void MainWindow::updateRecentFilesMenu() {
+    QSettings settings("VideoStudio", "VideoStudio");
+    QStringList files = settings.value("recentFiles").toStringList();
+
+    int numRecentFiles = qMin(files.size(), MaxRecentFiles);
+
+    for (int i = 0; i < numRecentFiles; ++i) {
+        QString text = QString("&%1 %2").arg(i + 1).arg(QFileInfo(files[i]).fileName());
+        m_recentFileActions[i]->setText(text);
+        m_recentFileActions[i]->setData(files[i]);
+        m_recentFileActions[i]->setToolTip(files[i]);
+        m_recentFileActions[i]->setVisible(true);
+    }
+
+    for (int i = numRecentFiles; i < MaxRecentFiles; ++i) {
+        m_recentFileActions[i]->setVisible(false);
+    }
+
+    m_recentFilesMenu->setEnabled(numRecentFiles > 0);
+}
+
+void MainWindow::addToRecentFiles(const QString& filePath) {
+    QSettings settings("VideoStudio", "VideoStudio");
+    QStringList files = settings.value("recentFiles").toStringList();
+
+    // Remove if already exists (to move it to top)
+    files.removeAll(filePath);
+
+    // Add to beginning
+    files.prepend(filePath);
+
+    // Keep only MaxRecentFiles
+    while (files.size() > MaxRecentFiles) {
+        files.removeLast();
+    }
+
+    settings.setValue("recentFiles", files);
+    updateRecentFilesMenu();
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event) {
+    // Accept drag if it contains URLs (files)
+    if (event->mimeData()->hasUrls()) {
+        event->acceptProposedAction();
+    }
+}
+
+void MainWindow::dropEvent(QDropEvent* event) {
+    const QMimeData* mimeData = event->mimeData();
+
+    if (mimeData->hasUrls()) {
+        QList<QUrl> urlList = mimeData->urls();
+
+        // Process only the first file
+        if (!urlList.isEmpty()) {
+            QString filePath = urlList.first().toLocalFile();
+
+            // Check if file exists
+            if (QFile::exists(filePath)) {
+                // Check if it's a supported video file
+                QStringList supportedExtensions = {
+                    ".mp4", ".mkv", ".avi", ".flv", ".mov",
+                    ".ts", ".m2ts", ".mts",
+                    ".h264", ".h265", ".hevc", ".264", ".265",
+                    ".yuv", ".webm", ".m4v"
+                };
+
+                bool isSupported = false;
+                for (const QString& ext : supportedExtensions) {
+                    if (filePath.endsWith(ext, Qt::CaseInsensitive)) {
+                        isSupported = true;
+                        break;
+                    }
+                }
+
+                if (isSupported) {
+                    // Add to recent files
+                    addToRecentFiles(filePath);
+
+                    // Store current file path
+                    m_currentFilePath = filePath;
+
+                    // Update file path label in toolbar
+                    QFileInfo fileInfo(filePath);
+                    QString displayPath = fileInfo.fileName();
+                    m_filePathLabel->setText(displayPath);
+                    m_filePathLabel->setToolTip(filePath);
+
+                    // TODO: Extract the file loading logic from openFile() into loadFile()
+                    // For now, show a message
+                    QMessageBox::information(this, tr("Drag & Drop"),
+                        tr("File dropped: %1\n\nNote: Full implementation pending.").arg(filePath));
+
+                    event->acceptProposedAction();
+                } else {
+                    QMessageBox::warning(this, tr("Unsupported File"),
+                        tr("The dropped file is not a supported video format:\n%1").arg(filePath));
+                }
+            } else {
+                QMessageBox::warning(this, tr("File Not Found"),
+                    tr("The dropped file does not exist:\n%1").arg(filePath));
+            }
+        }
+    }
 }
 
 } // namespace VideoStudio
