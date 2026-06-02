@@ -18,11 +18,13 @@ GraphicsChart::GraphicsChart(QWidget* parent)
     : QWidget(parent)
     , m_mode(GraphicsMode::Line)
     , m_rangingMode(RangingMode::Offset)
+    , m_scalingMode(ScalingMode::Global)
     , m_zoomLevel(1.0)
     , m_offsetX(0.0)
     , m_offsetY(0.0)
     , m_hoveredPointIndex(-1)
     , m_hasCursor(false)
+    , m_isDragging(false)
 {
     setMinimumHeight(400);
     setMouseTracking(true);
@@ -67,6 +69,11 @@ void GraphicsChart::setMode(GraphicsMode mode) {
 
 void GraphicsChart::setRangingMode(RangingMode mode) {
     m_rangingMode = mode;
+    update();
+}
+
+void GraphicsChart::setScalingMode(ScalingMode mode) {
+    m_scalingMode = mode;
     update();
 }
 
@@ -179,18 +186,21 @@ void GraphicsChart::drawDataLine(QPainter& painter) {
     int w = width() - margin * 2;
     int h = height() - margin * 2;
 
-    // Find global min/max for scaling
-    double minValue = 0.0;
-    double maxValue = 1.0;
+    // Find global or per-parameter min/max for scaling
+    double globalMinValue = 0.0;
+    double globalMaxValue = 1.0;
     int64_t minOffset = 0;
     int64_t maxOffset = 1;
 
+    // Calculate global min/max for X-axis (always global)
     for (const GraphicsParameter& param : m_parameters) {
         if (!param.visible || param.values.isEmpty()) continue;
 
-        for (double val : param.values) {
-            if (val < minValue) minValue = val;
-            if (val > maxValue) maxValue = val;
+        if (m_scalingMode == ScalingMode::Global) {
+            for (double val : param.values) {
+                if (val < globalMinValue) globalMinValue = val;
+                if (val > globalMaxValue) globalMaxValue = val;
+            }
         }
 
         if (!param.offsets.isEmpty()) {
@@ -206,6 +216,19 @@ void GraphicsChart::drawDataLine(QPainter& painter) {
     // Draw each parameter
     for (const GraphicsParameter& param : m_parameters) {
         if (!param.visible || param.values.size() < 2) continue;
+
+        // Calculate per-parameter min/max for Independent mode
+        double minValue = globalMinValue;
+        double maxValue = globalMaxValue;
+
+        if (m_scalingMode == ScalingMode::Independent) {
+            minValue = param.values[0];
+            maxValue = param.values[0];
+            for (double val : param.values) {
+                if (val < minValue) minValue = val;
+                if (val > maxValue) maxValue = val;
+            }
+        }
 
         painter.setPen(QPen(param.color, 2));
         QPainterPath path;
@@ -365,15 +388,178 @@ void GraphicsChart::drawLegend(QPainter& painter) {
 }
 
 void GraphicsChart::drawCursor(QPainter& painter) {
+    if (m_isDragging) {
+        return; // Don't show cursor while dragging
+    }
+
     painter.setPen(QPen(Qt::yellow, 1, Qt::DashLine));
     painter.drawLine(m_cursorPos.x(), 0, m_cursorPos.x(), height());
     painter.drawLine(0, m_cursorPos.y(), width(), m_cursorPos.y());
+
+    // Find nearest data point and show tooltip
+    int margin = 60;
+    int w = width() - margin * 2;
+    int h = height() - margin * 2;
+
+    // Check if cursor is within chart area
+    if (m_cursorPos.x() < margin || m_cursorPos.x() > width() - margin ||
+        m_cursorPos.y() < margin || m_cursorPos.y() > height() - margin) {
+        return;
+    }
+
+    // Find global min/max for scaling (same as drawDataLine)
+    double minValue = 0.0;
+    double maxValue = 1.0;
+    int64_t minOffset = 0;
+    int64_t maxOffset = 1;
+
+    for (const GraphicsParameter& param : m_parameters) {
+        if (!param.visible || param.values.isEmpty()) continue;
+
+        for (double val : param.values) {
+            if (val < minValue) minValue = val;
+            if (val > maxValue) maxValue = val;
+        }
+
+        if (!param.offsets.isEmpty()) {
+            if (param.offsets.first() < minOffset) minOffset = param.offsets.first();
+            if (param.offsets.last() > maxOffset) maxOffset = param.offsets.last();
+        }
+    }
+
+    // Calculate zoomed dimensions
+    int zoomedW = (int)(w * m_zoomLevel);
+    int zoomedH = (int)(h * m_zoomLevel);
+
+    // Find closest point across all parameters
+    double minDistance = 20.0; // Max distance to consider
+    QString tooltipText;
+    QPoint tooltipPos;
+    bool foundPoint = false;
+
+    for (const GraphicsParameter& param : m_parameters) {
+        if (!param.visible || param.values.isEmpty()) continue;
+
+        for (int i = 0; i < param.values.size(); ++i) {
+            double xRatio;
+            if (m_rangingMode == RangingMode::Offset && !param.offsets.isEmpty()) {
+                xRatio = (maxOffset > minOffset) ?
+                    (double)(param.offsets[i] - minOffset) / (maxOffset - minOffset) : 0.5;
+            } else {
+                xRatio = (double)i / (param.values.size() - 1);
+            }
+
+            double yRatio = (maxValue > minValue) ?
+                (param.values[i] - minValue) / (maxValue - minValue) : 0.5;
+
+            int x = margin + (int)(xRatio * zoomedW) + (int)m_offsetX;
+            int y = height() - margin - (int)(yRatio * zoomedH) - (int)m_offsetY;
+
+            // Calculate distance from cursor
+            double dx = x - m_cursorPos.x();
+            double dy = y - m_cursorPos.y();
+            double distance = sqrt(dx * dx + dy * dy);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                foundPoint = true;
+                tooltipPos = QPoint(x, y);
+
+                // Build tooltip text
+                tooltipText = QString("%1\nValue: %2")
+                    .arg(param.displayName)
+                    .arg(param.values[i], 0, 'f', 2);
+
+                if (!param.offsets.isEmpty()) {
+                    tooltipText += QString("\nOffset: 0x%1")
+                        .arg(param.offsets[i], 0, 16);
+                } else {
+                    tooltipText += QString("\nIndex: %1").arg(i);
+                }
+            }
+        }
+    }
+
+    // Draw tooltip if point found
+    if (foundPoint) {
+        // Highlight the point
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(255, 255, 0, 180));
+        painter.drawEllipse(tooltipPos, 6, 6);
+
+        // Draw tooltip box
+        QFont font = painter.font();
+        font.setPointSize(10);
+        painter.setFont(font);
+
+        QFontMetrics fm(font);
+        QStringList lines = tooltipText.split('\n');
+        int maxWidth = 0;
+        for (const QString& line : lines) {
+            maxWidth = qMax(maxWidth, fm.horizontalAdvance(line));
+        }
+
+        int tooltipWidth = maxWidth + 20;
+        int tooltipHeight = lines.size() * fm.height() + 10;
+
+        // Position tooltip near cursor but keep it visible
+        int tooltipX = m_cursorPos.x() + 15;
+        int tooltipY = m_cursorPos.y() + 15;
+
+        if (tooltipX + tooltipWidth > width()) {
+            tooltipX = m_cursorPos.x() - tooltipWidth - 15;
+        }
+        if (tooltipY + tooltipHeight > height()) {
+            tooltipY = m_cursorPos.y() - tooltipHeight - 15;
+        }
+
+        // Draw background
+        painter.setPen(QPen(Qt::white, 1));
+        painter.setBrush(QColor(50, 50, 50, 230));
+        painter.drawRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+
+        // Draw text
+        painter.setPen(Qt::white);
+        int textY = tooltipY + fm.ascent() + 5;
+        for (const QString& line : lines) {
+            painter.drawText(tooltipX + 10, textY, line);
+            textY += fm.height();
+        }
+    }
+}
+
+void GraphicsChart::mousePressEvent(QMouseEvent* event) {
+    if (event->button() == Qt::LeftButton) {
+        m_isDragging = true;
+        m_lastDragPos = event->pos();
+        setCursor(Qt::ClosedHandCursor);
+    }
+}
+
+void GraphicsChart::mouseReleaseEvent(QMouseEvent* event) {
+    if (event->button() == Qt::LeftButton) {
+        m_isDragging = false;
+        setCursor(Qt::ArrowCursor);
+    }
 }
 
 void GraphicsChart::mouseMoveEvent(QMouseEvent* event) {
-    m_cursorPos = event->pos();
-    m_hasCursor = true;
-    update();
+    if (m_isDragging) {
+        // Calculate drag delta
+        QPoint delta = event->pos() - m_lastDragPos;
+        m_lastDragPos = event->pos();
+
+        // Update offsets (pan the view)
+        m_offsetX += delta.x();
+        m_offsetY += delta.y();
+
+        update();
+    } else {
+        // Normal cursor tracking
+        m_cursorPos = event->pos();
+        m_hasCursor = true;
+        update();
+    }
 }
 
 void GraphicsChart::mouseDoubleClickEvent(QMouseEvent* event) {
@@ -453,6 +639,16 @@ void GraphicsPanel::createUI() {
             this, &GraphicsPanel::onRangingModeChanged);
     controlLayout->addWidget(m_rangingCombo);
 
+    QLabel* scalingLabel = new QLabel("Scaling:", this);
+    controlLayout->addWidget(scalingLabel);
+
+    m_scalingCombo = new QComboBox(this);
+    m_scalingCombo->addItem("Global");
+    m_scalingCombo->addItem("Independent");
+    connect(m_scalingCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &GraphicsPanel::onScalingModeChanged);
+    controlLayout->addWidget(m_scalingCombo);
+
     controlLayout->addStretch();
 
     // Remove parameter button
@@ -531,6 +727,10 @@ void GraphicsPanel::onModeChanged(int index) {
 
 void GraphicsPanel::onRangingModeChanged(int index) {
     m_chart->setRangingMode(static_cast<RangingMode>(index));
+}
+
+void GraphicsPanel::onScalingModeChanged(int index) {
+    m_chart->setScalingMode(static_cast<ScalingMode>(index));
 }
 
 void GraphicsPanel::onZoomIn() {

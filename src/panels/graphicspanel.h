@@ -37,6 +37,11 @@ enum class RangingMode {
     Count
 };
 
+enum class ScalingMode {
+    Global,      // All parameters share the same Y-axis scale
+    Independent  // Each parameter has its own Y-axis scale
+};
+
 class GraphicsChart : public QWidget {
     Q_OBJECT
 
@@ -49,6 +54,7 @@ public:
     void clearParameters();
     void setMode(GraphicsMode mode);
     void setRangingMode(RangingMode mode);
+    void setScalingMode(ScalingMode mode);
     void zoomIn();
     void zoomOut();
     void zoomFit();
@@ -61,6 +67,8 @@ signals:
 protected:
     void paintEvent(QPaintEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
     void mouseDoubleClickEvent(QMouseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
 
@@ -77,12 +85,17 @@ private:
     QVector<GraphicsParameter> m_parameters;
     GraphicsMode m_mode;
     RangingMode m_rangingMode;
+    ScalingMode m_scalingMode;
     double m_zoomLevel;
     double m_offsetX;
     double m_offsetY;
     QPoint m_cursorPos;
     int m_hoveredPointIndex;
     bool m_hasCursor;
+
+    // Drag/pan state
+    bool m_isDragging;
+    QPoint m_lastDragPos;
 };
 
 class GraphicsPanel : public QWidget {
@@ -104,6 +117,7 @@ signals:
 private slots:
     void onModeChanged(int index);
     void onRangingModeChanged(int index);
+    void onScalingModeChanged(int index);
     void onZoomIn();
     void onZoomOut();
     void onZoomFit();
@@ -122,6 +136,7 @@ private:
     // UI components
     QComboBox* m_modeCombo;
     QComboBox* m_rangingCombo;
+    QComboBox* m_scalingCombo;
     QPushButton* m_zoomInButton;
     QPushButton* m_zoomOutButton;
     QPushButton* m_fitButton;
