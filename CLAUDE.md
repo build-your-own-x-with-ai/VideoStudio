@@ -151,18 +151,26 @@ VideoStudio operates in two modes based on file type:
 - About dialog with help documentation and README viewer
 - Dockable panels for flexible layout
 - Real-time log viewer with animations
+- YUV Viewer dialog (open and analyze raw YUV files with format parameters)
+- Graphics panel (multi-parameter comparison charts with Line/Bar/Transition modes)
+- Comments panel (collaborative annotations with XML export)
+- EPG panel (Electronic Program Guide from EIT tables)
+- Explorer panel context menu (Dump ES, Compare mode, Sync mode)
+
+**Quality Metrics:**
+- VMAF (Video Multimethod Assessment Fusion) integration
+
+**Advanced Video Analysis:**
+- Motion vector overlay visualization
 
 ### 📋 Planned
 
-- Motion vector overlay (requires FFmpeg motion vector extraction)
 - Block/partition visualization (requires codec-specific block information)
 - Reference stream comparison with difference modes
-- EPG panel (Electronic Program Guide from EIT tables)
-- Comments panel (collaborative annotations, XML export)
-- Graphics panel (multi-parameter comparison charts)
-- Explorer panel context menu (Dump ES, Compare mode, Sync mode)
-- VMAF quality metric integration
 - Command line tool for batch processing
+- Graphics panel pan/drag after zoom
+- Graphics panel hover tooltip with values
+- Graphics panel independent Y-axis scaling per parameter
 
 ## Development Guidelines
 
