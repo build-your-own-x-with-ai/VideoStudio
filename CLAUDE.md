@@ -153,6 +153,10 @@ VideoStudio operates in two modes based on file type:
 - Real-time log viewer with animations
 - YUV Viewer dialog (open and analyze raw YUV files with format parameters)
 - Graphics panel (multi-parameter comparison charts with Line/Bar/Transition modes)
+  - Zoom in/out and fit controls
+  - Pan/drag navigation after zoom
+  - Hover tooltip showing parameter values at data points
+  - Independent Y-axis scaling per parameter (Global/Independent modes)
 - Comments panel (collaborative annotations with XML export)
 - EPG panel (Electronic Program Guide from EIT tables)
 - Explorer panel context menu (Dump ES, Compare mode, Sync mode)
@@ -168,9 +172,6 @@ VideoStudio operates in two modes based on file type:
 - Block/partition visualization (requires codec-specific block information)
 - Reference stream comparison with difference modes
 - Command line tool for batch processing
-- Graphics panel pan/drag after zoom
-- Graphics panel hover tooltip with values
-- Graphics panel independent Y-axis scaling per parameter
 
 ## Development Guidelines
 
