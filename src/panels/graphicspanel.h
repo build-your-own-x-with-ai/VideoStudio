@@ -53,6 +53,8 @@ public:
     void zoomOut();
     void zoomFit();
 
+    const QVector<GraphicsParameter>& getParameters() const { return m_parameters; }
+
 signals:
     void pointClicked(int64_t offset);
 

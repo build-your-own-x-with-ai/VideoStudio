@@ -5,6 +5,9 @@
 #include <QToolTip>
 #include <QFileDialog>
 #include <QTextStream>
+#include <QMessageBox>
+#include <QDialog>
+#include <QListWidget>
 #include <cmath>
 
 namespace VideoStudio {
@@ -510,9 +513,8 @@ void GraphicsPanel::addParameter(const QString& name, const QVector<double>& val
 
     m_chart->addParameter(param);
 
-    // Count parameters by checking the chart's internal parameter list
-    // We'll update the info label with a simple message
-    m_infoLabel->setText(QString("Parameter '%1' added").arg(name));
+    // Update parameter list display
+    updateParameterList();
 }
 
 QColor GraphicsPanel::getNextColor() {
@@ -550,12 +552,64 @@ void GraphicsPanel::onChartPointClicked(int64_t offset) {
 }
 
 void GraphicsPanel::onRemoveParameter() {
-    // TODO: Show dialog to select parameter to remove
-    m_chart->clearParameters();
-    m_infoLabel->setText("No parameters added");
+    const QVector<GraphicsParameter>& parameters = m_chart->getParameters();
+
+    if (parameters.isEmpty()) {
+        QMessageBox::information(this, tr("Remove Parameter"),
+            tr("No parameters to remove."));
+        return;
+    }
+
+    // Create selection dialog
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Remove Parameter"));
+    dialog.setMinimumWidth(300);
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+    QLabel* label = new QLabel(tr("Select parameter to remove:"), &dialog);
+    layout->addWidget(label);
+
+    QListWidget* listWidget = new QListWidget(&dialog);
+    for (const GraphicsParameter& param : parameters) {
+        QListWidgetItem* item = new QListWidgetItem(param.displayName);
+        item->setData(Qt::UserRole, param.name);
+        item->setForeground(QBrush(param.color));
+        listWidget->addItem(item);
+    }
+    layout->addWidget(listWidget);
+
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    QPushButton* removeButton = new QPushButton(tr("Remove"), &dialog);
+    QPushButton* cancelButton = new QPushButton(tr("Cancel"), &dialog);
+    buttonLayout->addStretch();
+    buttonLayout->addWidget(removeButton);
+    buttonLayout->addWidget(cancelButton);
+    layout->addLayout(buttonLayout);
+
+    connect(removeButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+    connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+    connect(listWidget, &QListWidget::itemDoubleClicked, &dialog, &QDialog::accept);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        QListWidgetItem* currentItem = listWidget->currentItem();
+        if (currentItem) {
+            QString paramName = currentItem->data(Qt::UserRole).toString();
+            m_chart->removeParameter(paramName);
+            updateParameterList();
+        }
+    }
 }
 
 void GraphicsPanel::onExport() {
+    const QVector<GraphicsParameter>& parameters = m_chart->getParameters();
+
+    if (parameters.isEmpty()) {
+        QMessageBox::information(this, tr("Export Data"),
+            tr("No parameters to export."));
+        return;
+    }
+
     QString fileName = QFileDialog::getSaveFileName(this,
         tr("Export Graphics Data"), QString(),
         tr("CSV Files (*.csv);;All Files (*)"));
@@ -564,12 +618,74 @@ void GraphicsPanel::onExport() {
         return;
     }
 
-    // TODO: Export chart data to CSV
-    qDebug() << "Export to:" << fileName;
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Export Failed"),
+            tr("Failed to open file for writing:\n%1").arg(fileName));
+        return;
+    }
+
+    QTextStream out(&file);
+
+    // Write header
+    out << "Index,Offset";
+    for (const GraphicsParameter& param : parameters) {
+        out << "," << param.displayName;
+    }
+    out << "\n";
+
+    // Find maximum data length
+    int maxLength = 0;
+    for (const GraphicsParameter& param : parameters) {
+        if (param.values.size() > maxLength) {
+            maxLength = param.values.size();
+        }
+    }
+
+    // Write data rows
+    for (int i = 0; i < maxLength; ++i) {
+        out << i;
+
+        // Write offset (use first parameter's offset if available)
+        if (!parameters.isEmpty() && i < parameters[0].offsets.size()) {
+            out << "," << parameters[0].offsets[i];
+        } else {
+            out << ",";
+        }
+
+        // Write values for each parameter
+        for (const GraphicsParameter& param : parameters) {
+            if (i < param.values.size()) {
+                out << "," << param.values[i];
+            } else {
+                out << ",";
+            }
+        }
+        out << "\n";
+    }
+
+    file.close();
+
+    QMessageBox::information(this, tr("Export Complete"),
+        tr("Exported %1 data points to:\n%2").arg(maxLength).arg(fileName));
 }
 
 void GraphicsPanel::updateParameterList() {
-    // TODO: Update parameter list display
+    const QVector<GraphicsParameter>& parameters = m_chart->getParameters();
+
+    if (parameters.isEmpty()) {
+        m_infoLabel->setText("No parameters added");
+    } else if (parameters.size() == 1) {
+        m_infoLabel->setText(QString("1 parameter: %1").arg(parameters[0].displayName));
+    } else {
+        QStringList names;
+        for (const GraphicsParameter& param : parameters) {
+            names.append(param.displayName);
+        }
+        m_infoLabel->setText(QString("%1 parameters: %2")
+            .arg(parameters.size())
+            .arg(names.join(", ")));
+    }
 }
 
 } // namespace VideoStudio
