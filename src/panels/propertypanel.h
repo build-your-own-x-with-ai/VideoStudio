@@ -85,6 +85,12 @@ private:
     QString formatTimestamp(int64_t timestamp);
     void addCompareRow(QTreeWidgetItem* parent, const QString& property, const QString& prevValue, const QString& currValue);
 
+    // PSI/SI table parsing helpers
+    void parsePATFields(QTreeWidgetItem* parent, const uint8_t* data, int dataLen);
+    void parsePMTFields(QTreeWidgetItem* parent, const uint8_t* data, int dataLen);
+    void parseSDTFields(QTreeWidgetItem* parent, const uint8_t* data, int dataLen);
+    QString parseDescriptor(const uint8_t* data, int dataLen);
+
     QTreeWidget* m_treeWidget;
     QToolBar* m_toolbar;
     TSParser* m_tsParser;

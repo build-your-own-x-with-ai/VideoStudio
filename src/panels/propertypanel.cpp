@@ -364,20 +364,60 @@ void PropertyPanel::addPacketFields(QTreeWidgetItem* parent, const TSPacket& pac
 }
 
 void PropertyPanel::addPSITableFields(QTreeWidgetItem* parent, const TSPacket& packet) {
-    // TODO: Parse and display PSI/SI table fields
-    // This would parse PAT, PMT, SDT, etc. based on PID and table_id
+    if (packet.payload.isEmpty()) {
+        return;
+    }
 
     QTreeWidgetItem* tableItem = new QTreeWidgetItem(parent);
     tableItem->setText(0, "PSI/SI Table");
 
-    if (packet.pid == 0x0000) {
+    const uint8_t* data = reinterpret_cast<const uint8_t*>(packet.payload.constData());
+    int dataLen = packet.payload.size();
+
+    // Skip pointer field if payload_unit_start_indicator is set
+    int offset = 0;
+    if (packet.payloadUnitStartIndicator && dataLen > 0) {
+        offset = data[0] + 1;  // pointer_field
+    }
+
+    if (offset >= dataLen) {
+        tableItem->setText(1, "Invalid table data");
+        return;
+    }
+
+    // Parse table header
+    uint8_t tableId = data[offset];
+    bool sectionSyntaxIndicator = (data[offset + 1] & 0x80) != 0;
+    uint16_t sectionLength = ((data[offset + 1] & 0x0F) << 8) | data[offset + 2];
+
+    // Table ID item
+    QTreeWidgetItem* tableIdItem = new QTreeWidgetItem(tableItem);
+    tableIdItem->setText(0, "Table ID");
+    tableIdItem->setText(1, QString("0x%1 (%2)").arg(tableId, 2, 16, QChar('0')).arg(tableId));
+
+    // Section length item
+    QTreeWidgetItem* sectionLenItem = new QTreeWidgetItem(tableItem);
+    sectionLenItem->setText(0, "Section Length");
+    sectionLenItem->setText(1, QString("%1 bytes").arg(sectionLength));
+
+    // Determine table type and parse accordingly
+    if (packet.pid == 0x0000 && tableId == 0x00) {
         tableItem->setText(1, "PAT (Program Association Table)");
-    } else if (packet.pid == 0x0001) {
+        parsePATFields(tableItem, data + offset, dataLen - offset);
+    } else if (tableId == 0x02) {
+        tableItem->setText(1, "PMT (Program Map Table)");
+        parsePMTFields(tableItem, data + offset, dataLen - offset);
+    } else if (packet.pid == 0x0001 && tableId == 0x01) {
         tableItem->setText(1, "CAT (Conditional Access Table)");
-    } else if (packet.pid == 0x0011) {
+    } else if (packet.pid == 0x0011 && tableId == 0x42) {
         tableItem->setText(1, "SDT (Service Description Table)");
+        parseSDTFields(tableItem, data + offset, dataLen - offset);
+    } else if (packet.pid == 0x0010 && tableId == 0x40) {
+        tableItem->setText(1, "NIT (Network Information Table)");
+    } else if (tableId >= 0x4E && tableId <= 0x6F) {
+        tableItem->setText(1, "EIT (Event Information Table)");
     } else {
-        tableItem->setText(1, "PMT or other");
+        tableItem->setText(1, QString("Unknown Table (ID: 0x%1)").arg(tableId, 2, 16, QChar('0')));
     }
 }
 
@@ -2033,5 +2073,243 @@ const FLVTag* PropertyPanel::findTagByOffset(const QVector<FLVTag>& tags, int64_
     }
     return nullptr;
 }
+
+void PropertyPanel::parsePATFields(QTreeWidgetItem* parent, const uint8_t* data, int dataLen) {
+    if (dataLen < 8) return;
+
+    // Parse PAT header
+    uint16_t transportStreamId = (data[3] << 8) | data[4];
+    uint8_t versionNumber = (data[5] >> 1) & 0x1F;
+    bool currentNextIndicator = (data[5] & 0x01) != 0;
+
+    QTreeWidgetItem* tsIdItem = new QTreeWidgetItem(parent);
+    tsIdItem->setText(0, "Transport Stream ID");
+    tsIdItem->setText(1, QString("0x%1 (%2)").arg(transportStreamId, 4, 16, QChar('0')).arg(transportStreamId));
+
+    QTreeWidgetItem* versionItem = new QTreeWidgetItem(parent);
+    versionItem->setText(0, "Version Number");
+    versionItem->setText(1, QString::number(versionNumber));
+
+    QTreeWidgetItem* currentItem = new QTreeWidgetItem(parent);
+    currentItem->setText(0, "Current/Next Indicator");
+    currentItem->setText(1, currentNextIndicator ? "Current" : "Next");
+
+    // Parse program list
+    uint16_t sectionLength = ((data[1] & 0x0F) << 8) | data[2];
+    int programsEnd = 3 + sectionLength - 4; // -4 for CRC
+
+    QTreeWidgetItem* programsItem = new QTreeWidgetItem(parent);
+    programsItem->setText(0, "Programs");
+
+    int offset = 8;
+    int programCount = 0;
+    while (offset + 4 <= programsEnd) {
+        uint16_t programNumber = (data[offset] << 8) | data[offset + 1];
+        uint16_t programPid = ((data[offset + 2] & 0x1F) << 8) | data[offset + 3];
+
+        QTreeWidgetItem* progItem = new QTreeWidgetItem(programsItem);
+        if (programNumber == 0) {
+            progItem->setText(0, "Network PID");
+            progItem->setText(1, QString("0x%1 (%2)").arg(programPid, 4, 16, QChar('0')).arg(programPid));
+        } else {
+            progItem->setText(0, QString("Program %1").arg(programNumber));
+            progItem->setText(1, QString("PMT PID: 0x%1 (%2)").arg(programPid, 4, 16, QChar('0')).arg(programPid));
+        }
+
+        offset += 4;
+        programCount++;
+    }
+
+    programsItem->setText(1, QString("%1 program(s)").arg(programCount));
+}
+
+void PropertyPanel::parsePMTFields(QTreeWidgetItem* parent, const uint8_t* data, int dataLen) {
+    if (dataLen < 12) return;
+
+    // Parse PMT header
+    uint16_t programNumber = (data[3] << 8) | data[4];
+    uint8_t versionNumber = (data[5] >> 1) & 0x1F;
+    bool currentNextIndicator = (data[5] & 0x01) != 0;
+    uint16_t pcrPid = ((data[8] & 0x1F) << 8) | data[9];
+    uint16_t programInfoLength = ((data[10] & 0x0F) << 8) | data[11];
+
+    QTreeWidgetItem* progNumItem = new QTreeWidgetItem(parent);
+    progNumItem->setText(0, "Program Number");
+    progNumItem->setText(1, QString::number(programNumber));
+
+    QTreeWidgetItem* versionItem = new QTreeWidgetItem(parent);
+    versionItem->setText(0, "Version Number");
+    versionItem->setText(1, QString::number(versionNumber));
+
+    QTreeWidgetItem* currentItem = new QTreeWidgetItem(parent);
+    currentItem->setText(0, "Current/Next Indicator");
+    currentItem->setText(1, currentNextIndicator ? "Current" : "Next");
+
+    QTreeWidgetItem* pcrItem = new QTreeWidgetItem(parent);
+    pcrItem->setText(0, "PCR PID");
+    pcrItem->setText(1, QString("0x%1 (%2)").arg(pcrPid, 4, 16, QChar('0')).arg(pcrPid));
+
+    // Skip program descriptors
+    int offset = 12 + programInfoLength;
+
+    // Parse elementary streams
+    uint16_t sectionLength = ((data[1] & 0x0F) << 8) | data[2];
+    int streamsEnd = 3 + sectionLength - 4; // -4 for CRC
+
+    QTreeWidgetItem* streamsItem = new QTreeWidgetItem(parent);
+    streamsItem->setText(0, "Elementary Streams");
+
+    int streamCount = 0;
+    while (offset + 5 <= streamsEnd) {
+        uint8_t streamType = data[offset];
+        uint16_t elementaryPid = ((data[offset + 1] & 0x1F) << 8) | data[offset + 2];
+        uint16_t esInfoLength = ((data[offset + 3] & 0x0F) << 8) | data[offset + 4];
+
+        QTreeWidgetItem* streamItem = new QTreeWidgetItem(streamsItem);
+        streamItem->setText(0, QString("PID 0x%1").arg(elementaryPid, 4, 16, QChar('0')));
+
+        QString streamTypeStr;
+        switch (streamType) {
+            case 0x01: streamTypeStr = "MPEG-1 Video"; break;
+            case 0x02: streamTypeStr = "MPEG-2 Video"; break;
+            case 0x03: streamTypeStr = "MPEG-1 Audio"; break;
+            case 0x04: streamTypeStr = "MPEG-2 Audio"; break;
+            case 0x0F: streamTypeStr = "AAC Audio"; break;
+            case 0x1B: streamTypeStr = "H.264/AVC Video"; break;
+            case 0x24: streamTypeStr = "H.265/HEVC Video"; break;
+            case 0x81: streamTypeStr = "AC-3 Audio"; break;
+            case 0x87: streamTypeStr = "E-AC-3 Audio"; break;
+            default: streamTypeStr = QString("Type 0x%1").arg(streamType, 2, 16, QChar('0'));
+        }
+
+        streamItem->setText(1, streamTypeStr);
+
+        offset += 5 + esInfoLength;
+        streamCount++;
+    }
+
+    streamsItem->setText(1, QString("%1 stream(s)").arg(streamCount));
+}
+
+void PropertyPanel::parseSDTFields(QTreeWidgetItem* parent, const uint8_t* data, int dataLen) {
+    if (dataLen < 11) return;
+
+    // Parse SDT header
+    uint16_t transportStreamId = (data[3] << 8) | data[4];
+    uint8_t versionNumber = (data[5] >> 1) & 0x1F;
+    bool currentNextIndicator = (data[5] & 0x01) != 0;
+    uint16_t originalNetworkId = (data[8] << 8) | data[9];
+
+    QTreeWidgetItem* tsIdItem = new QTreeWidgetItem(parent);
+    tsIdItem->setText(0, "Transport Stream ID");
+    tsIdItem->setText(1, QString("0x%1 (%2)").arg(transportStreamId, 4, 16, QChar('0')).arg(transportStreamId));
+
+    QTreeWidgetItem* versionItem = new QTreeWidgetItem(parent);
+    versionItem->setText(0, "Version Number");
+    versionItem->setText(1, QString::number(versionNumber));
+
+    QTreeWidgetItem* currentItem = new QTreeWidgetItem(parent);
+    currentItem->setText(0, "Current/Next Indicator");
+    currentItem->setText(1, currentNextIndicator ? "Current" : "Next");
+
+    QTreeWidgetItem* onIdItem = new QTreeWidgetItem(parent);
+    onIdItem->setText(0, "Original Network ID");
+    onIdItem->setText(1, QString("0x%1 (%2)").arg(originalNetworkId, 4, 16, QChar('0')).arg(originalNetworkId));
+
+    // Parse services
+    uint16_t sectionLength = ((data[1] & 0x0F) << 8) | data[2];
+    int servicesEnd = 3 + sectionLength - 4; // -4 for CRC
+
+    QTreeWidgetItem* servicesItem = new QTreeWidgetItem(parent);
+    servicesItem->setText(0, "Services");
+
+    int offset = 11;
+    int serviceCount = 0;
+    while (offset + 5 <= servicesEnd) {
+        uint16_t serviceId = (data[offset] << 8) | data[offset + 1];
+        bool eitScheduleFlag = (data[offset + 2] & 0x02) != 0;
+        bool eitPresentFollowingFlag = (data[offset + 2] & 0x01) != 0;
+        uint8_t runningStatus = (data[offset + 3] >> 5) & 0x07;
+        bool freeCaMode = (data[offset + 3] & 0x10) != 0;
+        uint16_t descriptorsLoopLength = ((data[offset + 3] & 0x0F) << 8) | data[offset + 4];
+
+        QTreeWidgetItem* serviceItem = new QTreeWidgetItem(servicesItem);
+        serviceItem->setText(0, QString("Service ID 0x%1").arg(serviceId, 4, 16, QChar('0')));
+
+        QString runningStatusStr;
+        switch (runningStatus) {
+            case 0: runningStatusStr = "Undefined"; break;
+            case 1: runningStatusStr = "Not Running"; break;
+            case 2: runningStatusStr = "Starts in a few seconds"; break;
+            case 3: runningStatusStr = "Pausing"; break;
+            case 4: runningStatusStr = "Running"; break;
+            default: runningStatusStr = QString("Reserved (%1)").arg(runningStatus);
+        }
+
+        QTreeWidgetItem* statusItem = new QTreeWidgetItem(serviceItem);
+        statusItem->setText(0, "Running Status");
+        statusItem->setText(1, runningStatusStr);
+
+        QTreeWidgetItem* caItem = new QTreeWidgetItem(serviceItem);
+        caItem->setText(0, "Free CA Mode");
+        caItem->setText(1, freeCaMode ? "Scrambled" : "Free");
+
+        // Parse service descriptor (tag 0x48)
+        int descOffset = offset + 5;
+        int descEnd = descOffset + descriptorsLoopLength;
+        while (descOffset + 2 <= descEnd) {
+            uint8_t descriptorTag = data[descOffset];
+            uint8_t descriptorLength = data[descOffset + 1];
+
+            if (descriptorTag == 0x48 && descOffset + 2 + descriptorLength <= descEnd) {
+                // Service descriptor
+                uint8_t serviceType = data[descOffset + 2];
+                uint8_t serviceProviderNameLength = data[descOffset + 3];
+
+                if (descOffset + 4 + serviceProviderNameLength <= descEnd) {
+                    QString providerName = QString::fromUtf8(
+                        reinterpret_cast<const char*>(&data[descOffset + 4]),
+                        serviceProviderNameLength
+                    );
+
+                    int serviceNameOffset = descOffset + 4 + serviceProviderNameLength;
+                    if (serviceNameOffset < descEnd) {
+                        uint8_t serviceNameLength = data[serviceNameOffset];
+                        if (serviceNameOffset + 1 + serviceNameLength <= descEnd) {
+                            QString serviceName = QString::fromUtf8(
+                                reinterpret_cast<const char*>(&data[serviceNameOffset + 1]),
+                                serviceNameLength
+                            );
+
+                            serviceItem->setText(1, serviceName);
+
+                            QTreeWidgetItem* providerItem = new QTreeWidgetItem(serviceItem);
+                            providerItem->setText(0, "Provider");
+                            providerItem->setText(1, providerName);
+                        }
+                    }
+                }
+            }
+
+            descOffset += 2 + descriptorLength;
+        }
+
+        offset += 5 + descriptorsLoopLength;
+        serviceCount++;
+    }
+
+    servicesItem->setText(1, QString("%1 service(s)").arg(serviceCount));
+}
+
+QString PropertyPanel::parseDescriptor(const uint8_t* data, int dataLen) {
+    if (dataLen < 2) return QString();
+
+    uint8_t tag = data[0];
+    uint8_t length = data[1];
+
+    // Return descriptor tag info
+    return QString("Descriptor 0x%1 (length: %2)").arg(tag, 2, 16, QChar('0')).arg(length);
+}
+
 
 } // namespace VideoStudio
