@@ -73,7 +73,11 @@ VideoStudio operates in two modes based on file type:
 - `TR101290Data` (src/core/tr101290data.h): TR 101-290 error type definitions
 - `ExplorerPanel` (src/panels/explorerpanel.cpp): Hierarchical stream structure tree
 - `PacketView` (src/widgets/packetview.cpp): Packet list with color-coded types
-- `PropertyPanel` (src/panels/propertypanel.cpp): Packet details viewer (Sync/Compare/Dump modes)
+- `PropertyPanel` (src/panels/propertypanel.cpp): Packet details viewer with multiple modes:
+  - Sync mode: Display current packet/atom properties
+  - Compare mode: Compare with previous packet/atom
+  - Dump mode: Export elementary stream data
+  - Detailed PSI/SI table parsing (PAT, PMT, SDT with full field extraction)
 - `HexViewerPanel` (src/panels/hexviewerpanel.cpp): Hex/binary viewer with search
 - `TR101290Panel` (src/panels/tr101290panel.cpp): Compliance validation (3 priority levels)
 - `TimeDynamicsPanel` (src/panels/timedynamicspanel.cpp): PTS/DTS/PCR timing analysis
