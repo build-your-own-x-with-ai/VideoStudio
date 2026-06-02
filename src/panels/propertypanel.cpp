@@ -433,7 +433,7 @@ void PropertyPanel::onContextMenu(const QPoint& pos) {
 
 void PropertyPanel::onAddToGraphics() {
     QTreeWidgetItem* item = m_treeWidget->currentItem();
-    if (!item || !m_tsParser) {
+    if (!item) {
         return;
     }
 
@@ -442,79 +442,197 @@ void PropertyPanel::onAddToGraphics() {
 
     qDebug() << "Adding parameter to Graphics:" << parameterName << "=" << valueText;
 
-    // Extract parameter values from all packets
+    // Extract parameter values from all packets/atoms/elements/chunks/tags
     QVector<double> values;
     QVector<int64_t> offsets;
 
-    const auto& packets = m_tsParser->getPackets();
+    // Handle TS packets
+    if (m_tsParser) {
+        const auto& packets = m_tsParser->getPackets();
 
-    // Determine which parameter to extract based on name
-    if (parameterName == "PID") {
-        for (const TSPacket& packet : packets) {
-            values.append(packet.pid);
-            offsets.append(packet.offset);
-        }
-    } else if (parameterName == "Continuity Counter") {
-        for (const TSPacket& packet : packets) {
-            values.append(packet.continuityCounter);
-            offsets.append(packet.offset);
-        }
-    } else if (parameterName == "Adaptation Field Control") {
-        for (const TSPacket& packet : packets) {
-            values.append(packet.adaptationFieldControl);
-            offsets.append(packet.offset);
-        }
-    } else if (parameterName == "Scrambling Control") {
-        for (const TSPacket& packet : packets) {
-            values.append(packet.scramblingControl);
-            offsets.append(packet.offset);
-        }
-    } else if (parameterName == "Transport Error Indicator") {
-        for (const TSPacket& packet : packets) {
-            values.append(packet.transportErrorIndicator ? 1.0 : 0.0);
-            offsets.append(packet.offset);
-        }
-    } else if (parameterName == "Payload Unit Start Indicator") {
-        for (const TSPacket& packet : packets) {
-            values.append(packet.payloadUnitStartIndicator ? 1.0 : 0.0);
-            offsets.append(packet.offset);
-        }
-    } else if (parameterName == "Transport Priority") {
-        for (const TSPacket& packet : packets) {
-            values.append(packet.transportPriority ? 1.0 : 0.0);
-            offsets.append(packet.offset);
-        }
-    } else if (parameterName == "PCR" && m_selectedPID != 0xFFFF) {
-        // Extract PCR values for selected PID
-        for (const TSPacket& packet : packets) {
-            if (packet.pid == m_selectedPID && packet.hasPCR) {
-                values.append(packet.pcr / 90000.0); // Convert to seconds
+        // Determine which parameter to extract based on name
+        if (parameterName == "PID") {
+            for (const TSPacket& packet : packets) {
+                values.append(packet.pid);
                 offsets.append(packet.offset);
             }
-        }
-    } else if (parameterName == "PTS" && m_selectedPID != 0xFFFF) {
-        // Extract PTS values for selected PID
-        for (const TSPacket& packet : packets) {
-            if (packet.pid == m_selectedPID && packet.hasPTS) {
-                values.append(packet.pts / 90000.0); // Convert to seconds
+        } else if (parameterName == "Continuity Counter") {
+            for (const TSPacket& packet : packets) {
+                values.append(packet.continuityCounter);
                 offsets.append(packet.offset);
             }
-        }
-    } else if (parameterName == "DTS" && m_selectedPID != 0xFFFF) {
-        // Extract DTS values for selected PID
-        for (const TSPacket& packet : packets) {
-            if (packet.pid == m_selectedPID && packet.hasDTS) {
-                values.append(packet.dts / 90000.0); // Convert to seconds
+        } else if (parameterName == "Adaptation Field Control") {
+            for (const TSPacket& packet : packets) {
+                values.append(packet.adaptationFieldControl);
                 offsets.append(packet.offset);
             }
+        } else if (parameterName == "Scrambling Control") {
+            for (const TSPacket& packet : packets) {
+                values.append(packet.scramblingControl);
+                offsets.append(packet.offset);
+            }
+        } else if (parameterName == "Transport Error Indicator") {
+            for (const TSPacket& packet : packets) {
+                values.append(packet.transportErrorIndicator ? 1.0 : 0.0);
+                offsets.append(packet.offset);
+            }
+        } else if (parameterName == "Payload Unit Start Indicator") {
+            for (const TSPacket& packet : packets) {
+                values.append(packet.payloadUnitStartIndicator ? 1.0 : 0.0);
+                offsets.append(packet.offset);
+            }
+        } else if (parameterName == "Transport Priority") {
+            for (const TSPacket& packet : packets) {
+                values.append(packet.transportPriority ? 1.0 : 0.0);
+                offsets.append(packet.offset);
+            }
+        } else if (parameterName == "PCR" && m_selectedPID != 0xFFFF) {
+            // Extract PCR values for selected PID
+            for (const TSPacket& packet : packets) {
+                if (packet.pid == m_selectedPID && packet.hasPCR) {
+                    values.append(packet.pcr / 90000.0); // Convert to seconds
+                    offsets.append(packet.offset);
+                }
+            }
+        } else if (parameterName == "PTS" && m_selectedPID != 0xFFFF) {
+            // Extract PTS values for selected PID
+            for (const TSPacket& packet : packets) {
+                if (packet.pid == m_selectedPID && packet.hasPTS) {
+                    values.append(packet.pts / 90000.0); // Convert to seconds
+                    offsets.append(packet.offset);
+                }
+            }
+        } else if (parameterName == "DTS" && m_selectedPID != 0xFFFF) {
+            // Extract DTS values for selected PID
+            for (const TSPacket& packet : packets) {
+                if (packet.pid == m_selectedPID && packet.hasDTS) {
+                    values.append(packet.dts / 90000.0); // Convert to seconds
+                    offsets.append(packet.offset);
+                }
+            }
+        } else if (parameterName == "Payload Size" && m_selectedPID != 0xFFFF) {
+            // Extract Payload Size for selected PID
+            for (const TSPacket& packet : packets) {
+                if (packet.pid == m_selectedPID) {
+                    values.append(packet.payload.size());
+                    offsets.append(packet.offset);
+                }
+            }
+        } else {
+            qDebug() << "Parameter" << parameterName << "not supported for TS Graphics";
+            QMessageBox::information(this, tr("Add to Graphics"),
+                tr("Parameter '%1' is not supported for Graphics Panel.\n\nSupported TS parameters:\n- PID\n- Continuity Counter\n- Adaptation Field Control\n- Scrambling Control\n- Transport Error Indicator\n- Payload Unit Start Indicator\n- Transport Priority\n- PCR (for selected PID)\n- PTS (for selected PID)\n- DTS (for selected PID)\n- Payload Size (for selected PID)").arg(parameterName));
+            return;
         }
-    } else {
-        qDebug() << "Parameter" << parameterName << "not supported for Graphics";
-        return;
+    }
+    // Handle MP4 atoms
+    else if (m_mp4Parser) {
+        std::function<void(const QVector<MP4Atom>&)> extractFromAtoms;
+        extractFromAtoms = [&](const QVector<MP4Atom>& atoms) {
+            for (const MP4Atom& atom : atoms) {
+                if (parameterName == "Size") {
+                    values.append(atom.size);
+                    offsets.append(atom.offset);
+                } else if (parameterName == "Data Size") {
+                    values.append(atom.dataSize);
+                    offsets.append(atom.offset);
+                } else if (parameterName == "Percentage") {
+                    values.append(atom.percentage);
+                    offsets.append(atom.offset);
+                } else if (parameterName == "Level") {
+                    values.append(atom.level);
+                    offsets.append(atom.offset);
+                } else if (parameterName == "Header Size") {
+                    values.append(atom.headerSize);
+                    offsets.append(atom.offset);
+                }
+
+                if (!atom.children.isEmpty()) {
+                    extractFromAtoms(atom.children);
+                }
+            }
+        };
+        extractFromAtoms(m_mp4Parser->getAtoms());
+    }
+    // Handle MKV elements
+    else if (m_mkvParser) {
+        std::function<void(const QVector<EBMLElement>&)> extractFromElements;
+        extractFromElements = [&](const QVector<EBMLElement>& elements) {
+            for (const EBMLElement& element : elements) {
+                if (parameterName == "Data Size") {
+                    values.append(element.dataSize);
+                    offsets.append(element.offset);
+                } else if (parameterName == "Total Size") {
+                    values.append(element.totalSize);
+                    offsets.append(element.offset);
+                } else if (parameterName == "Percentage") {
+                    values.append(element.percentage);
+                    offsets.append(element.offset);
+                } else if (parameterName == "Level") {
+                    values.append(element.level);
+                    offsets.append(element.offset);
+                } else if (parameterName == "Header Size") {
+                    values.append(element.headerSize);
+                    offsets.append(element.offset);
+                }
+
+                if (!element.children.isEmpty()) {
+                    extractFromElements(element.children);
+                }
+            }
+        };
+        extractFromElements(m_mkvParser->getElements());
+    }
+    // Handle AVI chunks
+    else if (m_aviParser) {
+        std::function<void(const QVector<AVIChunk>&)> extractFromChunks;
+        extractFromChunks = [&](const QVector<AVIChunk>& chunks) {
+            for (const AVIChunk& chunk : chunks) {
+                if (parameterName == "Size") {
+                    values.append(chunk.size);
+                    offsets.append(chunk.offset);
+                } else if (parameterName == "Total Size") {
+                    values.append(chunk.totalSize);
+                    offsets.append(chunk.offset);
+                } else if (parameterName == "Percentage") {
+                    values.append(chunk.percentage);
+                    offsets.append(chunk.offset);
+                } else if (parameterName == "Level") {
+                    values.append(chunk.level);
+                    offsets.append(chunk.offset);
+                }
+
+                if (!chunk.children.isEmpty()) {
+                    extractFromChunks(chunk.children);
+                }
+            }
+        };
+        extractFromChunks(m_aviParser->getChunks());
+    }
+    // Handle FLV tags
+    else if (m_flvParser) {
+        const auto& tags = m_flvParser->getTags();
+        for (const FLVTag& tag : tags) {
+            if (parameterName == "Data Size") {
+                values.append(tag.dataSize);
+                offsets.append(tag.offset);
+            } else if (parameterName == "Total Size") {
+                values.append(tag.totalSize);
+                offsets.append(tag.offset);
+            } else if (parameterName == "Percentage") {
+                values.append(tag.percentage);
+                offsets.append(tag.offset);
+            } else if (parameterName == "Timestamp") {
+                values.append(tag.timestamp);
+                offsets.append(tag.offset);
+            }
+        }
     }
 
     if (values.isEmpty()) {
         qDebug() << "No values found for parameter" << parameterName;
+        QMessageBox::information(this, tr("Add to Graphics"),
+            tr("Parameter '%1' is not supported for Graphics Panel or has no data.").arg(parameterName));
         return;
     }
 

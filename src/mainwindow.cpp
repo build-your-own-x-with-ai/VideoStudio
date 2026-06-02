@@ -1502,6 +1502,11 @@ void MainWindow::updateMP4Panels() {
             m_propertyPanel, &PropertyPanel::onAtomSelected, Qt::UniqueConnection);
     qDebug() << "updateMP4Panels: connected explorer to property";
 
+    // Connect Property Panel to Graphics Panel
+    connect(m_propertyPanel, &PropertyPanel::addToGraphics,
+            m_graphicsPanel, &GraphicsPanel::addParameter, Qt::UniqueConnection);
+    qDebug() << "updateMP4Panels: connected property to graphics";
+
     // Connect Explorer to Hex Viewer (pass offset and size)
     connect(m_explorerPanel, &ExplorerPanel::packetSelected,
             this, [this](int64_t offset) {
@@ -1553,6 +1558,10 @@ void MainWindow::updateMKVPanels() {
     connect(m_explorerPanel, &ExplorerPanel::packetSelected,
             m_propertyPanel, &PropertyPanel::onElementSelected, Qt::UniqueConnection);
 
+    // Connect Property Panel to Graphics Panel
+    connect(m_propertyPanel, &PropertyPanel::addToGraphics,
+            m_graphicsPanel, &GraphicsPanel::addParameter, Qt::UniqueConnection);
+
     // Connect Explorer to Hex Viewer (pass offset and size)
     connect(m_explorerPanel, &ExplorerPanel::packetSelected,
             this, [this](int64_t offset) {
@@ -1601,6 +1610,10 @@ void MainWindow::updateAVIPanels() {
     connect(m_explorerPanel, &ExplorerPanel::packetSelected,
             m_propertyPanel, &PropertyPanel::onChunkSelected, Qt::UniqueConnection);
 
+    // Connect Property Panel to Graphics Panel
+    connect(m_propertyPanel, &PropertyPanel::addToGraphics,
+            m_graphicsPanel, &GraphicsPanel::addParameter, Qt::UniqueConnection);
+
     // Connect Explorer to Hex Viewer (pass offset and size)
     connect(m_explorerPanel, &ExplorerPanel::packetSelected,
             this, [this](int64_t offset) {
@@ -1648,6 +1661,10 @@ void MainWindow::updateFLVPanels() {
     // Connect signals for FLV mode
     connect(m_explorerPanel, &ExplorerPanel::packetSelected,
             m_propertyPanel, &PropertyPanel::onTagSelected, Qt::UniqueConnection);
+
+    // Connect Property Panel to Graphics Panel
+    connect(m_propertyPanel, &PropertyPanel::addToGraphics,
+            m_graphicsPanel, &GraphicsPanel::addParameter, Qt::UniqueConnection);
 
     // Connect Explorer to Hex Viewer (pass offset and size)
     connect(m_explorerPanel, &ExplorerPanel::packetSelected,

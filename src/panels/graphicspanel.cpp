@@ -72,12 +72,14 @@ void GraphicsChart::setRangingMode(RangingMode mode) {
 
 void GraphicsChart::zoomIn() {
     m_zoomLevel *= 1.2;
+    qDebug() << "GraphicsChart::zoomIn() - new zoom level:" << m_zoomLevel;
     update();
 }
 
 void GraphicsChart::zoomOut() {
     m_zoomLevel /= 1.2;
     if (m_zoomLevel < 0.1) m_zoomLevel = 0.1;
+    qDebug() << "GraphicsChart::zoomOut() - new zoom level:" << m_zoomLevel;
     update();
 }
 
@@ -197,6 +199,10 @@ void GraphicsChart::drawDataLine(QPainter& painter) {
         }
     }
 
+    // Calculate zoomed dimensions
+    int zoomedW = (int)(w * m_zoomLevel);
+    int zoomedH = (int)(h * m_zoomLevel);
+
     // Draw each parameter
     for (const GraphicsParameter& param : m_parameters) {
         if (!param.visible || param.values.size() < 2) continue;
@@ -216,11 +222,9 @@ void GraphicsChart::drawDataLine(QPainter& painter) {
             double yRatio = (maxValue > minValue) ?
                 (param.values[i] - minValue) / (maxValue - minValue) : 0.5;
 
-            // Apply zoom centered
-            int zoomedW = (int)(w * m_zoomLevel);
-            int zoomedH = (int)(h * m_zoomLevel);
-            int x = margin + (int)(xRatio * zoomedW) - (zoomedW - w) / 2 + (int)m_offsetX;
-            int y = height() - margin - (int)(yRatio * zoomedH) + (zoomedH - h) / 2 - (int)m_offsetY;
+            // Apply zoom: scale coordinates from top-left
+            int x = margin + (int)(xRatio * zoomedW) + (int)m_offsetX;
+            int y = height() - margin - (int)(yRatio * zoomedH) - (int)m_offsetY;
 
             if (i == 0) {
                 path.moveTo(x, y);
@@ -247,11 +251,9 @@ void GraphicsChart::drawDataLine(QPainter& painter) {
             double yRatio = (maxValue > minValue) ?
                 (param.values[i] - minValue) / (maxValue - minValue) : 0.5;
 
-            // Apply zoom centered
-            int zoomedW = (int)(w * m_zoomLevel);
-            int zoomedH = (int)(h * m_zoomLevel);
-            int x = margin + (int)(xRatio * zoomedW) - (zoomedW - w) / 2 + (int)m_offsetX;
-            int y = height() - margin - (int)(yRatio * zoomedH) + (zoomedH - h) / 2 - (int)m_offsetY;
+            // Apply zoom: scale coordinates from top-left
+            int x = margin + (int)(xRatio * zoomedW) + (int)m_offsetX;
+            int y = height() - margin - (int)(yRatio * zoomedH) - (int)m_offsetY;
 
             painter.drawEllipse(QPoint(x, y), 3, 3);
         }
