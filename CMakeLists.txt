@@ -53,6 +53,7 @@ set(SOURCES
     src/panels/graphicspanel.cpp
     src/panels/commentspanel.cpp
     src/panels/epgpanel.cpp
+    src/panels/blockstatspanel.cpp
     src/dialogs/savestreaminfodialog.cpp
     src/dialogs/qualitymetricsdialog.cpp
     src/dialogs/aboutdialog.cpp
@@ -95,6 +96,7 @@ set(HEADERS
     src/panels/graphicspanel.h
     src/panels/commentspanel.h
     src/panels/epgpanel.h
+    src/panels/blockstatspanel.h
     src/dialogs/savestreaminfodialog.h
     src/dialogs/qualitymetricsdialog.h
     src/dialogs/aboutdialog.h

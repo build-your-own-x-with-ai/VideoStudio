@@ -11,6 +11,23 @@ extern "C" {
 
 namespace VideoStudio {
 
+// Block/Macroblock information for visualization
+struct BlockInfo {
+    int x;                   // Block position X
+    int y;                   // Block position Y
+    int width;               // Block width
+    int height;              // Block height
+    int qp;                  // Quantization parameter
+    bool isIntra;            // Intra/Inter prediction
+    int predMode;            // Prediction mode
+    int motionX;             // Motion vector X (quarter-pixel)
+    int motionY;             // Motion vector Y (quarter-pixel)
+
+    BlockInfo()
+        : x(0), y(0), width(0), height(0), qp(0),
+          isIntra(false), predMode(0), motionX(0), motionY(0) {}
+};
+
 struct FrameInfo {
     int frameNumber;
     int64_t pts;
@@ -22,6 +39,9 @@ struct FrameInfo {
     bool isKeyFrame;
     double bitrate;          // Instantaneous bitrate (bps)
     double timestamp;        // Timestamp in seconds
+
+    // Block-level information (optional, for detailed analysis)
+    QVector<BlockInfo> blocks;
 
     FrameInfo()
         : frameNumber(0), pts(0), dts(0), offset(0),

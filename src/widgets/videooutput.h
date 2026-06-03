@@ -47,6 +47,10 @@ public:
     void setCursorMode(bool enabled);
     bool isCursorModeEnabled() const { return m_cursorModeEnabled; }
 
+    // Block grid mode: true = standard grid, false = actual block boundaries
+    void setStandardGridMode(bool enabled);
+    bool isStandardGridMode() const { return m_standardGridMode; }
+
 protected:
     void paintEvent(QPaintEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
@@ -74,6 +78,9 @@ private:
     bool m_cursorModeEnabled;
     QPoint m_cursorPos;
     bool m_hasCursorPos;
+
+    // Block grid mode (true = standard grid, false = actual block boundaries)
+    bool m_standardGridMode;
 };
 
 } // namespace VideoStudio

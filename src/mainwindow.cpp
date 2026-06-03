@@ -31,6 +31,7 @@
 #include "panels/graphicspanel.h"
 #include "panels/commentspanel.h"
 #include "panels/epgpanel.h"
+#include "panels/blockstatspanel.h"
 #include "dialogs/savestreaminfodialog.h"
 
 #include <QApplication>
@@ -242,6 +243,8 @@ void MainWindow::createWidgets() {
     m_commentsPanel = new CommentsPanel(this);
 
     m_epgPanel = new EPGPanel(this);
+
+    m_blockStatsPanel = new BlockStatsPanel(this);
 }
 
 void MainWindow::createDockWidgets() {
@@ -368,6 +371,14 @@ void MainWindow::createDockWidgets() {
     addDockWidget(Qt::BottomDockWidgetArea, m_epgPanelDock);
     tabifyDockWidget(m_thumbnailDock, m_epgPanelDock);
     m_epgPanelDock->hide(); // Hidden by default
+
+    // Block Stats panel dock (bottom, tabbed with thumbnails)
+    m_blockStatsPanelDock = new QDockWidget(tr("Block Statistics"), this);
+    m_blockStatsPanelDock->setWidget(m_blockStatsPanel);
+    m_blockStatsPanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+    addDockWidget(Qt::BottomDockWidgetArea, m_blockStatsPanelDock);
+    tabifyDockWidget(m_thumbnailDock, m_blockStatsPanelDock);
+    m_blockStatsPanelDock->hide(); // Hidden by default
 
     // Log Viewer dock (bottom, tabbed with thumbnails)
     m_logViewerDock = new QDockWidget(tr("Log Viewer"), this);
@@ -527,6 +538,11 @@ void MainWindow::createMenus() {
     m_toggleEPGAction->setChecked(false);
     connect(m_toggleEPGAction, &QAction::triggered, this, &MainWindow::toggleEPG);
 
+    m_toggleBlockStatsAction = viewMenu->addAction(tr("Block &Statistics"));
+    m_toggleBlockStatsAction->setCheckable(true);
+    m_toggleBlockStatsAction->setChecked(false);
+    connect(m_toggleBlockStatsAction, &QAction::triggered, this, &MainWindow::toggleBlockStats);
+
     m_toggleLogViewerAction = viewMenu->addAction(tr("&Log Viewer"));
     m_toggleLogViewerAction->setCheckable(true);
     m_toggleLogViewerAction->setChecked(false);
@@ -576,6 +592,14 @@ void MainWindow::createMenus() {
     m_cursorModeAction->setShortcut(Qt::ALT | Qt::Key_C);
     connect(m_cursorModeAction, &QAction::triggered, this, &MainWindow::toggleCursorMode);
 
+    overlayMenu->addSeparator();
+
+    m_standardGridModeAction = overlayMenu->addAction(tr("&Standard Grid Mode"));
+    m_standardGridModeAction->setCheckable(true);
+    m_standardGridModeAction->setChecked(true);  // Default to enabled
+    m_standardGridModeAction->setShortcut(Qt::ALT | Qt::Key_G);
+    connect(m_standardGridModeAction, &QAction::triggered, this, &MainWindow::toggleStandardGridMode);
+
     // Navigation menu
     QMenu* navMenu = menuBar()->addMenu(tr("&Navigation"));
 
@@ -589,18 +613,18 @@ void MainWindow::createMenus() {
     navMenu->addSeparator();
 
     QAction* stepForwardAction = navMenu->addAction(tr("Step &Forward"));
-    stepForwardAction->setShortcut(Qt::ALT | Qt::Key_Right);
+    stepForwardAction->setShortcuts({QKeySequence(Qt::ALT | Qt::Key_Right), QKeySequence(Qt::Key_Right)});
     connect(stepForwardAction, &QAction::triggered, this, &MainWindow::stepForward);
 
     QAction* stepBackwardAction = navMenu->addAction(tr("Step &Backward"));
-    stepBackwardAction->setShortcut(Qt::ALT | Qt::Key_Left);
+    stepBackwardAction->setShortcuts({QKeySequence(Qt::ALT | Qt::Key_Left), QKeySequence(Qt::Key_Left)});
     connect(stepBackwardAction, &QAction::triggered, this, &MainWindow::stepBackward);
 
     // Tools menu
     QMenu* toolsMenu = menuBar()->addMenu(tr("&Tools"));
 
     QAction* qualityMetricsAction = toolsMenu->addAction(tr("&Quality Metrics (PSNR/SSIM)..."));
-    qualityMetricsAction->setShortcut(tr("Ctrl+Q"));
+    qualityMetricsAction->setShortcut(tr("Ctrl+Shift+Q"));
     connect(qualityMetricsAction, &QAction::triggered, this, &MainWindow::showQualityMetrics);
 
     QAction* referenceComparisonAction = toolsMenu->addAction(tr("&Reference Comparison..."));
@@ -828,6 +852,7 @@ void MainWindow::loadFile(const QString& fileName) {
                 if (frame) {
                     qDebug() << "Successfully decoded first frame";
                     m_videoOutput->displayFrame(frame);
+                    m_blockStatsPanel->updateStatistics(frame);
                     int currentFrame = m_decoder->getCurrentFrameNumber();
                     // Set to frame 0 since we just decoded the first frame
                     m_barChart->setCurrentFrame(0);
@@ -1129,6 +1154,23 @@ void MainWindow::play() {
         return;
     }
 
+    // If at end of video, restart from beginning
+    int currentFrame = m_decoder->getCurrentFrameNumber();
+    int frameCount = m_decoder->getFrameCount();
+    if (currentFrame >= frameCount - 1) {
+        if (m_decoder->seekToFrame(0)) {
+            AVFrame* frame = m_decoder->decodeNextFrame();
+            if (frame) {
+                m_videoOutput->displayFrame(frame);
+                m_blockStatsPanel->updateStatistics(frame);
+                m_barChart->setCurrentFrame(0);
+                m_thumbnailBar->setCurrentFrame(0);
+                m_gopViewer->setCurrentFrame(0);
+                updateFrameLabel(0, frameCount);
+            }
+        }
+    }
+
     m_isPlaying = true;
     double frameRate = m_decoder->getFrameRate();
     int interval = frameRate > 0 ? static_cast<int>(1000.0 / frameRate) : 40;
@@ -1150,6 +1192,7 @@ void MainWindow::stepForward() {
     AVFrame* frame = m_decoder->decodeNextFrame();
     if (frame) {
         m_videoOutput->displayFrame(frame);
+        m_blockStatsPanel->updateStatistics(frame);
         int currentFrame = m_decoder->getCurrentFrameNumber();
         m_barChart->setCurrentFrame(currentFrame);
         m_thumbnailBar->setCurrentFrame(currentFrame);
@@ -1176,6 +1219,7 @@ void MainWindow::stepBackward() {
             AVFrame* frame = m_decoder->decodeNextFrame();
             if (frame) {
                 m_videoOutput->displayFrame(frame);
+                m_blockStatsPanel->updateStatistics(frame);
                 m_barChart->setCurrentFrame(currentFrame - 1);
                 m_thumbnailBar->setCurrentFrame(currentFrame - 1);
                 m_gopViewer->setCurrentFrame(currentFrame - 1);
@@ -1199,6 +1243,7 @@ void MainWindow::onFrameClicked(int frameNumber) {
         AVFrame* frame = m_decoder->decodeNextFrame();
         if (frame) {
             m_videoOutput->displayFrame(frame);
+            m_blockStatsPanel->updateStatistics(frame);
             m_barChart->setCurrentFrame(frameNumber);
             m_thumbnailBar->setCurrentFrame(frameNumber);
             m_gopViewer->setCurrentFrame(frameNumber);
@@ -1316,6 +1361,12 @@ void MainWindow::toggleEPG() {
     m_toggleEPGAction->setChecked(visible);
 }
 
+void MainWindow::toggleBlockStats() {
+    bool visible = !m_blockStatsPanelDock->isVisible();
+    m_blockStatsPanelDock->setVisible(visible);
+    m_toggleBlockStatsAction->setChecked(visible);
+}
+
 void MainWindow::toggleLogViewer() {
     bool visible = !m_logViewerDock->isVisible();
     m_logViewerDock->setVisible(visible);
@@ -1347,6 +1398,12 @@ void MainWindow::toggleCursorMode() {
     bool enabled = !m_videoOutput->isCursorModeEnabled();
     m_videoOutput->setCursorMode(enabled);
     m_cursorModeAction->setChecked(enabled);
+}
+
+void MainWindow::toggleStandardGridMode() {
+    bool enabled = !m_videoOutput->isStandardGridMode();
+    m_videoOutput->setStandardGridMode(enabled);
+    m_standardGridModeAction->setChecked(enabled);
 }
 
 void MainWindow::updateUI() {

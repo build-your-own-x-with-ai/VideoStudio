@@ -21,6 +21,7 @@ VideoOutput::VideoOutput(QWidget* parent)
     , m_zoomLevel(1.0)
     , m_cursorModeEnabled(false)
     , m_hasCursorPos(false)
+    , m_standardGridMode(true)  // Default to standard grid mode
 {
     setMinimumSize(320, 240);
     setStyleSheet("background-color: black;");
@@ -283,6 +284,76 @@ void VideoOutput::drawBlockBoundaries(QPainter& painter, const QRect& videoRect)
         const AVMotionVector* mvs = reinterpret_cast<const AVMotionVector*>(sd->data);
         int mvCount = sd->size / sizeof(AVMotionVector);
 
+        // Check if all blocks are the same size (uniform partitioning)
+        bool uniformSize = true;
+        int firstBlockSize = (mvCount > 0) ? mvs[0].w : 0;
+
+        // Also check if blocks are properly aligned (starting from 0,0 with regular grid)
+        int minX = INT_MAX, minY = INT_MAX;
+        for (int i = 0; i < mvCount; ++i) {
+            if (mvs[i].src_x < minX) minX = mvs[i].src_x;
+            if (mvs[i].src_y < minY) minY = mvs[i].src_y;
+            if (mvs[i].w != firstBlockSize || mvs[i].h != firstBlockSize) {
+                uniformSize = false;
+            }
+        }
+
+        bool wellAligned = (minX <= 2 && minY <= 2); // Allow small offset tolerance
+
+        // If standard grid mode is enabled OR (blocks are uniform and well-aligned), draw a clean grid
+        if (m_standardGridMode || (uniformSize && wellAligned && firstBlockSize > 0)) {
+            // Draw clean grid for uniform blocks
+            painter.setPen(QPen(QColor(255, 255, 0, 150), 1));
+
+            // Use the detected block size if available, otherwise default to 16
+            int gridSize = (firstBlockSize > 0) ? firstBlockSize : 16;
+
+            double blockWidthScreen = (videoRect.width() * gridSize) / static_cast<double>(m_currentFrame->width);
+            double blockHeightScreen = (videoRect.height() * gridSize) / static_cast<double>(m_currentFrame->height);
+
+            int numHorizontalBlocks = (m_currentFrame->height + gridSize - 1) / gridSize;
+            for (int i = 0; i <= numHorizontalBlocks; ++i) {
+                int y1 = videoRect.top() + qRound(i * blockHeightScreen);
+                painter.drawLine(videoRect.left(), y1, videoRect.right(), y1);
+            }
+
+            int numVerticalBlocks = (m_currentFrame->width + gridSize - 1) / gridSize;
+            for (int i = 0; i <= numVerticalBlocks; ++i) {
+                int x1 = videoRect.left() + qRound(i * blockWidthScreen);
+                painter.drawLine(x1, videoRect.top(), x1, videoRect.bottom());
+            }
+
+            // Draw info text
+            if (m_zoomLevel >= 1.0) {
+                QString infoText;
+                if (m_standardGridMode) {
+                    infoText = QString("Standard %1x%1 Grid (P frame, %2 blocks)")
+                              .arg(gridSize).arg(mvCount);
+                } else {
+                    infoText = QString("Uniform %1x%1 Block Grid (P frame, %2 blocks)")
+                              .arg(gridSize).arg(mvCount);
+                }
+
+                painter.setFont(QFont("Arial", 10, QFont::Bold));
+                QFontMetrics fm(painter.font());
+                QRect textRect = fm.boundingRect(infoText);
+                int textWidth = textRect.width();
+                int textHeight = textRect.height();
+
+                painter.setPen(Qt::NoPen);
+                painter.setBrush(QColor(0, 0, 0, 180));
+                painter.drawRect(videoRect.left() + 8, videoRect.bottom() - textHeight - 14,
+                               textWidth + 4, textHeight + 4);
+
+                painter.setPen(Qt::white);
+                painter.drawText(videoRect.left() + 10, videoRect.bottom() - 10, infoText);
+            }
+
+            return; // Skip individual block drawing
+        }
+
+        // Otherwise, draw actual block boundaries with varying sizes
+
         // Use different colors for different block sizes
         QMap<int, QColor> blockColors;
         blockColors[64] = QColor(255, 0, 0, 180);    // Red for 64x64
@@ -291,7 +362,10 @@ void VideoOutput::drawBlockBoundaries(QPainter& painter, const QRect& videoRect)
         blockColors[8] = QColor(0, 255, 0, 180);     // Green for 8x8
         blockColors[4] = QColor(0, 255, 255, 180);   // Cyan for 4x4
 
-        // Draw each block boundary
+        // Count block sizes for statistics
+        QMap<int, int> blockSizeCount;
+
+        // Draw each block boundary with enhanced information
         for (int i = 0; i < mvCount; ++i) {
             const AVMotionVector* mv = &mvs[i];
 
@@ -307,8 +381,80 @@ void VideoOutput::drawBlockBoundaries(QPainter& painter, const QRect& videoRect)
                 color = blockColors[blockSize];
             }
 
-            painter.setPen(QPen(color, 1));
+            // Count block sizes
+            blockSizeCount[blockSize]++;
+
+            // Draw block boundary with thicker line for larger blocks
+            int lineWidth = (blockSize >= 32) ? 2 : 1;
+            painter.setPen(QPen(color, lineWidth));
             painter.drawRect(x, y, w, h);
+
+            // Draw block size label for larger blocks (if zoom is sufficient)
+            if (m_zoomLevel >= 1.0 && w >= 32 && h >= 32) {
+                QString sizeLabel = QString("%1x%2").arg(mv->w).arg(mv->h);
+
+                painter.setFont(QFont("Arial", 8, QFont::Bold));
+                QFontMetrics fm(painter.font());
+                QRect textRect = fm.boundingRect(sizeLabel);
+                int textWidth = textRect.width();
+                int textHeight = textRect.height();
+
+                // Calculate center position
+                int centerX = x + w / 2 - textWidth / 2;
+                int centerY = y + h / 2 - textHeight / 2;
+
+                // Draw semi-transparent black background
+                painter.setPen(Qt::NoPen);
+                painter.setBrush(QColor(0, 0, 0, 200));
+                painter.drawRect(centerX - 2, centerY - 2, textWidth + 4, textHeight + 4);
+
+                // Draw text in white
+                painter.setPen(Qt::white);
+                painter.drawText(centerX, centerY + textHeight - 2, sizeLabel);
+            }
+
+            // Draw prediction mode indicator (source vs destination)
+            if (m_zoomLevel >= 1.5 && w >= 16 && h >= 16) {
+                // Draw small circle to indicate prediction direction
+                bool isIntra = (mv->source == -1);  // source == -1 means intra prediction
+                QColor predColor = isIntra ? QColor(255, 0, 0, 200) : QColor(0, 255, 0, 200);
+                painter.setBrush(predColor);
+                painter.setPen(Qt::NoPen);
+                int circleSize = qMax(3, qMin(8, w / 4));
+                painter.drawEllipse(QPoint(x + circleSize + 2, y + circleSize + 2), circleSize, circleSize);
+            }
+        }
+
+        // Draw block size statistics in top-left corner (if there are multiple block sizes)
+        if (blockSizeCount.size() > 1) {
+            int statsX = videoRect.left() + 10;
+            int statsY = videoRect.top() + 10;
+            painter.setFont(QFont("Arial", 9, QFont::Bold));
+
+            for (auto it = blockSizeCount.constBegin(); it != blockSizeCount.constEnd(); ++it) {
+                int size = it.key();
+                int count = it.value();
+                QColor color = blockColors.value(size, QColor(255, 255, 255));
+
+                QString text = QString("%1x%1: %2").arg(size).arg(count);
+                QFontMetrics fm(painter.font());
+                int textWidth = fm.horizontalAdvance(text);
+
+                // Draw semi-transparent black background for entire legend item
+                painter.setPen(Qt::NoPen);
+                painter.setBrush(QColor(0, 0, 0, 200));
+                painter.drawRect(statsX - 2, statsY - 2, textWidth + 20, 16);
+
+                // Draw color indicator
+                painter.setBrush(color);
+                painter.drawRect(statsX, statsY, 12, 12);
+
+                // Draw text with white color
+                painter.setPen(Qt::white);
+                painter.drawText(statsX + 16, statsY + 10, text);
+
+                statsY += 16;
+            }
         }
     } else {
         // Fallback: Draw standard 16x16 macroblock grid aligned to video
@@ -316,16 +462,46 @@ void VideoOutput::drawBlockBoundaries(QPainter& painter, const QRect& videoRect)
 
         int blockSize = 16;
 
+        // Calculate exact block dimensions in screen coordinates
+        double blockWidthScreen = (videoRect.width() * blockSize) / static_cast<double>(m_currentFrame->width);
+        double blockHeightScreen = (videoRect.height() * blockSize) / static_cast<double>(m_currentFrame->height);
+
         // Draw horizontal lines
-        for (int y = 0; y <= m_currentFrame->height; y += blockSize) {
-            int y1 = videoRect.top() + static_cast<int>(y * scaleY);
+        int numHorizontalBlocks = (m_currentFrame->height + blockSize - 1) / blockSize;
+        for (int i = 0; i <= numHorizontalBlocks; ++i) {
+            int y1 = videoRect.top() + qRound(i * blockHeightScreen);
             painter.drawLine(videoRect.left(), y1, videoRect.right(), y1);
         }
 
         // Draw vertical lines
-        for (int x = 0; x <= m_currentFrame->width; x += blockSize) {
-            int x1 = videoRect.left() + static_cast<int>(x * scaleX);
+        int numVerticalBlocks = (m_currentFrame->width + blockSize - 1) / blockSize;
+        for (int i = 0; i <= numVerticalBlocks; ++i) {
+            int x1 = videoRect.left() + qRound(i * blockWidthScreen);
             painter.drawLine(x1, videoRect.top(), x1, videoRect.bottom());
+        }
+
+        // Draw macroblock size info
+        if (m_zoomLevel >= 1.0) {
+            QString infoText = QString("Standard 16x16 Macroblock Grid (%1 frame)")
+                              .arg(isIFrame ? "I" : "Unknown");
+
+            painter.setFont(QFont("Arial", 10, QFont::Bold));
+
+            // Measure text size
+            QFontMetrics fm(painter.font());
+            QRect textRect = fm.boundingRect(infoText);
+            int textWidth = textRect.width();
+            int textHeight = textRect.height();
+
+            // Draw semi-transparent black background
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(QColor(0, 0, 0, 180));
+            painter.drawRect(videoRect.left() + 8, videoRect.bottom() - textHeight - 14,
+                           textWidth + 4, textHeight + 4);
+
+            // Draw text
+            painter.setPen(Qt::white);
+            painter.drawText(videoRect.left() + 10, videoRect.bottom() - 10, infoText);
         }
     }
 }
@@ -407,6 +583,11 @@ void VideoOutput::setCursorMode(bool enabled) {
     update();
 }
 
+void VideoOutput::setStandardGridMode(bool enabled) {
+    m_standardGridMode = enabled;
+    update();
+}
+
 void VideoOutput::mouseMoveEvent(QMouseEvent* event) {
     if (m_cursorModeEnabled && !m_image.isNull()) {
         m_cursorPos = event->pos();
@@ -483,34 +664,98 @@ QString VideoOutput::getBlockInfoAtPosition(const QPoint& pos, const QRect& vide
         return QString();
     }
 
-    // Calculate macroblock position (assuming 16x16 macroblocks for H.264)
-    int mbSize = 16;
-    int mbX = pos.x() / mbSize;
-    int mbY = pos.y() / mbSize;
-    int mbIndex = mbY * (m_image.width() / mbSize) + mbX;
-
     QString info;
     info += QString("Position: (%1, %2)\n").arg(pos.x()).arg(pos.y());
-    info += QString("Macroblock: (%1, %2)\n").arg(mbX).arg(mbY);
-    info += QString("MB Index: %1\n").arg(mbIndex);
 
     // Get pixel value at position
-    if (pos.x() >= 0 && pos.x() < m_image.width() &&
-        pos.y() >= 0 && pos.y() < m_image.height()) {
+    if (pos.x() >= 0 && pos.x() < m_currentFrame->width &&
+        pos.y() >= 0 && pos.y() < m_currentFrame->height) {
 
         // Get Y value from current frame
         if (m_currentFrame->data[0]) {
             int yStride = m_currentFrame->linesize[0];
             uint8_t yValue = m_currentFrame->data[0][pos.y() * yStride + pos.x()];
-            info += QString("Y value: %1\n").arg(yValue);
+            info += QString("Y: %1\n").arg(yValue);
+        }
+
+        // Get U/V values for YUV frames
+        if (m_currentFrame->format == AV_PIX_FMT_YUV420P ||
+            m_currentFrame->format == AV_PIX_FMT_YUVJ420P) {
+            int uvX = pos.x() / 2;
+            int uvY = pos.y() / 2;
+            if (m_currentFrame->data[1] && m_currentFrame->data[2]) {
+                int uvStride = m_currentFrame->linesize[1];
+                uint8_t uValue = m_currentFrame->data[1][uvY * uvStride + uvX];
+                uint8_t vValue = m_currentFrame->data[2][uvY * uvStride + uvX];
+                info += QString("U: %1, V: %2\n").arg(uValue).arg(vValue);
+            }
         }
 
         // Get RGB value from displayed image
-        QRgb pixel = m_image.pixel(pos.x(), pos.y());
-        info += QString("RGB: (%1, %2, %3)")
-            .arg(qRed(pixel))
-            .arg(qGreen(pixel))
-            .arg(qBlue(pixel));
+        if (pos.x() < m_image.width() && pos.y() < m_image.height()) {
+            QRgb pixel = m_image.pixel(pos.x(), pos.y());
+            info += QString("RGB: (%1, %2, %3)\n")
+                .arg(qRed(pixel))
+                .arg(qGreen(pixel))
+                .arg(qBlue(pixel));
+        }
+    }
+
+    // Try to get motion vector data for detailed block info
+    AVFrameSideData* sd = av_frame_get_side_data(m_currentFrame, AV_FRAME_DATA_MOTION_VECTORS);
+    if (sd) {
+        const AVMotionVector* mvs = reinterpret_cast<const AVMotionVector*>(sd->data);
+        int mvCount = sd->size / sizeof(AVMotionVector);
+
+        // Find the block that contains this position
+        for (int i = 0; i < mvCount; ++i) {
+            const AVMotionVector* mv = &mvs[i];
+
+            // Check if position is inside this block
+            if (pos.x() >= mv->src_x && pos.x() < mv->src_x + mv->w &&
+                pos.y() >= mv->src_y && pos.y() < mv->src_y + mv->h) {
+
+                info += "\n--- Block Info ---\n";
+                info += QString("Block Position: (%1, %2)\n").arg(mv->src_x).arg(mv->src_y);
+                info += QString("Block Size: %1x%2\n").arg(mv->w).arg(mv->h);
+
+                // Macroblock index
+                int mbSize = 16;
+                int mbX = mv->src_x / mbSize;
+                int mbY = mv->src_y / mbSize;
+                info += QString("Macroblock: (%1, %2)\n").arg(mbX).arg(mbY);
+
+                // Motion vector
+                if (mv->motion_x != 0 || mv->motion_y != 0) {
+                    // Motion vectors are in quarter-pixel units
+                    double mvX = mv->motion_x / 4.0;
+                    double mvY = mv->motion_y / 4.0;
+                    double magnitude = std::sqrt(mvX * mvX + mvY * mvY);
+                    info += QString("Motion Vector: (%.2f, %.2f)\n").arg(mvX).arg(mvY);
+                    info += QString("MV Magnitude: %.2f px\n").arg(magnitude);
+                } else {
+                    info += "Motion Vector: (0, 0)\n";
+                }
+
+                // Prediction mode
+                bool isIntra = (mv->source == -1);
+                info += QString("Prediction: %1\n").arg(isIntra ? "Intra" : "Inter");
+
+                if (!isIntra) {
+                    info += QString("Reference: Frame %1\n").arg(mv->source);
+                    info += QString("Destination: (%1, %2)\n").arg(mv->dst_x).arg(mv->dst_y);
+                }
+
+                break; // Found the block, no need to continue
+            }
+        }
+    } else {
+        // Fallback: show macroblock grid info
+        int mbSize = 16;
+        int mbX = pos.x() / mbSize;
+        int mbY = pos.y() / mbSize;
+        info += QString("\nMacroblock: (%1, %2)\n").arg(mbX).arg(mbY);
+        info += QString("MB Index: %1\n").arg(mbY * (m_currentFrame->width / mbSize) + mbX);
     }
 
     return info;

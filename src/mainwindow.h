@@ -34,6 +34,7 @@ class BufferPanel;
 class GraphicsPanel;
 class CommentsPanel;
 class EPGPanel;
+class BlockStatsPanel;
 class LogViewer;
 class TSParser;
 class MP4Parser;
@@ -75,11 +76,13 @@ private slots:
     void toggleGraphics();
     void toggleComments();
     void toggleEPG();
+    void toggleBlockStats();
     void toggleLogViewer();
     void toggleMotionVectors();
     void togglePartitions();
     void toggleFrameTypes();
     void toggleCursorMode();
+    void toggleStandardGridMode();
     void saveStreamInfo();
     void exportFrameAsYUV();
     void exportFrameRangeAsYUV();
@@ -141,6 +144,7 @@ private:
     GraphicsPanel* m_graphicsPanel;
     CommentsPanel* m_commentsPanel;
     EPGPanel* m_epgPanel;
+    BlockStatsPanel* m_blockStatsPanel;
     LogViewer* m_logViewer;
 
     QDockWidget* m_barChartDock;
@@ -160,6 +164,7 @@ private:
     QDockWidget* m_graphicsPanelDock;
     QDockWidget* m_commentsPanelDock;
     QDockWidget* m_epgPanelDock;
+    QDockWidget* m_blockStatsPanelDock;
     QDockWidget* m_logViewerDock;
 
     QTimer* m_playbackTimer;
@@ -172,6 +177,7 @@ private:
     QAction* m_overlayPartitionsAction;
     QAction* m_overlayFrameTypesAction;
     QAction* m_cursorModeAction;
+    QAction* m_standardGridModeAction;
 
     // View menu actions
     QAction* m_toggleStreamAction;
@@ -191,6 +197,7 @@ private:
     QAction* m_toggleGraphicsAction;
     QAction* m_toggleCommentsAction;
     QAction* m_toggleEPGAction;
+    QAction* m_toggleBlockStatsAction;
     QAction* m_toggleLogViewerAction;
 
     QString m_currentFilePath;
