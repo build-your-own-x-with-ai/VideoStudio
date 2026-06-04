@@ -56,16 +56,33 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 
 ## Screenshots
 
-### Main Interface
-![YUV Viewer](docs/screenshots/yuv_viewer.png)
-*Raw YUV file viewer with format detection and playback controls*
+### Layout 1: Video Analysis Mode
+![Video Analysis Layout](docs/screenshots/layout1_video_analysis.png)
+*Main interface showing video playback with bitrate chart, GOP viewer, thumbnails, and stream info panels*
 
-### Features
-- Multi-format video analysis with comprehensive codec support
-- Raw YUV file viewing and frame export
-- Transport stream analysis with TR 101-290 compliance
-- Quality metrics comparison (PSNR/SSIM)
-- Professional dockable panel interface
+### Layout 2: Transport Stream Analysis
+![TS Analysis Layout](docs/screenshots/layout2_ts_analysis.png)
+*Transport stream analysis with TS Explorer, Packet View, Property Panel, Hex Viewer, and TR 101-290 compliance*
+
+### Layout 3: Block/Partition Visualization
+![Block Visualization Layout](docs/screenshots/layout3_block_visualization.png)
+*Motion vector overlay with block boundaries, block statistics panel, and frame-level analysis*
+
+### Layout 4: All Panels View
+![All Panels Layout](docs/screenshots/layout4_all_panels.png)
+*Complete view showing all available analysis panels for comprehensive codec inspection*
+
+### Layout 5: Quality Metrics Comparison
+![Quality Metrics](docs/screenshots/layout5_quality_metrics.png)
+*PSNR/SSIM comparison dialog for reference vs distorted video analysis*
+
+### Layout 6: All Visible Panels
+![All Visible Layout](docs/screenshots/layout6_all_visible.png)
+*Complete interface showing all analysis panels simultaneously without tab switching - thumbnails at top, Explorer on left, Stream Info on right, and video display in center*
+
+### Layout 7: YUV Viewer
+![YUV Viewer](docs/screenshots/layout7_yuv_viewer.png)
+*Raw YUV file viewer with format detection and playback controls*
 
 ## Requirements
 

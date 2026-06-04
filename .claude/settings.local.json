@@ -43,7 +43,14 @@
       "Bash(echo \"VideoStudio started. PID: $!\")",
       "Bash(./generate_test_videos.sh)",
       "Bash(pdftotext /Users/i/Code/VideoStudio/EStreamEye_UG_Mac.pdf -)",
-      "Bash(pkg-config --modversion libvmaf)"
+      "Bash(pkg-config --modversion libvmaf)",
+      "Bash(iconutil -c icns /Users/i/Code/VideoStudio/resources/icons/VideoStudio.iconset)",
+      "Bash(plutil -p VideoStudio.app/Contents/Info.plist)",
+      "Bash(killall Dock)",
+      "Bash(killall Finder)",
+      "Bash(plutil -p /Users/i/Code/VideoStudio/build/VideoStudio.app/Contents/Info.plist)",
+      "Bash(sudo rm *)",
+      "Bash(/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Users/i/Code/VideoStudio/build/VideoStudio.app)"
     ]
   }
 }

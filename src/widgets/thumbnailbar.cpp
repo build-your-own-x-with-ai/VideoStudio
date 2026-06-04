@@ -19,8 +19,9 @@ ThumbnailBar::ThumbnailBar(QWidget* parent)
     , m_thumbnailWidth(80)
     , m_thumbnailHeight(60)
 {
-    setMinimumHeight(m_thumbnailHeight + 20);
-    setMaximumHeight(m_thumbnailHeight + 20);
+    // Fixed height for single row with horizontal scrolling
+    setMinimumHeight(m_thumbnailHeight + 30);
+    setMaximumHeight(m_thumbnailHeight + 30);
 }
 
 ThumbnailBar::~ThumbnailBar() {
@@ -120,6 +121,15 @@ void ThumbnailBar::generateThumbnails() {
     }
 
     qDebug() << "Generated" << m_thumbnails.size() << "thumbnails";
+
+    // Calculate and set minimum width after generating thumbnails
+    if (!m_thumbnails.isEmpty()) {
+        int thumbnailSpacing = 5;
+        int totalWidth = m_thumbnails.size() * (m_thumbnailWidth + thumbnailSpacing) + 5;
+        setMinimumWidth(totalWidth);
+        qDebug() << "Set thumbnail bar minimum width to" << totalWidth;
+    }
+
     update();
 }
 
@@ -137,32 +147,35 @@ void ThumbnailBar::paintEvent(QPaintEvent* event) {
     painter.fillRect(rect(), QColor(50, 50, 50));
 
     if (!m_decoder || m_thumbnails.isEmpty()) {
+        qDebug() << "ThumbnailBar::paintEvent - no thumbnails to display. Decoder:" << (m_decoder != nullptr) << "Thumbnails size:" << m_thumbnails.size();
         return;
     }
 
-    // Draw thumbnails
+    qDebug() << "ThumbnailBar::paintEvent - drawing" << m_thumbnails.size() << "thumbnails";
+
+    // Draw thumbnails in single row
+    int thumbnailSpacing = 5;
     int x = 5;
+    int y = 5;
+
     for (int i = 0; i < m_thumbnails.size(); ++i) {
         int frameNumber = m_thumbnailFrameNumbers[i];
 
         // Draw thumbnail
-        painter.drawPixmap(x, 10, m_thumbnails[i]);
+        painter.drawPixmap(x, y, m_thumbnails[i]);
 
         // Draw frame type indicator
         QColor color = getFrameTypeColor(frameNumber);
-        painter.fillRect(x, height() - 8, m_thumbnailWidth, 3, color);
+        painter.fillRect(x, y + m_thumbnailHeight + 2, m_thumbnailWidth, 3, color);
 
-        // Highlight current frame - check if current frame is closest to this thumbnail
+        // Highlight current frame
         bool isClosest = false;
         if (i == 0) {
-            // First thumbnail: highlight if current frame is before next thumbnail
             isClosest = (i == m_thumbnails.size() - 1) ||
                        (m_currentFrame < (m_thumbnailFrameNumbers[i] + m_thumbnailFrameNumbers[i + 1]) / 2);
         } else if (i == m_thumbnails.size() - 1) {
-            // Last thumbnail: highlight if current frame is after previous thumbnail midpoint
             isClosest = m_currentFrame >= (m_thumbnailFrameNumbers[i - 1] + m_thumbnailFrameNumbers[i]) / 2;
         } else {
-            // Middle thumbnails: highlight if current frame is in range
             int prevMid = (m_thumbnailFrameNumbers[i - 1] + m_thumbnailFrameNumbers[i]) / 2;
             int nextMid = (m_thumbnailFrameNumbers[i] + m_thumbnailFrameNumbers[i + 1]) / 2;
             isClosest = m_currentFrame >= prevMid && m_currentFrame < nextMid;
@@ -170,22 +183,30 @@ void ThumbnailBar::paintEvent(QPaintEvent* event) {
 
         if (isClosest) {
             painter.setPen(QPen(Qt::yellow, 2));
-            painter.drawRect(x - 1, 9, m_thumbnailWidth + 2, m_thumbnailHeight + 2);
+            painter.drawRect(x - 1, y - 1, m_thumbnailWidth + 2, m_thumbnailHeight + 2);
         }
 
         // Draw frame number
         painter.setPen(Qt::white);
         painter.setFont(QFont("Arial", 8));
-        painter.drawText(x, height() - 10, QString::number(frameNumber));
+        painter.drawText(x, y + m_thumbnailHeight + 17, QString::number(frameNumber));
 
-        x += m_thumbnailWidth + 5;
+        x += m_thumbnailWidth + thumbnailSpacing;
     }
 }
 
 void ThumbnailBar::mousePressEvent(QMouseEvent* event) {
-    int frameNumber = frameNumberAtPosition(event->pos().x());
-    if (frameNumber >= 0) {
-        emit frameClicked(frameNumber);
+    if (!m_decoder || m_thumbnails.isEmpty()) {
+        return;
+    }
+
+    // Calculate which thumbnail was clicked (single row)
+    int clickX = event->pos().x();
+    int thumbnailSpacing = 5;
+    int index = (clickX - 5) / (m_thumbnailWidth + thumbnailSpacing);
+
+    if (index >= 0 && index < m_thumbnailFrameNumbers.size()) {
+        emit frameClicked(m_thumbnailFrameNumbers[index]);
     }
 }
 
@@ -199,9 +220,15 @@ int ThumbnailBar::frameNumberAtPosition(int x) const {
         return -1;
     }
 
-    int thumbnailIndex = (x - 5) / (m_thumbnailWidth + 5);
-    if (thumbnailIndex >= 0 && thumbnailIndex < m_thumbnails.size()) {
-        return m_thumbnailFrameNumbers[thumbnailIndex];
+    // Calculate thumbnails per row
+    int thumbnailSpacing = 5;
+    int thumbnailsPerRow = qMax(1, (width() - 5) / (m_thumbnailWidth + thumbnailSpacing));
+
+    // Find which thumbnail was clicked based on grid position
+    int col = (x - 5) / (m_thumbnailWidth + thumbnailSpacing);
+
+    if (col >= 0 && col < thumbnailsPerRow && col < m_thumbnailFrameNumbers.size()) {
+        return m_thumbnailFrameNumbers[col];
     }
 
     return -1;

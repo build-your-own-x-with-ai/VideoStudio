@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QDockWidget>
 #include <QLabel>
+#include <QScrollArea>
 #include <QFuture>
 #include <QFutureWatcher>
 #include <QtConcurrent>
@@ -129,6 +130,7 @@ private:
     BarChart* m_barChart;
     AreaChart* m_areaChart;
     ThumbnailBar* m_thumbnailBar;
+    QScrollArea* m_thumbnailScrollArea;
     StreamPanel* m_streamPanel;
     OverlayPanel* m_overlayPanel;
     GOPViewer* m_gopViewer;

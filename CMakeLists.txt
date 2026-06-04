@@ -143,4 +143,13 @@ set_target_properties(VideoStudio PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.videostudio.app"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE_BUNDLE_NAME "VideoStudio"
+    MACOSX_BUNDLE_ICON_FILE VideoStudio.icns
 )
+
+# Copy icon file to bundle
+set(ICON_FILE ${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/VideoStudio.icns)
+set_source_files_properties(${ICON_FILE} PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+)
+target_sources(VideoStudio PRIVATE ${ICON_FILE})

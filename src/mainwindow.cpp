@@ -35,6 +35,7 @@
 #include "dialogs/savestreaminfodialog.h"
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QMenuBar>
 #include <QToolBar>
 #include <QFileDialog>
@@ -116,8 +117,13 @@ MainWindow::MainWindow(QWidget* parent)
     , m_overlayFrameTypesAction(nullptr)
     , m_filePathLabel(nullptr)
 {
-    setWindowTitle("VideoStudio");
+    setWindowTitle("VideoStudio - Professional Video Analysis Tool - https://github.com/build-your-own-x-with-ai - 作者：AI开发日志");
     resize(1400, 900);
+
+    // Set organization info for window title
+    QCoreApplication::setOrganizationName("VideoStudio");
+    QCoreApplication::setOrganizationDomain("https://github.com/build-your-own-x-with-ai/VideoStudio");
+    QCoreApplication::setApplicationName("VideoStudio");
 
     // Set static instance for message handler
     s_instance = this;
@@ -201,6 +207,15 @@ void MainWindow::createWidgets() {
     m_thumbnailBar = new ThumbnailBar(this);
     connect(m_thumbnailBar, &ThumbnailBar::frameClicked, this, &MainWindow::onFrameClicked);
 
+    // Wrap thumbnail bar in scroll area for horizontal scrolling
+    m_thumbnailScrollArea = new QScrollArea(this);
+    m_thumbnailScrollArea->setWidget(m_thumbnailBar);
+    m_thumbnailScrollArea->setWidgetResizable(false);  // Allow widget to set its own size
+    m_thumbnailScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_thumbnailScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_thumbnailScrollArea->setMinimumHeight(m_thumbnailBar->minimumHeight());
+    m_thumbnailScrollArea->setMaximumHeight(m_thumbnailBar->maximumHeight());
+
     m_streamPanel = new StreamPanel(this);
 
     m_overlayPanel = new OverlayPanel(this);
@@ -248,11 +263,22 @@ void MainWindow::createWidgets() {
 }
 
 void MainWindow::createDockWidgets() {
-    // Bar chart dock (top)
+    // Thumbnail bar dock (top - primary navigation, fixed position)
+    // Must be added first and span full width
+    m_thumbnailDock = new QDockWidget(tr("Thumbnails"), this);
+    m_thumbnailDock->setWidget(m_thumbnailScrollArea);  // Use scroll area instead of thumbnail bar
+    m_thumbnailDock->setAllowedAreas(Qt::TopDockWidgetArea);  // Only allow top area
+    m_thumbnailDock->setFeatures(QDockWidget::NoDockWidgetFeatures);  // Disable floating, closing, moving
+    addDockWidget(Qt::TopDockWidgetArea, m_thumbnailDock);
+
+    // Bar chart dock (top, in second row below thumbnails)
     m_barChartDock = new QDockWidget(tr("Frame Size Distribution"), this);
     m_barChartDock->setWidget(m_barChart);
     m_barChartDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::TopDockWidgetArea, m_barChartDock);
+
+    // Split docks so thumbnails are in separate row
+    splitDockWidget(m_thumbnailDock, m_barChartDock, Qt::Vertical);
 
     // Area chart dock (top, tabbed with bar chart)
     m_areaChartDock = new QDockWidget(tr("Bitstream Distribution"), this);
@@ -260,12 +286,6 @@ void MainWindow::createDockWidgets() {
     m_areaChartDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::TopDockWidgetArea, m_areaChartDock);
     tabifyDockWidget(m_barChartDock, m_areaChartDock);
-
-    // Thumbnail bar dock (bottom)
-    m_thumbnailDock = new QDockWidget(tr("Thumbnails"), this);
-    m_thumbnailDock->setWidget(m_thumbnailBar);
-    m_thumbnailDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
-    addDockWidget(Qt::BottomDockWidgetArea, m_thumbnailDock);
 
     // Stream panel dock (right)
     m_streamPanelDock = new QDockWidget(tr("Stream Info"), this);
@@ -279,12 +299,12 @@ void MainWindow::createDockWidgets() {
     m_overlayPanelDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     addDockWidget(Qt::RightDockWidgetArea, m_overlayPanelDock);
 
-    // GOP viewer dock (bottom, tabbed with thumbnails)
+    // GOP viewer dock (top, tabbed with bar chart, NOT with thumbnails)
     m_gopViewerDock = new QDockWidget(tr("GOP Structure"), this);
     m_gopViewerDock->setWidget(m_gopViewer);
     m_gopViewerDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
-    addDockWidget(Qt::BottomDockWidgetArea, m_gopViewerDock);
-    tabifyDockWidget(m_thumbnailDock, m_gopViewerDock);
+    addDockWidget(Qt::TopDockWidgetArea, m_gopViewerDock);
+    tabifyDockWidget(m_barChartDock, m_gopViewerDock);  // Tab with bar chart, not thumbnails
 
     // Explorer panel dock (left)
     m_explorerPanelDock = new QDockWidget(tr("Explorer"), this);
@@ -300,96 +320,95 @@ void MainWindow::createDockWidgets() {
     addDockWidget(Qt::RightDockWidgetArea, m_propertyPanelDock);
     m_propertyPanelDock->hide(); // Hidden by default
 
-    // Hex Viewer panel dock (bottom, tabbed with thumbnails)
+    // Hex Viewer panel dock (bottom)
     m_hexViewerPanelDock = new QDockWidget(tr("Hex Viewer"), this);
     m_hexViewerPanelDock->setWidget(m_hexViewerPanel);
     m_hexViewerPanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_hexViewerPanelDock);
-    tabifyDockWidget(m_thumbnailDock, m_hexViewerPanelDock);
     m_hexViewerPanelDock->hide(); // Hidden by default
 
-    // Messages panel dock (bottom, tabbed with thumbnails)
+    // Messages panel dock (bottom, tabbed with hex viewer)
     m_messagesPanelDock = new QDockWidget(tr("Messages"), this);
     m_messagesPanelDock->setWidget(m_messagesPanel);
     m_messagesPanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_messagesPanelDock);
-    tabifyDockWidget(m_thumbnailDock, m_messagesPanelDock);
+    tabifyDockWidget(m_hexViewerPanelDock, m_messagesPanelDock);
     m_messagesPanelDock->hide(); // Hidden by default
 
-    // TR 101-290 panel dock (bottom, tabbed with thumbnails)
+    // TR 101-290 panel dock (bottom, tabbed with hex viewer)
     m_tr101290PanelDock = new QDockWidget(tr("TR 101-290"), this);
     m_tr101290PanelDock->setWidget(m_tr101290Panel);
     m_tr101290PanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_tr101290PanelDock);
-    tabifyDockWidget(m_thumbnailDock, m_tr101290PanelDock);
+    tabifyDockWidget(m_hexViewerPanelDock, m_tr101290PanelDock);
     m_tr101290PanelDock->hide(); // Hidden by default
 
-    // Time Dynamics panel dock (bottom, tabbed with thumbnails)
+    // Time Dynamics panel dock (bottom, tabbed with hex viewer)
     m_timeDynamicsPanelDock = new QDockWidget(tr("Time Dynamics"), this);
     m_timeDynamicsPanelDock->setWidget(m_timeDynamicsPanel);
     m_timeDynamicsPanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_timeDynamicsPanelDock);
-    tabifyDockWidget(m_thumbnailDock, m_timeDynamicsPanelDock);
+    tabifyDockWidget(m_hexViewerPanelDock, m_timeDynamicsPanelDock);
     m_timeDynamicsPanelDock->hide(); // Hidden by default
 
-    // Bitrate panel dock (bottom, tabbed with thumbnails)
+    // Bitrate panel dock (bottom, tabbed with hex viewer)
     m_bitratePanelDock = new QDockWidget(tr("Bitrate"), this);
     m_bitratePanelDock->setWidget(m_bitratePanel);
     m_bitratePanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_bitratePanelDock);
-    tabifyDockWidget(m_thumbnailDock, m_bitratePanelDock);
+    tabifyDockWidget(m_hexViewerPanelDock, m_bitratePanelDock);
     m_bitratePanelDock->hide(); // Hidden by default
 
-    // Buffer panel dock (bottom, tabbed with thumbnails)
+    // Buffer panel dock (bottom, tabbed with hex viewer)
     m_bufferPanelDock = new QDockWidget(tr("Buffer"), this);
     m_bufferPanelDock->setWidget(m_bufferPanel);
     m_bufferPanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_bufferPanelDock);
-    tabifyDockWidget(m_thumbnailDock, m_bufferPanelDock);
+    tabifyDockWidget(m_hexViewerPanelDock, m_bufferPanelDock);
     m_bufferPanelDock->hide(); // Hidden by default
 
-    // Graphics panel dock (bottom, tabbed with thumbnails)
+    // Graphics panel dock (bottom, tabbed with hex viewer)
     m_graphicsPanelDock = new QDockWidget(tr("Graphics"), this);
     m_graphicsPanelDock->setWidget(m_graphicsPanel);
     m_graphicsPanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_graphicsPanelDock);
-    tabifyDockWidget(m_thumbnailDock, m_graphicsPanelDock);
+    tabifyDockWidget(m_hexViewerPanelDock, m_graphicsPanelDock);
     m_graphicsPanelDock->hide(); // Hidden by default
 
-    // Comments panel dock (bottom, tabbed with thumbnails)
+    // Comments panel dock (bottom, tabbed with hex viewer)
     m_commentsPanelDock = new QDockWidget(tr("Comments"), this);
     m_commentsPanelDock->setWidget(m_commentsPanel);
     m_commentsPanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_commentsPanelDock);
-    tabifyDockWidget(m_thumbnailDock, m_commentsPanelDock);
+    tabifyDockWidget(m_hexViewerPanelDock, m_commentsPanelDock);
     m_commentsPanelDock->hide(); // Hidden by default
 
-    // EPG panel dock (bottom, tabbed with thumbnails)
+    // EPG panel dock (bottom, tabbed with hex viewer)
     m_epgPanelDock = new QDockWidget(tr("EPG"), this);
     m_epgPanelDock->setWidget(m_epgPanel);
     m_epgPanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_epgPanelDock);
-    tabifyDockWidget(m_thumbnailDock, m_epgPanelDock);
+    tabifyDockWidget(m_hexViewerPanelDock, m_epgPanelDock);
     m_epgPanelDock->hide(); // Hidden by default
 
-    // Block Stats panel dock (bottom, tabbed with thumbnails)
+    // Block Stats panel dock (bottom, tabbed with hex viewer)
     m_blockStatsPanelDock = new QDockWidget(tr("Block Statistics"), this);
     m_blockStatsPanelDock->setWidget(m_blockStatsPanel);
     m_blockStatsPanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_blockStatsPanelDock);
-    tabifyDockWidget(m_thumbnailDock, m_blockStatsPanelDock);
+    tabifyDockWidget(m_hexViewerPanelDock, m_blockStatsPanelDock);
     m_blockStatsPanelDock->hide(); // Hidden by default
 
-    // Log Viewer dock (bottom, tabbed with thumbnails)
+    // Log Viewer dock (bottom, tabbed with hex viewer)
     m_logViewerDock = new QDockWidget(tr("Log Viewer"), this);
     m_logViewerDock->setWidget(m_logViewer);
     m_logViewerDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_logViewerDock);
-    tabifyDockWidget(m_thumbnailDock, m_logViewerDock);
+    tabifyDockWidget(m_hexViewerPanelDock, m_logViewerDock);
     m_logViewerDock->hide(); // Hidden by default
 
-    // Make bar chart the active tab
-    m_barChartDock->raise();
+    // Make thumbnails the active top tab
+    m_thumbnailDock->raise();
 }
 
 void MainWindow::createActions() {
@@ -552,10 +571,26 @@ void MainWindow::createMenus() {
 
     // Layout presets
     viewMenu->addAction(tr("Layout 1 (Default)"), this, [this]() {
+        // Show panels on both sides to utilize space around video
         m_barChartDock->show();
         m_areaChartDock->show();
         m_thumbnailDock->show();
         m_streamPanelDock->show();
+        m_overlayPanelDock->show();
+        m_gopViewerDock->show();
+        m_explorerPanelDock->show();  // Show Explorer on left side
+        m_propertyPanelDock->hide();
+        m_hexViewerPanelDock->hide();
+        m_messagesPanelDock->hide();
+        m_tr101290PanelDock->hide();
+        m_timeDynamicsPanelDock->hide();
+        m_bitratePanelDock->hide();
+        m_bufferPanelDock->hide();
+        m_graphicsPanelDock->hide();
+        m_commentsPanelDock->hide();
+        m_epgPanelDock->hide();
+        m_blockStatsPanelDock->hide();
+        m_logViewerDock->hide();
     })->setShortcut(Qt::Key_F5);
 
     viewMenu->addAction(tr("Layout 2 (Minimal)"), this, [this]() {
@@ -563,7 +598,124 @@ void MainWindow::createMenus() {
         m_areaChartDock->hide();
         m_thumbnailDock->hide();
         m_streamPanelDock->hide();
+        m_overlayPanelDock->hide();
+        m_gopViewerDock->hide();
+        m_explorerPanelDock->hide();
+        m_propertyPanelDock->hide();
+        m_hexViewerPanelDock->hide();
+        m_messagesPanelDock->hide();
+        m_tr101290PanelDock->hide();
+        m_timeDynamicsPanelDock->hide();
+        m_bitratePanelDock->hide();
+        m_bufferPanelDock->hide();
+        m_graphicsPanelDock->hide();
+        m_commentsPanelDock->hide();
+        m_epgPanelDock->hide();
+        m_blockStatsPanelDock->hide();
+        m_logViewerDock->hide();
     })->setShortcut(Qt::Key_F6);
+
+    viewMenu->addAction(tr("Layout 3 (TS Analysis)"), this, [this]() {
+        m_barChartDock->hide();
+        m_areaChartDock->hide();
+        m_thumbnailDock->hide();
+        m_streamPanelDock->show();
+        m_overlayPanelDock->hide();
+        m_gopViewerDock->hide();
+        m_explorerPanelDock->show();
+        m_propertyPanelDock->show();
+        m_hexViewerPanelDock->show();
+        m_messagesPanelDock->show();
+        m_tr101290PanelDock->show();
+        m_timeDynamicsPanelDock->show();
+        m_bitratePanelDock->show();
+        m_bufferPanelDock->hide();
+        m_graphicsPanelDock->hide();
+        m_commentsPanelDock->hide();
+        m_epgPanelDock->hide();
+        m_blockStatsPanelDock->hide();
+        m_logViewerDock->hide();
+    })->setShortcut(Qt::Key_F7);
+
+    viewMenu->addAction(tr("Layout 4 (Block Analysis)"), this, [this]() {
+        m_barChartDock->show();
+        m_areaChartDock->hide();
+        m_thumbnailDock->show();
+        m_streamPanelDock->show();
+        m_overlayPanelDock->show();
+        m_gopViewerDock->show();
+        m_explorerPanelDock->hide();
+        m_propertyPanelDock->hide();
+        m_hexViewerPanelDock->hide();
+        m_messagesPanelDock->hide();
+        m_tr101290PanelDock->hide();
+        m_timeDynamicsPanelDock->hide();
+        m_bitratePanelDock->hide();
+        m_bufferPanelDock->hide();
+        m_graphicsPanelDock->hide();
+        m_commentsPanelDock->hide();
+        m_epgPanelDock->hide();
+        m_blockStatsPanelDock->show();
+        m_logViewerDock->hide();
+    })->setShortcut(Qt::Key_F8);
+
+    viewMenu->addAction(tr("Layout 5 (All Panels)"), this, [this]() {
+        m_barChartDock->show();
+        m_areaChartDock->show();
+        m_thumbnailDock->show();
+        m_streamPanelDock->show();
+        m_overlayPanelDock->show();
+        m_gopViewerDock->show();
+        m_explorerPanelDock->show();
+        m_propertyPanelDock->show();
+        m_hexViewerPanelDock->show();
+        m_messagesPanelDock->show();
+        m_tr101290PanelDock->show();
+        m_timeDynamicsPanelDock->show();
+        m_bitratePanelDock->show();
+        m_bufferPanelDock->show();
+        m_graphicsPanelDock->show();
+        m_commentsPanelDock->show();
+        m_epgPanelDock->show();
+        m_blockStatsPanelDock->show();
+        m_logViewerDock->show();
+    })->setShortcut(Qt::Key_F9);
+
+    viewMenu->addAction(tr("Layout 6 (All Visible)"), this, [this]() {
+        // Show panels on left and right sides to utilize black space around video
+
+        // Left side - show Explorer
+        m_explorerPanelDock->show();
+
+        // Right side - show Stream Info, Overlays, Properties, Block Stats
+        m_streamPanelDock->show();
+        m_overlayPanelDock->show();
+        m_propertyPanelDock->show();
+        m_blockStatsPanelDock->show();
+
+        // Top - show charts
+        m_barChartDock->show();
+        m_areaChartDock->show();
+
+        // Bottom - show key panels
+        m_thumbnailDock->show();
+        m_gopViewerDock->show();
+        m_messagesPanelDock->show();
+        m_tr101290PanelDock->show();
+        m_timeDynamicsPanelDock->show();
+        m_bitratePanelDock->show();
+        m_bufferPanelDock->show();
+        m_graphicsPanelDock->show();
+        m_commentsPanelDock->show();
+        m_epgPanelDock->show();
+        m_hexViewerPanelDock->show();
+        m_logViewerDock->show();
+
+        // Raise important panels to front
+        m_barChartDock->raise();
+        m_thumbnailDock->raise();
+        m_messagesPanelDock->raise();
+    })->setShortcut(Qt::Key_F10);
 
     viewMenu->addSeparator();
 
@@ -738,8 +890,13 @@ void MainWindow::loadFile(const QString& fileName) {
     // Store current file path
     m_currentFilePath = fileName;
 
-    // Update file path label in toolbar
+    // Update window title with filename (similar to Qt Creator style)
     QFileInfo fileInfo(fileName);
+    QString windowTitle = QString("%1 - VideoStudio - Professional Video Analysis Tool - https://github.com/build-your-own-x-with-ai - 作者：AI开发日志")
+        .arg(fileInfo.fileName());
+    setWindowTitle(windowTitle);
+
+    // Update file path label in toolbar
     QString displayPath = fileInfo.fileName(); // Show just filename by default
     m_filePathLabel->setText(displayPath);
     m_filePathLabel->setToolTip(fileName); // Full path in tooltip
@@ -1591,13 +1748,11 @@ void MainWindow::updateMP4Panels() {
     m_explorerPanelDock->setWindowTitle(tr("MP4 Explorer"));
     qDebug() << "updateMP4Panels: updated dock title";
 
-    // Show Explorer and Property panels
+    // Show Explorer and Property panels (don't auto-show Hex Viewer to avoid freeze)
     m_explorerPanelDock->show();
     m_propertyPanelDock->show();
-    m_hexViewerPanelDock->show();
     m_toggleExplorerAction->setChecked(true);
     m_togglePropertyPanelAction->setChecked(true);
-    m_toggleHexViewerAction->setChecked(true);
     qDebug() << "updateMP4Panels: completed successfully";
 }
 
@@ -1644,13 +1799,11 @@ void MainWindow::updateMKVPanels() {
     // Update dock title
     m_explorerPanelDock->setWindowTitle(tr("MKV Explorer"));
 
-    // Show Explorer and Property panels
+    // Show Explorer and Property panels (don't auto-show Hex Viewer to avoid freeze)
     m_explorerPanelDock->show();
     m_propertyPanelDock->show();
-    m_hexViewerPanelDock->show();
     m_toggleExplorerAction->setChecked(true);
     m_togglePropertyPanelAction->setChecked(true);
-    m_toggleHexViewerAction->setChecked(true);
 }
 
 void MainWindow::updateAVIPanels() {
@@ -1696,13 +1849,11 @@ void MainWindow::updateAVIPanels() {
     // Update dock title
     m_explorerPanelDock->setWindowTitle(tr("AVI Explorer"));
 
-    // Show Explorer and Property panels
+    // Show Explorer and Property panels (don't auto-show Hex Viewer to avoid freeze)
     m_explorerPanelDock->show();
     m_propertyPanelDock->show();
-    m_hexViewerPanelDock->show();
     m_toggleExplorerAction->setChecked(true);
     m_togglePropertyPanelAction->setChecked(true);
-    m_toggleHexViewerAction->setChecked(true);
 }
 
 void MainWindow::updateFLVPanels() {
@@ -1739,13 +1890,11 @@ void MainWindow::updateFLVPanels() {
     // Update dock title
     m_explorerPanelDock->setWindowTitle(tr("FLV Explorer"));
 
-    // Show Explorer and Property panels
+    // Show Explorer and Property panels (don't auto-show Hex Viewer to avoid freeze)
     m_explorerPanelDock->show();
     m_propertyPanelDock->show();
-    m_hexViewerPanelDock->show();
     m_toggleExplorerAction->setChecked(true);
     m_togglePropertyPanelAction->setChecked(true);
-    m_toggleHexViewerAction->setChecked(true);
 }
 
 void MainWindow::saveStreamInfo() {
