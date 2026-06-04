@@ -186,16 +186,16 @@ void DuplicateFrameDetectionDialog::displayResults(const DetectionResult& result
     // Update summary labels
     m_totalFramesLabel->setText(tr("Total Frames: %1").arg(result.totalFrames));
     m_uniqueFramesLabel->setText(tr("Unique Frames: %1").arg(result.uniqueFrames));
-    m_duplicateFramesLabel->setText(tr("Duplicate Frames: %1 (%2%)")
+    m_duplicateFramesLabel->setText(tr("Consecutive Duplicate Frames: %1 (%2%)")
         .arg(result.duplicateFrames)
         .arg(result.duplicatePercentage, 0, 'f', 1));
-    m_duplicateGroupsLabel->setText(tr("Duplicate Groups: %1").arg(result.duplicateGroupCount));
+    m_duplicateGroupsLabel->setText(tr("Freeze Frame Groups: %1").arg(result.duplicateGroupCount));
 
     if (result.maxConsecutiveDuplicates > 0) {
         // Find the group with max consecutive duplicates
         QString freezeInfo;
         for (const auto& group : result.duplicateGroups) {
-            if (group.isConsecutive && group.occurrences == result.maxConsecutiveDuplicates) {
+            if (group.occurrences == result.maxConsecutiveDuplicates) {
                 freezeInfo = QString("%1 frames (frames %2-%3)")
                     .arg(result.maxConsecutiveDuplicates)
                     .arg(group.frameNumbers.first())
@@ -221,8 +221,8 @@ void DuplicateFrameDetectionDialog::displayResults(const DetectionResult& result
         QTableWidgetItem* occItem = new QTableWidgetItem(QString::number(group.occurrences));
         m_groupsTable->setItem(i, 1, occItem);
 
-        // Type
-        QString type = group.isConsecutive ? tr("Consecutive") : tr("Scattered");
+        // Type (always consecutive for adjacent frame comparison)
+        QString type = tr("Consecutive");
         QTableWidgetItem* typeItem = new QTableWidgetItem(type);
         m_groupsTable->setItem(i, 2, typeItem);
 
@@ -232,7 +232,7 @@ void DuplicateFrameDetectionDialog::displayResults(const DetectionResult& result
         m_groupsTable->setItem(i, 3, framesItem);
 
         // Color coding for long consecutive sequences (>= 10 frames)
-        if (group.isConsecutive && group.occurrences >= 10) {
+        if (group.occurrences >= 10) {
             for (int col = 0; col < 4; ++col) {
                 m_groupsTable->item(i, col)->setBackground(QColor(255, 200, 200));
             }
@@ -324,14 +324,14 @@ void DuplicateFrameDetectionDialog::exportReport() {
     QTextStream out(&file);
 
     // Write summary
-    out << "# Duplicate Frame Detection Report\n";
+    out << "# Consecutive Duplicate Frame Detection Report\n";
     out << "# Video: " << (m_decoder ? m_decoder->getFileName() : "Unknown") << "\n";
     out << "\n";
     out << "Total Frames," << m_currentResult.totalFrames << "\n";
     out << "Unique Frames," << m_currentResult.uniqueFrames << "\n";
-    out << "Duplicate Frames," << m_currentResult.duplicateFrames << "\n";
+    out << "Consecutive Duplicate Frames," << m_currentResult.duplicateFrames << "\n";
     out << "Duplicate Percentage," << QString::number(m_currentResult.duplicatePercentage, 'f', 2) << "%\n";
-    out << "Duplicate Groups," << m_currentResult.duplicateGroupCount << "\n";
+    out << "Freeze Frame Groups," << m_currentResult.duplicateGroupCount << "\n";
     out << "Max Consecutive Duplicates," << m_currentResult.maxConsecutiveDuplicates << "\n";
     out << "\n";
 
@@ -341,7 +341,7 @@ void DuplicateFrameDetectionDialog::exportReport() {
     // Write duplicate groups
     for (int i = 0; i < m_currentResult.duplicateGroups.size(); ++i) {
         const DuplicateGroup& group = m_currentResult.duplicateGroups[i];
-        QString type = group.isConsecutive ? "Consecutive" : "Scattered";
+        QString type = "Consecutive";
 
         // Build frame list
         QString frameList;

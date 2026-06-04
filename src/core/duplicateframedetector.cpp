@@ -55,12 +55,14 @@ bool DuplicateFrameDetector::analyzeVideo(VideoDecoder* decoder) {
     int frameCount = decoder->getFrameCount();
     m_result.totalFrames = frameCount;
 
-    qDebug() << "DuplicateFrameDetector: Analyzing" << frameCount << "frames";
+    qDebug() << "DuplicateFrameDetector: Analyzing consecutive frames for" << frameCount << "frames";
 
     // Save current position
     int originalFrame = decoder->getCurrentFrameNumber();
 
-    // Analyze all frames
+    QByteArray prevHash;
+
+    // Analyze all frames and compare with previous frame
     for (int i = 0; i < frameCount; ++i) {
         if (m_cancelled) {
             qDebug() << "DuplicateFrameDetector: Analysis cancelled";
@@ -97,9 +99,24 @@ bool DuplicateFrameDetector::analyzeVideo(VideoDecoder* decoder) {
             continue;
         }
 
-        // Store hash
-        m_hashToFrames[hash].append(i);
+        // Store hash for this frame
         m_frameToHash[i] = hash;
+
+        // Compare with previous frame
+        if (i > 0 && hash == prevHash) {
+            // This frame is duplicate of previous frame
+            // Check if we're extending an existing group or starting a new one
+            if (m_hashToFrames.contains(hash)) {
+                // Extend existing group
+                m_hashToFrames[hash].append(i);
+            } else {
+                // Start new consecutive group (include previous frame)
+                m_hashToFrames[hash].append(i - 1);
+                m_hashToFrames[hash].append(i);
+            }
+        }
+
+        prevHash = hash;
     }
 
     // Restore original position
@@ -107,7 +124,7 @@ bool DuplicateFrameDetector::analyzeVideo(VideoDecoder* decoder) {
         decoder->seekToFrame(originalFrame);
     }
 
-    // Process hash map to identify duplicates
+    // Process hash map to identify consecutive duplicate groups
     processHashMap();
 
     qDebug() << "DuplicateFrameDetector: Analysis complete";
@@ -128,39 +145,41 @@ void DuplicateFrameDetector::processHashMap() {
     m_result.maxConsecutiveDuplicates = 0;
     m_result.duplicateGroupCount = 0;
 
+    // Count unique frames (frames not in any duplicate group)
+    QSet<int> duplicateFrameSet;
+    for (auto it = m_hashToFrames.begin(); it != m_hashToFrames.end(); ++it) {
+        const QVector<int>& frameNumbers = it.value();
+        for (int frameNum : frameNumbers) {
+            duplicateFrameSet.insert(frameNum);
+        }
+    }
+
+    m_result.duplicateFrames = duplicateFrameSet.size();
+    m_result.uniqueFrames = m_result.totalFrames - m_result.duplicateFrames;
+
+    // Process each duplicate group (all are consecutive by design)
     for (auto it = m_hashToFrames.begin(); it != m_hashToFrames.end(); ++it) {
         const QByteArray& hash = it.key();
         const QVector<int>& frameNumbers = it.value();
 
-        if (frameNumbers.size() == 1) {
-            // Unique frame
-            m_result.uniqueFrames++;
-        } else {
-            // Duplicate group
-            m_result.duplicateFrames += frameNumbers.size();
-            m_result.duplicateGroupCount++;
-
-            DuplicateGroup group;
-            group.frameHash = hash;
-            group.frameNumbers = frameNumbers;
-            group.occurrences = frameNumbers.size();
-
-            // Check if consecutive
-            group.isConsecutive = true;
-            for (int i = 1; i < frameNumbers.size(); ++i) {
-                if (frameNumbers[i] != frameNumbers[i - 1] + 1) {
-                    group.isConsecutive = false;
-                    break;
-                }
-            }
-
-            // Track max consecutive duplicates
-            if (group.isConsecutive && group.occurrences > m_result.maxConsecutiveDuplicates) {
-                m_result.maxConsecutiveDuplicates = group.occurrences;
-            }
-
-            m_result.duplicateGroups.append(group);
+        if (frameNumbers.size() < 2) {
+            continue; // Should not happen with new logic
         }
+
+        m_result.duplicateGroupCount++;
+
+        DuplicateGroup group;
+        group.frameHash = hash;
+        group.frameNumbers = frameNumbers;
+        group.occurrences = frameNumbers.size();
+        group.isConsecutive = true; // Always true for consecutive frame comparison
+
+        // Track max consecutive duplicates
+        if (group.occurrences > m_result.maxConsecutiveDuplicates) {
+            m_result.maxConsecutiveDuplicates = group.occurrences;
+        }
+
+        m_result.duplicateGroups.append(group);
     }
 
     // Sort groups by occurrence count (descending)
