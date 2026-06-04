@@ -33,6 +33,7 @@ set(SOURCES
     src/core/flvparser.cpp
     src/core/yuvreader.cpp
     src/core/timinganalyzer.cpp
+    src/core/duplicateframedetector.cpp
     src/widgets/videooutput.cpp
     src/widgets/barchart.cpp
     src/widgets/thumbnailbar.cpp
@@ -61,6 +62,7 @@ set(SOURCES
     src/dialogs/referencecomparisondialog.cpp
     src/dialogs/yuvexportdialog.cpp
     src/dialogs/yuvviewerdialog.cpp
+    src/dialogs/duplicateframedetectiondialog.cpp
 )
 
 set(HEADERS
@@ -76,6 +78,7 @@ set(HEADERS
     src/core/yuvreader.h
     src/core/tr101290data.h
     src/core/timinganalyzer.h
+    src/core/duplicateframedetector.h
     src/widgets/videooutput.h
     src/widgets/barchart.h
     src/widgets/thumbnailbar.h
@@ -104,6 +107,7 @@ set(HEADERS
     src/dialogs/referencecomparisondialog.h
     src/dialogs/yuvexportdialog.h
     src/dialogs/yuvviewerdialog.h
+    src/dialogs/duplicateframedetectiondialog.h
 )
 
 # Create executable

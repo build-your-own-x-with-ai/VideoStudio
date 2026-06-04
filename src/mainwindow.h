@@ -93,6 +93,7 @@ private slots:
     void showYUVViewer();
     void captureScreenshot();
     void showAboutDialog();
+    void showDuplicateFrameDetection();
 
 public slots:
     void appendLog(const QString& message, QtMsgType type);

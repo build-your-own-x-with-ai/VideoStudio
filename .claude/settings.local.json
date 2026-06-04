@@ -50,7 +50,8 @@
       "Bash(killall Finder)",
       "Bash(plutil -p /Users/i/Code/VideoStudio/build/VideoStudio.app/Contents/Info.plist)",
       "Bash(sudo rm *)",
-      "Bash(/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Users/i/Code/VideoStudio/build/VideoStudio.app)"
+      "Bash(/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Users/i/Code/VideoStudio/build/VideoStudio.app)",
+      "Bash(grep -E \"\\\\.h$|\\\\.cpp$\")"
     ]
   }
 }

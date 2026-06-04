@@ -14,6 +14,7 @@
 #include "dialogs/csvexportdialog.h"
 #include "dialogs/yuvexportdialog.h"
 #include "dialogs/yuvviewerdialog.h"
+#include "dialogs/duplicateframedetectiondialog.h"
 #include "widgets/thumbnailbar.h"
 #include "widgets/gopviewer.h"
 #include "widgets/packetview.h"
@@ -789,6 +790,13 @@ void MainWindow::createMenus() {
     yuvViewerAction->setShortcut(tr("Ctrl+Y"));
     yuvViewerAction->setStatusTip(tr("Open and analyze raw YUV files"));
     connect(yuvViewerAction, &QAction::triggered, this, &MainWindow::showYUVViewer);
+
+    toolsMenu->addSeparator();
+
+    QAction* duplicateDetectionAction = toolsMenu->addAction(tr("&Duplicate Frame Detection..."));
+    duplicateDetectionAction->setShortcut(tr("Ctrl+D"));
+    duplicateDetectionAction->setStatusTip(tr("Detect duplicate and freeze frames"));
+    connect(duplicateDetectionAction, &QAction::triggered, this, &MainWindow::showDuplicateFrameDetection);
 
     // Help menu
     QMenu* helpMenu = menuBar()->addMenu(tr("&Help"));
@@ -2005,6 +2013,22 @@ void MainWindow::showYUVViewer() {
 
 void MainWindow::showAboutDialog() {
     AboutDialog dialog(this);
+    dialog.exec();
+}
+
+void MainWindow::showDuplicateFrameDetection() {
+    if (!m_decoder || !m_decoder->isOpen()) {
+        QMessageBox::warning(this, tr("No Video Loaded"),
+            tr("Please open a video file first."));
+        return;
+    }
+
+    DuplicateFrameDetectionDialog dialog(m_decoder.get(), this);
+
+    // Connect dialog signal to seek slot
+    connect(&dialog, &DuplicateFrameDetectionDialog::seekToFrame,
+            this, &MainWindow::onFrameClicked);
+
     dialog.exec();
 }
 

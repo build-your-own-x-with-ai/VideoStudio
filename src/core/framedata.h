@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QVector>
+#include <QByteArray>
 #include <cstdint>
 
 extern "C" {
@@ -43,10 +44,13 @@ struct FrameInfo {
     // Block-level information (optional, for detailed analysis)
     QVector<BlockInfo> blocks;
 
+    // Frame hash for duplicate detection (MD5 of pixel data)
+    QByteArray frameHash;
+
     FrameInfo()
         : frameNumber(0), pts(0), dts(0), offset(0),
           frameType(AV_PICTURE_TYPE_NONE), size(0), qp(0),
-          isKeyFrame(false), bitrate(0.0), timestamp(0.0) {}
+          isKeyFrame(false), bitrate(0.0), timestamp(0.0), frameHash() {}
 };
 
 class FrameIndex {
