@@ -23,6 +23,7 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 
 #### Quality & Export
 - **Quality Metrics**: PSNR/SSIM comparison between reference and distorted videos
+- **Duplicate Frame Detection**: Identify and analyze consecutive duplicate frames with configurable similarity thresholds
 - **YUV Export**: Export single frames or frame ranges as raw YUV files
 - **CSV Export**: Export frame metrics, statistics, GOP structure, and bitrate data
 - **Stream Info Export**: Save detailed stream information to text files
@@ -83,6 +84,13 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 ### Layout 7: YUV Viewer
 ![YUV Viewer](docs/screenshots/layout7_yuv_viewer.png)
 *Raw YUV file viewer with format detection and playback controls*
+
+### Layout 8: Duplicate Frame Detection
+![Duplicate Frame Detection - Analysis](docs/screenshots/duplicate_detection_analysis.png)
+*Duplicate frame detection dialog showing analysis progress and similarity threshold controls*
+
+![Duplicate Frame Detection - Results](docs/screenshots/duplicate_detection_results.png)
+*Analysis results displaying unique frames, duplicate groups, and freeze frame statistics with detailed frame number listings*
 
 ## Requirements
 

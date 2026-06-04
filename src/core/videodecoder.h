@@ -27,6 +27,7 @@ public:
     bool isOpen() const { return m_formatContext != nullptr; }
 
     AVFrame* decodeNextFrame();
+    AVFrame* getCurrentFrame() const { return m_frame; }
     bool seekToFrame(int frameNumber);
     bool seekToTime(double seconds);
 

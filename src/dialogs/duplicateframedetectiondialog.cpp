@@ -65,9 +65,9 @@ void DuplicateFrameDetectionDialog::setupUI() {
 
     m_thresholdHintLabel = new QLabel(
         tr("0.000 = Exact match only (fastest)\n"
-           "0.001 = Nearly identical frames\n"
-           "0.005 = Very similar frames\n"
-           "0.01+ = Allow minor differences"), this);
+           "0.001-0.005 = Nearly identical (1-5 gray levels avg diff)\n"
+           "0.01-0.02 = Very similar frames\n"
+           "0.05+ = Allow noticeable differences"), this);
     m_thresholdHintLabel->setStyleSheet("color: gray; font-size: 9pt;");
     analysisLayout->addWidget(m_thresholdHintLabel);
 
@@ -160,7 +160,9 @@ void DuplicateFrameDetectionDialog::startAnalysis() {
 
     // Set the similarity threshold from UI
     double threshold = m_thresholdSpinBox->value();
+    qDebug() << "DuplicateFrameDetectionDialog: Setting threshold to" << threshold;
     m_detector->setSimilarityThreshold(threshold);
+    qDebug() << "DuplicateFrameDetectionDialog: Threshold confirmed as" << m_detector->getSimilarityThreshold();
 
     // Disable start button, enable cancel
     m_startButton->setEnabled(false);
@@ -178,8 +180,12 @@ void DuplicateFrameDetectionDialog::startAnalysis() {
     m_statusLabel->setText(tr("Starting analysis..."));
 
     // Run analysis in background thread
+    qDebug() << "DuplicateFrameDetectionDialog: Starting background analysis thread";
     QFuture<bool> future = QtConcurrent::run([this]() {
-        return m_detector->analyzeVideo(m_decoder);
+        qDebug() << "DuplicateFrameDetectionDialog: Inside background thread, calling analyzeVideo()";
+        bool result = m_detector->analyzeVideo(m_decoder);
+        qDebug() << "DuplicateFrameDetectionDialog: analyzeVideo() returned" << result;
+        return result;
     });
 
     // Watch for completion (analysis completed signal will be emitted)

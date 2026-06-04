@@ -52,15 +52,15 @@ QByteArray DuplicateFrameDetector::computeFrameHash(AVFrame* frame) {
 
 double DuplicateFrameDetector::computeFrameSimilarity(AVFrame* frame1, AVFrame* frame2) {
     if (!frame1 || !frame2 || !frame1->data[0] || !frame2->data[0]) {
-        return 0.0;
+        return 1.0;  // Return high difference if invalid
     }
 
     // Ensure frames have same dimensions
     if (frame1->width != frame2->width || frame1->height != frame2->height) {
-        return 0.0;
+        return 1.0;  // Return high difference if dimensions don't match
     }
 
-    // Calculate MSE (Mean Squared Error) on Y plane only for speed
+    // Calculate average absolute difference on Y plane only for speed
     uint64_t totalDiff = 0;
     int pixelCount = frame1->width * frame1->height;
 
@@ -69,15 +69,17 @@ double DuplicateFrameDetector::computeFrameSimilarity(AVFrame* frame1, AVFrame* 
         const uint8_t* row2 = frame2->data[0] + y * frame2->linesize[0];
 
         for (int x = 0; x < frame1->width; x++) {
-            int diff = row1[x] - row2[x];
-            totalDiff += diff * diff;
+            int diff = static_cast<int>(row1[x]) - static_cast<int>(row2[x]);
+            totalDiff += (diff < 0) ? -diff : diff;  // Absolute value
         }
     }
 
-    // Calculate normalized difference (0.0 = identical, 1.0 = maximum difference)
-    // Maximum possible MSE for 8-bit data is 255^2 = 65025
-    double mse = static_cast<double>(totalDiff) / pixelCount;
-    double normalizedDiff = mse / 65025.0;
+    // Calculate average pixel difference (0-255 range)
+    // Normalize to 0.0-1.0 range where:
+    // 0.0 = identical frames
+    // 1.0 = maximum difference (all pixels differ by 255)
+    double avgDiff = static_cast<double>(totalDiff) / pixelCount;
+    double normalizedDiff = avgDiff / 255.0;
 
     return normalizedDiff;
 }
@@ -102,12 +104,20 @@ bool DuplicateFrameDetector::analyzeVideo(VideoDecoder* decoder) {
     // Save current position
     int originalFrame = decoder->getCurrentFrameNumber();
 
-    AVFrame* prevFrame = nullptr;
+    // Store previous frame's pixel data (Y plane only) for similarity comparison
+    QByteArray prevFrameData;
+    int prevFrameWidth = 0;
+    int prevFrameHeight = 0;
+
     QByteArray prevHash;
     int groupStartFrame = -1;
 
     // Analyze all frames and compare with previous frame
+    qDebug() << "DuplicateFrameDetector: Starting frame analysis, frameCount=" << frameCount << "threshold=" << m_similarityThreshold;
     for (int i = 0; i < frameCount; ++i) {
+        if (i <= 5) {
+            qDebug() << "DuplicateFrameDetector: Processing frame" << i;
+        }
         if (m_cancelled) {
             qDebug() << "DuplicateFrameDetector: Analysis cancelled";
             // Restore original position
@@ -123,30 +133,83 @@ bool DuplicateFrameDetector::analyzeVideo(VideoDecoder* decoder) {
             emit progressUpdated(i + 1, frameCount, status);
         }
 
-        // Seek to frame
+        // Seek to frame (this also decodes the frame internally)
         if (!decoder->seekToFrame(i)) {
             qDebug() << "DuplicateFrameDetector: Failed to seek to frame" << i;
             continue;
         }
 
-        // Decode frame
-        AVFrame* frame = decoder->decodeNextFrame();
+        // Get the current frame (already decoded by seekToFrame)
+        AVFrame* frame = decoder->getCurrentFrame();
         if (!frame) {
-            qDebug() << "DuplicateFrameDetector: Failed to decode frame" << i;
+            qDebug() << "DuplicateFrameDetector: Failed to get frame" << i;
             continue;
         }
 
         bool isDuplicate = false;
 
-        if (i > 0 && prevFrame) {
+        if (i > 0 && !prevFrameData.isEmpty()) {
             if (m_similarityThreshold <= 0.0) {
                 // Use exact hash matching for threshold = 0
                 QByteArray hash = computeFrameHash(frame);
                 isDuplicate = (hash == prevHash);
+                if (i <= 5) {
+                    qDebug() << "Frame" << i << ": Using hash comparison, isDuplicate=" << isDuplicate;
+                }
             } else {
                 // Use similarity calculation for threshold > 0
-                double diff = computeFrameSimilarity(prevFrame, frame);
-                isDuplicate = (diff <= m_similarityThreshold);
+                // Compare current frame's Y plane with saved previous frame data
+                if (i <= 5) {
+                    qDebug() << "Frame" << i << ": Entering similarity calculation branch";
+                }
+                if (frame->width == prevFrameWidth && frame->height == prevFrameHeight) {
+                    uint64_t totalDiff = 0;
+                    int pixelCount = frame->width * frame->height;
+
+                    const uint8_t* prevData = reinterpret_cast<const uint8_t*>(prevFrameData.constData());
+
+                    // Debug: print first pixel values of current and previous frame
+                    if (i <= 5) {
+                        qDebug() << "Frame" << i << "current: first 10 pixels="
+                                 << (int)frame->data[0][0] << (int)frame->data[0][1] << (int)frame->data[0][2]
+                                 << (int)frame->data[0][3] << (int)frame->data[0][4] << (int)frame->data[0][5]
+                                 << (int)frame->data[0][6] << (int)frame->data[0][7] << (int)frame->data[0][8] << (int)frame->data[0][9];
+                        qDebug() << "Frame" << i << "prevData: first 10 pixels="
+                                 << (int)prevData[0] << (int)prevData[1] << (int)prevData[2]
+                                 << (int)prevData[3] << (int)prevData[4] << (int)prevData[5]
+                                 << (int)prevData[6] << (int)prevData[7] << (int)prevData[8] << (int)prevData[9];
+                    }
+
+                    for (int y = 0; y < frame->height; y++) {
+                        const uint8_t* currentRow = frame->data[0] + y * frame->linesize[0];
+                        const uint8_t* prevRow = prevData + y * frame->width;
+
+                        for (int x = 0; x < frame->width; x++) {
+                            int diff = static_cast<int>(currentRow[x]) - static_cast<int>(prevRow[x]);
+                            totalDiff += (diff < 0) ? -diff : diff;
+                        }
+                    }
+
+                    double avgDiff = static_cast<double>(totalDiff) / pixelCount;
+                    double normalizedDiff = avgDiff / 255.0;
+                    isDuplicate = (normalizedDiff <= m_similarityThreshold);
+
+                    // Debug: print first 10 comparisons
+                    if (i <= 10) {
+                        qDebug() << "Frame" << i << "vs" << (i-1) << ": avgDiff=" << avgDiff
+                                 << "normalized=" << normalizedDiff
+                                 << "threshold=" << m_similarityThreshold
+                                 << "isDuplicate=" << isDuplicate;
+                    }
+                } else {
+                    if (i <= 5) {
+                        qDebug() << "Frame" << i << ": Frame dimensions don't match!";
+                    }
+                }
+            }
+        } else {
+            if (i <= 5) {
+                qDebug() << "Frame" << i << ": Skipping comparison (i=" << i << ", prevFrameData.isEmpty=" << prevFrameData.isEmpty() << ")";
             }
         }
 
@@ -155,7 +218,7 @@ bool DuplicateFrameDetector::analyzeVideo(VideoDecoder* decoder) {
             if (groupStartFrame == -1) {
                 // Start new group
                 groupStartFrame = i - 1;
-                QByteArray groupHash = computeFrameHash(prevFrame);
+                QByteArray groupHash = prevHash;
                 m_hashToFrames[groupHash].append(i - 1);
                 m_hashToFrames[groupHash].append(i);
             } else {
@@ -173,7 +236,25 @@ bool DuplicateFrameDetector::analyzeVideo(VideoDecoder* decoder) {
             prevHash = hash;
         }
 
-        prevFrame = frame;
+        // Save current frame's Y plane data for next comparison
+        prevFrameWidth = frame->width;
+        prevFrameHeight = frame->height;
+        prevFrameData.resize(frame->width * frame->height);
+        uint8_t* destData = reinterpret_cast<uint8_t*>(prevFrameData.data());
+        for (int y = 0; y < frame->height; y++) {
+            memcpy(destData + y * frame->width,
+                   frame->data[0] + y * frame->linesize[0],
+                   frame->width);
+        }
+
+        // Debug: print first pixel values
+        if (i <= 5) {
+            const uint8_t* firstPixels = reinterpret_cast<const uint8_t*>(prevFrameData.constData());
+            qDebug() << "Frame" << i << "saved: first 10 pixels="
+                     << (int)firstPixels[0] << (int)firstPixels[1] << (int)firstPixels[2]
+                     << (int)firstPixels[3] << (int)firstPixels[4] << (int)firstPixels[5]
+                     << (int)firstPixels[6] << (int)firstPixels[7] << (int)firstPixels[8] << (int)firstPixels[9];
+        }
     }
 
     // Restore original position

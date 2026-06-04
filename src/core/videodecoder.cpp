@@ -175,6 +175,15 @@ AVFrame* VideoDecoder::decodeNextFrame() {
             if (ret == 0) {
                 m_currentFrameNumber++;
                 av_packet_unref(m_packet);
+
+                // Debug: print first 10 pixels after decode
+                if (m_currentFrameNumber <= 5 && m_frame && m_frame->data[0]) {
+                    qDebug() << "decodeNextFrame: frame" << m_currentFrameNumber << "first 10 pixels ="
+                             << (int)m_frame->data[0][0] << (int)m_frame->data[0][1] << (int)m_frame->data[0][2]
+                             << (int)m_frame->data[0][3] << (int)m_frame->data[0][4] << (int)m_frame->data[0][5]
+                             << (int)m_frame->data[0][6] << (int)m_frame->data[0][7] << (int)m_frame->data[0][8] << (int)m_frame->data[0][9];
+                }
+
                 qDebug() << "decodeNextFrame: successfully decoded frame" << m_currentFrameNumber;
                 return m_frame;
             } else if (ret != AVERROR(EAGAIN)) {
@@ -225,7 +234,19 @@ bool VideoDecoder::seekToFrame(int frameNumber) {
             }
         }
         avcodec_flush_buffers(m_codecContext);
-        m_currentFrameNumber = 0;
+        m_currentFrameNumber = -1;  // Will be incremented to 0 in decodeNextFrame
+        // Decode the first frame
+        if (!decodeNextFrame()) {
+            qDebug() << "seekToFrame: failed to decode frame 0";
+            return false;
+        }
+        // Debug: print first 10 pixels after decode
+        if (m_frame && m_frame->data[0]) {
+            qDebug() << "seekToFrame(0): first 10 pixels ="
+                     << (int)m_frame->data[0][0] << (int)m_frame->data[0][1] << (int)m_frame->data[0][2]
+                     << (int)m_frame->data[0][3] << (int)m_frame->data[0][4] << (int)m_frame->data[0][5]
+                     << (int)m_frame->data[0][6] << (int)m_frame->data[0][7] << (int)m_frame->data[0][8] << (int)m_frame->data[0][9];
+        }
         qDebug() << "seekToFrame: successfully positioned at frame 0";
         return true;
     }
@@ -280,6 +301,15 @@ bool VideoDecoder::seekToFrame(int frameNumber) {
     }
 
     m_currentFrameNumber = frameNumber;
+
+    // Debug: print first 10 pixels after seek
+    if (frameNumber <= 5 && m_frame && m_frame->data[0]) {
+        qDebug() << "seekToFrame(" << frameNumber << "): first 10 pixels ="
+                 << (int)m_frame->data[0][0] << (int)m_frame->data[0][1] << (int)m_frame->data[0][2]
+                 << (int)m_frame->data[0][3] << (int)m_frame->data[0][4] << (int)m_frame->data[0][5]
+                 << (int)m_frame->data[0][6] << (int)m_frame->data[0][7] << (int)m_frame->data[0][8] << (int)m_frame->data[0][9];
+    }
+
     qDebug() << "seekToFrame: successfully reached frame" << frameNumber;
     return true;
 }
@@ -357,14 +387,9 @@ bool VideoDecoder::buildFrameIndex() {
                     frameInfo.frameType = frame->pict_type;
                     frameInfo.qp = frame->quality;
 
-                    // I-frames should always be key frames
-                    // Use frame type as the authoritative source
-                    if (frame->pict_type == AV_PICTURE_TYPE_I) {
-                        frameInfo.isKeyFrame = true;
-                    } else {
-                        // For non-I frames, trust the packet flag
-                        frameInfo.isKeyFrame = (packet->flags & AV_PKT_FLAG_KEY) != 0;
-                    }
+                    // Use packet flag as authoritative source for keyframes
+                    // Not all I-frames are keyframes (some I-frames depend on previous frames)
+                    frameInfo.isKeyFrame = (packet->flags & AV_PKT_FLAG_KEY) != 0;
 
                     // Only add frame if we successfully decoded it
                     m_frameIndex.addFrame(frameInfo);
@@ -389,12 +414,11 @@ bool VideoDecoder::buildFrameIndex() {
     av_frame_free(&frame);
     av_packet_free(&packet);
 
-    // Seek back to beginning and reset decoder state
-    av_seek_frame(m_formatContext, m_videoStreamIndex, 0, AVSEEK_FLAG_BACKWARD);
-    avcodec_flush_buffers(m_codecContext);
-
-    // Reset frame counter so next decode starts from frame 0
-    m_currentFrameNumber = 0;
+    // Seek back to beginning using seekToFrame to properly decode first frame
+    m_currentFrameNumber = -1;  // Will be set by seekToFrame
+    if (!seekToFrame(0)) {
+        qDebug() << "buildFrameIndex: failed to seek back to frame 0";
+    }
 
     m_indexBuilt = true;
     emit indexingComplete();
