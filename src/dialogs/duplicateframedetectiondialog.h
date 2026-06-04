@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QProgressBar>
 #include <QTableWidget>
+#include <QSet>
 #include "core/duplicateframedetector.h"
 
 namespace VideoStudio {
@@ -21,6 +22,7 @@ public:
 
 signals:
     void seekToFrame(int frameNumber);
+    void duplicateFramesDetected(const QSet<int>& duplicateFrames);
 
 private slots:
     void startAnalysis();

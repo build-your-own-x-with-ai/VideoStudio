@@ -2029,6 +2029,10 @@ void MainWindow::showDuplicateFrameDetection() {
     connect(&dialog, &DuplicateFrameDetectionDialog::seekToFrame,
             this, &MainWindow::onFrameClicked);
 
+    // Connect duplicate frames signal to GOP viewer
+    connect(&dialog, &DuplicateFrameDetectionDialog::duplicateFramesDetected,
+            m_gopViewer, &GOPViewer::setDuplicateFrames);
+
     dialog.exec();
 }
 

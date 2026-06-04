@@ -257,8 +257,6 @@ bool VideoDecoder::seekToFrame(int frameNumber) {
 
     int64_t timestamp = keyframeInfo->pts;
     qDebug() << "seekToFrame: seeking to keyframe PTS" << timestamp;
-
-    // Use AVSEEK_FLAG_BACKWARD to ensure we land at or before the keyframe
     int ret = av_seek_frame(m_formatContext, m_videoStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD);
     if (ret < 0) {
         char errbuf[128];
@@ -274,10 +272,8 @@ bool VideoDecoder::seekToFrame(int frameNumber) {
     int framesToDecode = frameNumber - keyframeIndex;
     qDebug() << "seekToFrame: need to decode" << framesToDecode << "frames from keyframe to target";
 
-    AVFrame* decodedFrame = nullptr;
     for (int i = 0; i <= framesToDecode; i++) {
-        decodedFrame = decodeNextFrame();
-        if (!decodedFrame) {
+        if (!decodeNextFrame()) {
             qDebug() << "seekToFrame: decodeNextFrame failed at frame" << i << "of" << framesToDecode;
             return false;
         }

@@ -180,6 +180,15 @@ void DuplicateFrameDetectionDialog::onAnalysisCompleted(const DetectionResult& r
     m_exportButton->setEnabled(true);
     m_progressBar->setValue(100);
     m_statusLabel->setText(tr("Analysis complete"));
+
+    // Emit signal with duplicate frame set for GOP viewer
+    QSet<int> duplicateFrames;
+    for (const auto& group : result.duplicateGroups) {
+        for (int frameNum : group.frameNumbers) {
+            duplicateFrames.insert(frameNum);
+        }
+    }
+    emit duplicateFramesDetected(duplicateFrames);
 }
 
 void DuplicateFrameDetectionDialog::displayResults(const DetectionResult& result) {

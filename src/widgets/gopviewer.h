@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QVector>
+#include <QSet>
 
 namespace VideoStudio {
 
@@ -25,6 +26,7 @@ public:
 
     void setFrameIndex(const FrameIndex* frameIndex);
     void setCurrentFrame(int frameNumber);
+    void setDuplicateFrames(const QSet<int>& duplicateFrames);
     void clear();
 
 signals:
@@ -48,6 +50,7 @@ private:
 
     const FrameIndex* m_frameIndex;
     QVector<GOPInfo> m_gops;
+    QSet<int> m_duplicateFrames;
     int m_currentFrame;
     int m_viewStartFrame;
     int m_viewEndFrame;

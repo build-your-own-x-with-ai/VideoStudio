@@ -64,6 +64,11 @@ void GOPViewer::setCurrentFrame(int frameNumber) {
     update();
 }
 
+void GOPViewer::setDuplicateFrames(const QSet<int>& duplicateFrames) {
+    m_duplicateFrames = duplicateFrames;
+    update();
+}
+
 void GOPViewer::clear() {
     m_frameIndex = nullptr;
     m_gops.clear();
@@ -245,6 +250,10 @@ void GOPViewer::drawFrame(QPainter& painter, int frameNumber, int x, int y, int 
     if (frameNumber == m_currentFrame) {
         painter.setPen(QPen(Qt::yellow, 3));
         painter.setBrush(frameColor);
+    } else if (m_duplicateFrames.contains(frameNumber)) {
+        // Mark duplicate frames with orange border
+        painter.setPen(QPen(QColor(255, 165, 0), 2));
+        painter.setBrush(frameColor);
     } else {
         painter.setPen(QPen(Qt::white, 1));
         painter.setBrush(frameColor);
@@ -252,6 +261,17 @@ void GOPViewer::drawFrame(QPainter& painter, int frameNumber, int x, int y, int 
 
     // Draw frame rectangle
     painter.drawRect(x, y, w, h);
+
+    // Draw duplicate marker overlay if this is a duplicate frame
+    if (m_duplicateFrames.contains(frameNumber) && frameNumber != m_currentFrame) {
+        // Draw a small "D" badge in the corner
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(255, 165, 0));
+        painter.drawEllipse(x + w - 12, y + 2, 10, 10);
+        painter.setPen(Qt::black);
+        painter.setFont(QFont("Arial", 7, QFont::Bold));
+        painter.drawText(QRect(x + w - 12, y + 2, 10, 10), Qt::AlignCenter, "D");
+    }
 
     // Draw frame type label
     painter.setPen(Qt::white);
