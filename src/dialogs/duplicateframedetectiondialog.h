@@ -6,6 +6,8 @@
 #include <QLabel>
 #include <QProgressBar>
 #include <QTableWidget>
+#include <QSlider>
+#include <QDoubleSpinBox>
 #include <QSet>
 #include "core/duplicateframedetector.h"
 
@@ -32,6 +34,7 @@ private slots:
     void onGroupSelected(int row, int column);
     void goToFrame();
     void exportReport();
+    void onThresholdChanged(double value);
 
 private:
     void setupUI();
@@ -43,6 +46,8 @@ private:
 
     // UI components
     QLabel* m_videoInfoLabel;
+    QDoubleSpinBox* m_thresholdSpinBox;
+    QLabel* m_thresholdHintLabel;
     QPushButton* m_startButton;
     QPushButton* m_cancelButton;
     QProgressBar* m_progressBar;

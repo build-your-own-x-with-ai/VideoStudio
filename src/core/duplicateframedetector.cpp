@@ -8,10 +8,19 @@ namespace VideoStudio {
 DuplicateFrameDetector::DuplicateFrameDetector(QObject* parent)
     : QObject(parent)
     , m_cancelled(false)
+    , m_similarityThreshold(0.0)  // Default: exact match only
 {
 }
 
 DuplicateFrameDetector::~DuplicateFrameDetector() {
+}
+
+void DuplicateFrameDetector::setSimilarityThreshold(double threshold) {
+    m_similarityThreshold = qBound(0.0, threshold, 1.0);
+}
+
+double DuplicateFrameDetector::getSimilarityThreshold() const {
+    return m_similarityThreshold;
 }
 
 QByteArray DuplicateFrameDetector::computeFrameHash(AVFrame* frame) {
@@ -41,6 +50,38 @@ QByteArray DuplicateFrameDetector::computeFrameHash(AVFrame* frame) {
     return hash.result();
 }
 
+double DuplicateFrameDetector::computeFrameSimilarity(AVFrame* frame1, AVFrame* frame2) {
+    if (!frame1 || !frame2 || !frame1->data[0] || !frame2->data[0]) {
+        return 0.0;
+    }
+
+    // Ensure frames have same dimensions
+    if (frame1->width != frame2->width || frame1->height != frame2->height) {
+        return 0.0;
+    }
+
+    // Calculate MSE (Mean Squared Error) on Y plane only for speed
+    uint64_t totalDiff = 0;
+    int pixelCount = frame1->width * frame1->height;
+
+    for (int y = 0; y < frame1->height; y++) {
+        const uint8_t* row1 = frame1->data[0] + y * frame1->linesize[0];
+        const uint8_t* row2 = frame2->data[0] + y * frame2->linesize[0];
+
+        for (int x = 0; x < frame1->width; x++) {
+            int diff = row1[x] - row2[x];
+            totalDiff += diff * diff;
+        }
+    }
+
+    // Calculate normalized difference (0.0 = identical, 1.0 = maximum difference)
+    // Maximum possible MSE for 8-bit data is 255^2 = 65025
+    double mse = static_cast<double>(totalDiff) / pixelCount;
+    double normalizedDiff = mse / 65025.0;
+
+    return normalizedDiff;
+}
+
 bool DuplicateFrameDetector::analyzeVideo(VideoDecoder* decoder) {
     if (!decoder || !decoder->isOpen()) {
         qDebug() << "DuplicateFrameDetector: Invalid decoder";
@@ -56,11 +97,14 @@ bool DuplicateFrameDetector::analyzeVideo(VideoDecoder* decoder) {
     m_result.totalFrames = frameCount;
 
     qDebug() << "DuplicateFrameDetector: Analyzing consecutive frames for" << frameCount << "frames";
+    qDebug() << "DuplicateFrameDetector: Similarity threshold:" << m_similarityThreshold;
 
     // Save current position
     int originalFrame = decoder->getCurrentFrameNumber();
 
+    AVFrame* prevFrame = nullptr;
     QByteArray prevHash;
+    int groupStartFrame = -1;
 
     // Analyze all frames and compare with previous frame
     for (int i = 0; i < frameCount; ++i) {
@@ -92,31 +136,44 @@ bool DuplicateFrameDetector::analyzeVideo(VideoDecoder* decoder) {
             continue;
         }
 
-        // Compute hash
-        QByteArray hash = computeFrameHash(frame);
-        if (hash.isEmpty()) {
-            qDebug() << "DuplicateFrameDetector: Failed to compute hash for frame" << i;
-            continue;
-        }
+        bool isDuplicate = false;
 
-        // Store hash for this frame
-        m_frameToHash[i] = hash;
-
-        // Compare with previous frame
-        if (i > 0 && hash == prevHash) {
-            // This frame is duplicate of previous frame
-            // Check if we're extending an existing group or starting a new one
-            if (m_hashToFrames.contains(hash)) {
-                // Extend existing group
-                m_hashToFrames[hash].append(i);
+        if (i > 0 && prevFrame) {
+            if (m_similarityThreshold <= 0.0) {
+                // Use exact hash matching for threshold = 0
+                QByteArray hash = computeFrameHash(frame);
+                isDuplicate = (hash == prevHash);
             } else {
-                // Start new consecutive group (include previous frame)
-                m_hashToFrames[hash].append(i - 1);
-                m_hashToFrames[hash].append(i);
+                // Use similarity calculation for threshold > 0
+                double diff = computeFrameSimilarity(prevFrame, frame);
+                isDuplicate = (diff <= m_similarityThreshold);
             }
         }
 
-        prevHash = hash;
+        if (isDuplicate) {
+            // This frame is duplicate/similar to previous frame
+            if (groupStartFrame == -1) {
+                // Start new group
+                groupStartFrame = i - 1;
+                QByteArray groupHash = computeFrameHash(prevFrame);
+                m_hashToFrames[groupHash].append(i - 1);
+                m_hashToFrames[groupHash].append(i);
+            } else {
+                // Extend existing group
+                QByteArray groupHash = m_frameToHash[groupStartFrame];
+                m_hashToFrames[groupHash].append(i);
+            }
+            m_frameToHash[i] = m_frameToHash[groupStartFrame];
+        } else {
+            // Not a duplicate, end current group if any
+            groupStartFrame = -1;
+            // Compute and store hash for current frame
+            QByteArray hash = computeFrameHash(frame);
+            m_frameToHash[i] = hash;
+            prevHash = hash;
+        }
+
+        prevFrame = frame;
     }
 
     // Restore original position

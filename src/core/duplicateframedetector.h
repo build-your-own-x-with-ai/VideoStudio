@@ -53,18 +53,24 @@ public:
     bool isFrameDuplicate(int frameNumber) const;
     QVector<int> getDuplicatesOf(int frameNumber) const;
 
+    // Set similarity threshold (0.0 = exact match only, 1.0 = allow any difference)
+    void setSimilarityThreshold(double threshold);
+    double getSimilarityThreshold() const;
+
 signals:
     void progressUpdated(int current, int total, const QString& status);
     void analysisCompleted(const DetectionResult& result);
 
 private:
     QByteArray computeFrameHash(AVFrame* frame);
+    double computeFrameSimilarity(AVFrame* frame1, AVFrame* frame2);
     void processHashMap();
 
     QMap<QByteArray, QVector<int>> m_hashToFrames;
     QMap<int, QByteArray> m_frameToHash;
     DetectionResult m_result;
     bool m_cancelled;
+    double m_similarityThreshold;  // 0.0 = exact match, higher = more lenient
 };
 
 } // namespace VideoStudio

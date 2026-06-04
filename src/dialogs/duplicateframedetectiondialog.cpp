@@ -49,6 +49,28 @@ void DuplicateFrameDetectionDialog::setupUI() {
     }
     analysisLayout->addWidget(m_videoInfoLabel);
 
+    // Threshold settings
+    QHBoxLayout* thresholdLayout = new QHBoxLayout();
+    QLabel* thresholdLabel = new QLabel(tr("Similarity Threshold:"), this);
+    m_thresholdSpinBox = new QDoubleSpinBox(this);
+    m_thresholdSpinBox->setRange(0.0, 0.1);
+    m_thresholdSpinBox->setSingleStep(0.001);
+    m_thresholdSpinBox->setDecimals(3);
+    m_thresholdSpinBox->setValue(0.0);
+    m_thresholdSpinBox->setSuffix("");
+    thresholdLayout->addWidget(thresholdLabel);
+    thresholdLayout->addWidget(m_thresholdSpinBox);
+    thresholdLayout->addStretch();
+    analysisLayout->addLayout(thresholdLayout);
+
+    m_thresholdHintLabel = new QLabel(
+        tr("0.000 = Exact match only (fastest)\n"
+           "0.001 = Nearly identical frames\n"
+           "0.005 = Very similar frames\n"
+           "0.01+ = Allow minor differences"), this);
+    m_thresholdHintLabel->setStyleSheet("color: gray; font-size: 9pt;");
+    analysisLayout->addWidget(m_thresholdHintLabel);
+
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     m_startButton = new QPushButton(tr("Start Analysis"), this);
     m_cancelButton = new QPushButton(tr("Cancel"), this);
@@ -121,6 +143,8 @@ void DuplicateFrameDetectionDialog::setupUI() {
     // Connect signals
     connect(m_startButton, &QPushButton::clicked, this, &DuplicateFrameDetectionDialog::startAnalysis);
     connect(m_cancelButton, &QPushButton::clicked, this, &DuplicateFrameDetectionDialog::cancelAnalysis);
+    connect(m_thresholdSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &DuplicateFrameDetectionDialog::onThresholdChanged);
     connect(m_groupsTable, &QTableWidget::cellClicked, this, &DuplicateFrameDetectionDialog::onGroupSelected);
     connect(m_groupsTable, &QTableWidget::cellDoubleClicked, this, &DuplicateFrameDetectionDialog::goToFrame);
     connect(m_goToFrameButton, &QPushButton::clicked, this, &DuplicateFrameDetectionDialog::goToFrame);
@@ -134,11 +158,16 @@ void DuplicateFrameDetectionDialog::startAnalysis() {
         return;
     }
 
+    // Set the similarity threshold from UI
+    double threshold = m_thresholdSpinBox->value();
+    m_detector->setSimilarityThreshold(threshold);
+
     // Disable start button, enable cancel
     m_startButton->setEnabled(false);
     m_cancelButton->setEnabled(true);
     m_goToFrameButton->setEnabled(false);
     m_exportButton->setEnabled(false);
+    m_thresholdSpinBox->setEnabled(false);
 
     // Clear previous results
     m_groupsTable->setRowCount(0);
@@ -161,6 +190,13 @@ void DuplicateFrameDetectionDialog::cancelAnalysis() {
     m_statusLabel->setText(tr("Analysis cancelled"));
     m_startButton->setEnabled(true);
     m_cancelButton->setEnabled(false);
+    m_thresholdSpinBox->setEnabled(true);
+}
+
+void DuplicateFrameDetectionDialog::onThresholdChanged(double value) {
+    Q_UNUSED(value);
+    // Just update the detector's threshold (will be used on next analysis)
+    // No need to do anything else here
 }
 
 void DuplicateFrameDetectionDialog::onProgressUpdated(int current, int total, const QString& status) {
@@ -178,6 +214,7 @@ void DuplicateFrameDetectionDialog::onAnalysisCompleted(const DetectionResult& r
     m_startButton->setEnabled(true);
     m_cancelButton->setEnabled(false);
     m_exportButton->setEnabled(true);
+    m_thresholdSpinBox->setEnabled(true);
     m_progressBar->setValue(100);
     m_statusLabel->setText(tr("Analysis complete"));
 
