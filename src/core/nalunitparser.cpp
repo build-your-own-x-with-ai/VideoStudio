@@ -17,6 +17,7 @@ NALUnitParser::~NALUnitParser() {
 
 void NALUnitParser::clear() {
     m_nalUnits.clear();
+    m_audioFrames.clear();
     m_filePath.clear();
 }
 
@@ -25,6 +26,13 @@ const NALUnitInfo* NALUnitParser::getNALUnit(int index) const {
         return nullptr;
     }
     return &m_nalUnits[index];
+}
+
+const AudioFrameInfo* NALUnitParser::getAudioFrame(int index) const {
+    if (index < 0 || index >= m_audioFrames.size()) {
+        return nullptr;
+    }
+    return &m_audioFrames[index];
 }
 
 bool NALUnitParser::parseFile(const QString& filePath, VideoDecoder* decoder, const QString& containerType) {
@@ -95,6 +103,46 @@ bool NALUnitParser::parseFile(const QString& filePath, VideoDecoder* decoder, co
     file.close();
 
     qDebug() << "NALUnitParser: Parsed" << m_nalUnits.size() << "NAL units from" << totalFrames << "frames";
+
+    // Parse audio frames (AAC)
+    AVFormatContext* formatContext = decoder->getFormatContext();
+    qDebug() << "NALUnitParser: Checking for audio streams, formatContext =" << (formatContext != nullptr);
+
+    if (formatContext) {
+        int audioStreamIndex = -1;
+        AVCodecParameters* audioCodecParams = nullptr;
+
+        qDebug() << "NALUnitParser: Format has" << formatContext->nb_streams << "streams";
+
+        // Find audio stream
+        for (unsigned int i = 0; i < formatContext->nb_streams; i++) {
+            AVMediaType codecType = formatContext->streams[i]->codecpar->codec_type;
+            qDebug() << "NALUnitParser: Stream" << i << "type =" << codecType << "(AUDIO=" << AVMEDIA_TYPE_AUDIO << ")";
+
+            if (codecType == AVMEDIA_TYPE_AUDIO) {
+                audioStreamIndex = i;
+                audioCodecParams = formatContext->streams[i]->codecpar;
+                break;
+            }
+        }
+
+        qDebug() << "NALUnitParser: Audio stream index =" << audioStreamIndex;
+
+        if (audioStreamIndex >= 0 && audioCodecParams) {
+            AVCodecID audioCodecId = audioCodecParams->codec_id;
+            QString audioCodecName = QString::fromUtf8(avcodec_get_name(audioCodecId));
+
+            qDebug() << "NALUnitParser: Found audio stream" << audioStreamIndex << "with codec" << audioCodecName;
+
+            // Only parse AAC for now
+            if (audioCodecId == AV_CODEC_ID_AAC) {
+                parseAudioFrames(filePath, formatContext, audioStreamIndex);
+            } else {
+                qDebug() << "NALUnitParser: Audio codec" << audioCodecName << "not supported (only AAC)";
+            }
+        }
+    }
+
     emit parseComplete();
     return true;
 }
@@ -336,6 +384,51 @@ QString NALUnitParser::getH265NALTypeName(int type) const {
         case HEVC_NAL_SEI_SUFFIX: return "HEVC SEI SUFFIX";
         default: return QString("HEVC NAL Type %1").arg(type);
     }
+}
+
+void NALUnitParser::parseAudioFrames(const QString& filePath, AVFormatContext* formatContext, int audioStreamIndex) {
+    // Create a new format context for audio parsing to avoid interfering with video decoding
+    AVFormatContext* audioFormatContext = nullptr;
+    if (avformat_open_input(&audioFormatContext, filePath.toUtf8().constData(), nullptr, nullptr) < 0) {
+        qDebug() << "NALUnitParser: Failed to open file for audio parsing";
+        return;
+    }
+
+    if (avformat_find_stream_info(audioFormatContext, nullptr) < 0) {
+        qDebug() << "NALUnitParser: Failed to find audio stream info";
+        avformat_close_input(&audioFormatContext);
+        return;
+    }
+
+    AVPacket* packet = av_packet_alloc();
+    if (!packet) {
+        avformat_close_input(&audioFormatContext);
+        return;
+    }
+
+    int audioFrameIndex = 0;
+    int audioFrameNumber = 0;
+
+    // Read packets from the file
+    while (av_read_frame(audioFormatContext, packet) >= 0) {
+        if (packet->stream_index == audioStreamIndex) {
+            AudioFrameInfo audioInfo;
+            audioInfo.index = audioFrameIndex++;
+            audioInfo.fileOffset = packet->pos;  // File offset of this packet
+            audioInfo.size = packet->size;
+            audioInfo.frameNumber = audioFrameNumber++;
+            audioInfo.codecType = "AAC";
+            audioInfo.frameName = "AAC raw_data_block";
+
+            m_audioFrames.append(audioInfo);
+        }
+        av_packet_unref(packet);
+    }
+
+    av_packet_free(&packet);
+    avformat_close_input(&audioFormatContext);
+
+    qDebug() << "NALUnitParser: Parsed" << m_audioFrames.size() << "audio frames";
 }
 
 } // namespace VideoStudio

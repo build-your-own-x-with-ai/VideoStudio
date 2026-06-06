@@ -30,6 +30,11 @@ public:
     const QVector<NALUnitInfo>& getNALUnits() const { return m_nalUnits; }
     const NALUnitInfo* getNALUnit(int index) const;
     int getNALUnitCount() const { return m_nalUnits.size(); }
+
+    const QVector<AudioFrameInfo>& getAudioFrames() const { return m_audioFrames; }
+    const AudioFrameInfo* getAudioFrame(int index) const;
+    int getAudioFrameCount() const { return m_audioFrames.size(); }
+
     QString getFilePath() const { return m_filePath; }
 
     // Clear parsed data
@@ -44,6 +49,9 @@ private:
     // Extract NAL units from a single frame
     QVector<NALUnitInfo> extractNALUnits(const QByteArray& frameData, AVCodecID codecId,
                                           int frameNumber, int64_t frameOffset);
+
+    // Parse audio frames
+    void parseAudioFrames(const QString& filePath, AVFormatContext* formatContext, int audioStreamIndex);
 
     // Format detection
     enum BitstreamFormat {
@@ -62,6 +70,7 @@ private:
 
     // Data
     QVector<NALUnitInfo> m_nalUnits;
+    QVector<AudioFrameInfo> m_audioFrames;
     QString m_filePath;
 };
 

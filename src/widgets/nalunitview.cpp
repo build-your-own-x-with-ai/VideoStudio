@@ -2,6 +2,7 @@
 #include <QHeaderView>
 #include <QScrollBar>
 #include <QDebug>
+#include <algorithm>
 
 namespace VideoStudio {
 
@@ -58,59 +59,116 @@ void NALUnitView::buildNALUnitList() {
     }
 
     const QVector<NALUnitInfo>& nalUnits = m_parser->getNALUnits();
+    const QVector<AudioFrameInfo>& audioFrames = m_parser->getAudioFrames();
     int totalNALs = nalUnits.size();
+    int totalAudio = audioFrames.size();
+    int totalItems = totalNALs + totalAudio;
 
-    if (totalNALs == 0) {
+    if (totalItems == 0) {
         QTreeWidgetItem* item = new QTreeWidgetItem(m_treeWidget);
-        item->setText(0, "No NAL units found");
+        item->setText(0, "No NAL units or audio frames found");
         item->setForeground(0, QColor(150, 150, 150));
         return;
     }
 
-    // Display limit: 1000 NAL units (same as PacketView)
-    int maxNALs = qMin(1000, totalNALs);
+    // Create combined list sorted by file offset
+    struct MediaItem {
+        enum Type { NAL, AUDIO };
+        Type type;
+        int index;
+        int64_t offset;
+    };
 
-    for (int i = 0; i < maxNALs; ++i) {
-        const NALUnitInfo& nalInfo = nalUnits[i];
+    QVector<MediaItem> items;
+    for (int i = 0; i < totalNALs; ++i) {
+        items.append({MediaItem::NAL, i, nalUnits[i].fileOffset});
+    }
+    for (int i = 0; i < totalAudio; ++i) {
+        items.append({MediaItem::AUDIO, i, audioFrames[i].fileOffset});
+    }
 
+    // Sort by file offset
+    std::sort(items.begin(), items.end(), [](const MediaItem& a, const MediaItem& b) {
+        return a.offset < b.offset;
+    });
+
+    // Display limit: 1000 items (same as PacketView)
+    int maxItems = qMin(1000, totalItems);
+
+    for (int i = 0; i < maxItems; ++i) {
+        const MediaItem& mediaItem = items[i];
         QTreeWidgetItem* item = new QTreeWidgetItem(m_treeWidget);
 
-        // Store NAL index in user data
-        item->setData(0, Qt::UserRole, nalInfo.index);
+        if (mediaItem.type == MediaItem::NAL) {
+            const NALUnitInfo& nalInfo = nalUnits[mediaItem.index];
 
-        // Column 0: Index
-        item->setText(0, QString::number(nalInfo.index));
+            // Store NAL index and type in user data
+            item->setData(0, Qt::UserRole, QVariant::fromValue(QPair<int, int>(0, nalInfo.index)));  // 0 = NAL type
 
-        // Column 1: Offset (hex)
-        item->setText(1, QString("0x%1").arg(nalInfo.fileOffset, 0, 16));
+            // Column 0: Index
+            item->setText(0, QString::number(nalInfo.index));
 
-        // Column 2: Frame number
-        item->setText(2, QString::number(nalInfo.frameNumber));
+            // Column 1: Offset (hex)
+            item->setText(1, QString("0x%1").arg(nalInfo.fileOffset, 0, 16));
 
-        // Column 3: Type
-        item->setText(3, nalInfo.typeName);
+            // Column 2: Frame number
+            item->setText(2, QString::number(nalInfo.frameNumber));
 
-        // Column 4: Size
-        item->setText(4, QString("%1 B").arg(nalInfo.size));
+            // Column 3: Type
+            item->setText(3, nalInfo.typeName);
 
-        // Column 5: Properties
-        item->setText(5, formatProperties(nalInfo));
+            // Column 4: Size
+            item->setText(4, QString("%1 B").arg(nalInfo.size));
 
-        // Color coding
-        QColor color = getNALUnitColor(nalInfo);
-        for (int col = 2; col <= 3; ++col) {
-            item->setForeground(col, color);
+            // Column 5: Properties
+            item->setText(5, formatProperties(nalInfo));
+
+            // Color coding
+            QColor color = getNALUnitColor(nalInfo);
+            for (int col = 2; col <= 3; ++col) {
+                item->setForeground(col, color);
+            }
+        } else {
+            // Audio frame
+            const AudioFrameInfo& audioInfo = audioFrames[mediaItem.index];
+
+            // Store audio index and type in user data
+            item->setData(0, Qt::UserRole, QVariant::fromValue(QPair<int, int>(1, audioInfo.index)));  // 1 = AUDIO type
+
+            // Column 0: Index
+            item->setText(0, QString("A%1").arg(audioInfo.index));
+
+            // Column 1: Offset (hex)
+            item->setText(1, QString("0x%1").arg(audioInfo.fileOffset, 0, 16));
+
+            // Column 2: Frame number
+            item->setText(2, QString::number(audioInfo.frameNumber));
+
+            // Column 3: Type
+            item->setText(3, audioInfo.frameName);
+
+            // Column 4: Size
+            item->setText(4, QString("%1 B").arg(audioInfo.size));
+
+            // Column 5: Properties
+            item->setText(5, audioInfo.codecType);
+
+            // Color coding for audio - dark blue
+            QColor audioColor(50, 100, 200);
+            for (int col = 2; col <= 3; ++col) {
+                item->setForeground(col, audioColor);
+            }
         }
     }
 
-    // Show message if more NAL units exist
-    if (totalNALs > maxNALs) {
+    // Show message if more items exist
+    if (totalItems > maxItems) {
         QTreeWidgetItem* item = new QTreeWidgetItem(m_treeWidget);
-        item->setText(0, QString("... (%1 more NAL units)").arg(totalNALs - maxNALs));
+        item->setText(0, QString("... (%1 more items)").arg(totalItems - maxItems));
         item->setForeground(0, QColor(150, 150, 150));
     }
 
-    qDebug() << "NALUnitView: Built list with" << maxNALs << "NAL units (total:" << totalNALs << ")";
+    qDebug() << "NALUnitView: Built list with" << maxItems << "items (NAL:" << totalNALs << "Audio:" << totalAudio << "Total:" << totalItems << ")";
 }
 
 void NALUnitView::clear() {
@@ -151,11 +209,29 @@ void NALUnitView::onItemClicked(QTreeWidgetItem* item, int column) {
         return;
     }
 
-    int nalIndex = item->data(0, Qt::UserRole).toInt();
-    m_currentNALIndex = nalIndex;
+    QVariant userData = item->data(0, Qt::UserRole);
+    if (userData.canConvert<QPair<int, int>>()) {
+        QPair<int, int> typeAndIndex = userData.value<QPair<int, int>>();
+        int itemType = typeAndIndex.first;  // 0 = NAL, 1 = AUDIO
+        int itemIndex = typeAndIndex.second;
 
-    qDebug() << "NALUnitView::onItemClicked: Emitting nalUnitSelected signal with nalIndex:" << nalIndex;
-    emit nalUnitSelected(nalIndex);
+        if (itemType == 0) {
+            // NAL unit
+            m_currentNALIndex = itemIndex;
+            qDebug() << "NALUnitView::onItemClicked: Emitting nalUnitSelected signal with nalIndex:" << itemIndex;
+            emit nalUnitSelected(itemIndex);
+        } else {
+            // Audio frame - for now, just log it
+            // TODO: Add audioFrameSelected signal if needed
+            qDebug() << "NALUnitView::onItemClicked: Audio frame" << itemIndex << "clicked (not yet supported)";
+        }
+    } else {
+        // Old format (backward compatibility)
+        int nalIndex = item->data(0, Qt::UserRole).toInt();
+        m_currentNALIndex = nalIndex;
+        qDebug() << "NALUnitView::onItemClicked: Emitting nalUnitSelected signal with nalIndex:" << nalIndex;
+        emit nalUnitSelected(nalIndex);
+    }
 }
 
 void NALUnitView::onItemDoubleClicked(QTreeWidgetItem* item, int column) {
@@ -165,12 +241,34 @@ void NALUnitView::onItemDoubleClicked(QTreeWidgetItem* item, int column) {
         return;
     }
 
-    int nalIndex = item->data(0, Qt::UserRole).toInt();
-    const NALUnitInfo* nalInfo = m_parser->getNALUnit(nalIndex);
+    QVariant userData = item->data(0, Qt::UserRole);
+    if (userData.canConvert<QPair<int, int>>()) {
+        QPair<int, int> typeAndIndex = userData.value<QPair<int, int>>();
+        int itemType = typeAndIndex.first;  // 0 = NAL, 1 = AUDIO
+        int itemIndex = typeAndIndex.second;
 
-    if (nalInfo) {
-        emit nalUnitDoubleClicked(nalIndex);
-        emit frameSelected(nalInfo->frameNumber);
+        if (itemType == 0) {
+            // NAL unit
+            const NALUnitInfo* nalInfo = m_parser->getNALUnit(itemIndex);
+            if (nalInfo) {
+                emit nalUnitDoubleClicked(itemIndex);
+                emit frameSelected(nalInfo->frameNumber);
+            }
+        } else {
+            // Audio frame
+            const AudioFrameInfo* audioInfo = m_parser->getAudioFrame(itemIndex);
+            if (audioInfo) {
+                emit frameSelected(audioInfo->frameNumber);
+            }
+        }
+    } else {
+        // Old format (backward compatibility)
+        int nalIndex = item->data(0, Qt::UserRole).toInt();
+        const NALUnitInfo* nalInfo = m_parser->getNALUnit(nalIndex);
+        if (nalInfo) {
+            emit nalUnitDoubleClicked(nalIndex);
+            emit frameSelected(nalInfo->frameNumber);
+        }
     }
 }
 
