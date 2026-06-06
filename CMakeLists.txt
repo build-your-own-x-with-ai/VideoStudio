@@ -34,12 +34,14 @@ set(SOURCES
     src/core/yuvreader.cpp
     src/core/timinganalyzer.cpp
     src/core/duplicateframedetector.cpp
+    src/core/nalunitparser.cpp
     src/widgets/videooutput.cpp
     src/widgets/barchart.cpp
     src/widgets/thumbnailbar.cpp
     src/widgets/areachart.cpp
     src/widgets/gopviewer.cpp
     src/widgets/packetview.cpp
+    src/widgets/nalunitview.cpp
     src/widgets/logviewer.cpp
     src/panels/streampanel.cpp
     src/panels/overlaypanel.cpp
@@ -79,12 +81,15 @@ set(HEADERS
     src/core/tr101290data.h
     src/core/timinganalyzer.h
     src/core/duplicateframedetector.h
+    src/core/naldata.h
+    src/core/nalunitparser.h
     src/widgets/videooutput.h
     src/widgets/barchart.h
     src/widgets/thumbnailbar.h
     src/widgets/areachart.h
     src/widgets/gopviewer.h
     src/widgets/packetview.h
+    src/widgets/nalunitview.h
     src/widgets/logviewer.h
     src/panels/streampanel.h
     src/panels/overlaypanel.h

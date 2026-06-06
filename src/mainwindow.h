@@ -27,6 +27,7 @@ class ExplorerPanel;
 class PropertyPanel;
 class HexViewerPanel;
 class PacketView;
+class NALUnitView;
 class MessagesPanel;
 class TR101290Panel;
 class TimeDynamicsPanel;
@@ -42,6 +43,7 @@ class MP4Parser;
 class MKVParser;
 class AVIParser;
 class FLVParser;
+class NALUnitParser;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -126,6 +128,7 @@ private:
     std::unique_ptr<MKVParser> m_mkvParser;
     std::unique_ptr<AVIParser> m_aviParser;
     std::unique_ptr<FLVParser> m_flvParser;
+    std::unique_ptr<NALUnitParser> m_nalUnitParser;
     QTabWidget* m_centralTabs;
     VideoOutput* m_videoOutput;
     BarChart* m_barChart;
@@ -139,6 +142,7 @@ private:
     PropertyPanel* m_propertyPanel;
     HexViewerPanel* m_hexViewerPanel;
     PacketView* m_packetView;
+    NALUnitView* m_nalUnitView;
     MessagesPanel* m_messagesPanel;
     TR101290Panel* m_tr101290Panel;
     TimeDynamicsPanel* m_timeDynamicsPanel;

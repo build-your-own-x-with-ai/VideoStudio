@@ -13,6 +13,7 @@
 #include "core/mkvparser.h"
 #include "core/aviparser.h"
 #include "core/flvparser.h"
+#include "core/nalunitparser.h"
 
 namespace VideoStudio {
 
@@ -29,9 +30,11 @@ public:
     void setMKVParser(MKVParser* parser);
     void setAVIParser(AVIParser* parser);
     void setFLVParser(FLVParser* parser);
+    void setNALUnitParser(NALUnitParser* parser);
 
     // Display packet/atom/element/chunk/tag at offset
     void displayPacket(int packetIndex);
+    void displayNALUnit(int nalIndex);
     void displayAtom(int64_t offset, int64_t size);
     void displayElement(int64_t offset, int64_t size);
     void displayChunk(int64_t offset, int64_t size);
@@ -69,6 +72,7 @@ private:
     MKVParser* m_mkvParser;
     AVIParser* m_aviParser;
     FLVParser* m_flvParser;
+    NALUnitParser* m_nalUnitParser;
     QString m_filePath;
     int m_currentPacketIndex;
     int64_t m_currentOffset;

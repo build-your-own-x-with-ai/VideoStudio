@@ -16,6 +16,7 @@ HexViewerPanel::HexViewerPanel(QWidget* parent)
     , m_mkvParser(nullptr)
     , m_aviParser(nullptr)
     , m_flvParser(nullptr)
+    , m_nalUnitParser(nullptr)
     , m_currentPacketIndex(-1)
     , m_currentOffset(-1)
     , m_currentSize(0)
@@ -157,6 +158,13 @@ void HexViewerPanel::setFLVParser(FLVParser* parser) {
     m_currentSize = 0;
 }
 
+void HexViewerPanel::setNALUnitParser(NALUnitParser* parser) {
+    m_nalUnitParser = parser;
+    if (parser) {
+        m_filePath = parser->getFilePath();
+    }
+}
+
 void HexViewerPanel::displayPacket(int packetIndex) {
     if (!m_tsParser || packetIndex < 0) {
         return;
@@ -169,6 +177,68 @@ void HexViewerPanel::displayPacket(int packetIndex) {
 
     m_currentPacketIndex = packetIndex;
     updateDisplay();
+}
+
+void HexViewerPanel::displayNALUnit(int nalIndex) {
+    qDebug() << "HexViewerPanel::displayNALUnit called with nalIndex:" << nalIndex;
+
+    if (!m_nalUnitParser || nalIndex < 0) {
+        qDebug() << "HexViewerPanel::displayNALUnit: parser is null or invalid index";
+        return;
+    }
+
+    const NALUnitInfo* nalInfo = m_nalUnitParser->getNALUnit(nalIndex);
+    if (!nalInfo) {
+        qDebug() << "HexViewerPanel::displayNALUnit: Failed to get NAL info for index" << nalIndex;
+        return;
+    }
+
+    qDebug() << "HexViewerPanel::displayNALUnit: NAL info - type:" << nalInfo->typeName
+             << "offset:" << nalInfo->fileOffset << "size:" << nalInfo->size;
+    qDebug() << "HexViewerPanel::displayNALUnit: File path:" << m_filePath;
+
+    // Read NAL unit data from file
+    QFile file(m_filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "HexViewerPanel::displayNALUnit: Failed to open file" << m_filePath;
+        return;
+    }
+
+    if (!file.seek(nalInfo->fileOffset)) {
+        qDebug() << "HexViewerPanel::displayNALUnit: Failed to seek to offset" << nalInfo->fileOffset;
+        file.close();
+        return;
+    }
+
+    QByteArray nalData = file.read(nalInfo->size);
+    file.close();
+
+    if (nalData.size() != nalInfo->size) {
+        qDebug() << "HexViewerPanel::displayNALUnit: Read size mismatch, expected" << nalInfo->size << "got" << nalData.size();
+        return;
+    }
+
+    // Display the NAL unit data
+    m_currentOffset = nalInfo->fileOffset;
+    m_currentSize = nalInfo->size;
+    m_textEdit->clear();
+
+    QString output;
+    output += QString("=== NAL Unit #%1 ===\n").arg(nalIndex);
+    output += QString("Type: %1\n").arg(nalInfo->typeName);
+    output += QString("Offset: 0x%1\n").arg(nalInfo->fileOffset, 0, 16);
+    output += QString("Size: %1 bytes\n").arg(nalInfo->size);
+    output += QString("Frame: %1\n").arg(nalInfo->frameNumber);
+    output += "\n";
+
+    // Display hex dump
+    for (int i = 0; i < nalData.size(); i += m_bytesPerRow) {
+        int chunkSize = qMin(m_bytesPerRow, nalData.size() - i);
+        QByteArray chunk = nalData.mid(i, chunkSize);
+        output += formatHexLine(nalInfo->fileOffset + i, chunk, m_bytesPerRow);
+    }
+
+    m_textEdit->setPlainText(output);
 }
 
 void HexViewerPanel::jumpToOffset(int64_t offset) {

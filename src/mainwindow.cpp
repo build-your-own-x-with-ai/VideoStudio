@@ -5,6 +5,7 @@
 #include "core/mkvparser.h"
 #include "core/aviparser.h"
 #include "core/flvparser.h"
+#include "core/nalunitparser.h"
 #include "widgets/videooutput.h"
 #include "widgets/barchart.h"
 #include "widgets/areachart.h"
@@ -18,6 +19,7 @@
 #include "widgets/thumbnailbar.h"
 #include "widgets/gopviewer.h"
 #include "widgets/packetview.h"
+#include "widgets/nalunitview.h"
 #include "widgets/logviewer.h"
 #include "panels/streampanel.h"
 #include "panels/overlaypanel.h"
@@ -198,6 +200,10 @@ void MainWindow::createWidgets() {
     // Create packet view (will be shown only for TS files)
     m_packetView = new PacketView(this);
     // Don't add it yet - will be added when TS file is opened
+
+    // Create NAL unit view (will be shown only for MP4/MKV files)
+    m_nalUnitView = new NALUnitView(this);
+    // Don't add it yet - will be added when MP4/MKV file is opened
 
     // Create other widgets (will be added to dock widgets)
     m_barChart = new BarChart(this);
@@ -1144,20 +1150,73 @@ void MainWindow::loadFile(const QString& fileName) {
 
                 if (success) {
                     updateMP4Panels();
-                    m_statusLabel->setText(tr("MP4 file loaded successfully"));
+
+                    // Parse NAL units for MP4 files
+                    if (!m_nalUnitParser) {
+                        m_nalUnitParser = std::make_unique<NALUnitParser>();
+                    }
+
+                    m_statusLabel->setText(tr("Parsing NAL units..."));
+
+                    // Parse NAL units in background
+                    QFuture<bool> nalFuture = QtConcurrent::run([this, fileName]() {
+                        return m_nalUnitParser->parseFile(fileName, m_decoder.get(), "MP4");
+                    });
+
+                    QFutureWatcher<bool>* nalWatcher = new QFutureWatcher<bool>(this);
+                    connect(nalWatcher, &QFutureWatcher<bool>::finished, this, [=]() {
+                        bool nalSuccess = nalWatcher->result();
+                        nalWatcher->deleteLater();
+
+                        if (nalSuccess) {
+                            // Add NAL Unit List tab
+                            bool tabExists = false;
+                            for (int i = 0; i < m_centralTabs->count(); ++i) {
+                                if (m_centralTabs->widget(i) == m_nalUnitView) {
+                                    tabExists = true;
+                                    break;
+                                }
+                            }
+                            if (!tabExists) {
+                                m_centralTabs->addTab(m_nalUnitView, "NAL Unit List");
+                            }
+
+                            m_nalUnitView->setNALUnitParser(m_nalUnitParser.get());
+                            m_nalUnitView->buildNALUnitList();
+
+                            // Set NAL parser in hex viewer
+                            m_hexViewerPanel->setNALUnitParser(m_nalUnitParser.get());
+
+                            m_statusLabel->setText(tr("MP4 file loaded successfully"));
+                        } else {
+                            m_statusLabel->setText(tr("MP4 loaded (NAL parsing failed)"));
+                        }
+
+                        // Close progress dialog
+                        progressDialog->close();
+                        delete progressDialog;
+
+                        // Move Log Viewer back to dock
+                        if (m_logViewer && m_logViewerDock) {
+                            m_logViewerDock->setWidget(m_logViewer);
+                            m_logViewerDock->show();
+                            m_toggleLogViewerAction->setChecked(true);
+                        }
+                    });
+                    nalWatcher->setFuture(nalFuture);
                 } else {
                     m_statusLabel->setText(tr("Failed to parse MP4 structure"));
-                }
 
-                // Close progress dialog
-                progressDialog->close();
-                delete progressDialog;
+                    // Close progress dialog
+                    progressDialog->close();
+                    delete progressDialog;
 
-                // Move Log Viewer back to dock (without animation)
-                if (m_logViewer && m_logViewerDock) {
-                    m_logViewerDock->setWidget(m_logViewer);
-                    m_logViewerDock->show();
-                    m_toggleLogViewerAction->setChecked(true);
+                    // Move Log Viewer back to dock
+                    if (m_logViewer && m_logViewerDock) {
+                        m_logViewerDock->setWidget(m_logViewer);
+                        m_logViewerDock->show();
+                        m_toggleLogViewerAction->setChecked(true);
+                    }
                 }
             });
             watcher->setFuture(future);
@@ -1193,20 +1252,73 @@ void MainWindow::loadFile(const QString& fileName) {
 
                 if (success) {
                     updateMKVPanels();
-                    m_statusLabel->setText(tr("MKV file loaded successfully"));
+
+                    // Parse NAL units for MKV files
+                    if (!m_nalUnitParser) {
+                        m_nalUnitParser = std::make_unique<NALUnitParser>();
+                    }
+
+                    m_statusLabel->setText(tr("Parsing NAL units..."));
+
+                    // Parse NAL units in background
+                    QFuture<bool> nalFuture = QtConcurrent::run([this, fileName]() {
+                        return m_nalUnitParser->parseFile(fileName, m_decoder.get(), "MKV");
+                    });
+
+                    QFutureWatcher<bool>* nalWatcher = new QFutureWatcher<bool>(this);
+                    connect(nalWatcher, &QFutureWatcher<bool>::finished, this, [=]() {
+                        bool nalSuccess = nalWatcher->result();
+                        nalWatcher->deleteLater();
+
+                        if (nalSuccess) {
+                            // Add NAL Unit List tab
+                            bool tabExists = false;
+                            for (int i = 0; i < m_centralTabs->count(); ++i) {
+                                if (m_centralTabs->widget(i) == m_nalUnitView) {
+                                    tabExists = true;
+                                    break;
+                                }
+                            }
+                            if (!tabExists) {
+                                m_centralTabs->addTab(m_nalUnitView, "NAL Unit List");
+                            }
+
+                            m_nalUnitView->setNALUnitParser(m_nalUnitParser.get());
+                            m_nalUnitView->buildNALUnitList();
+
+                            // Set NAL parser in hex viewer
+                            m_hexViewerPanel->setNALUnitParser(m_nalUnitParser.get());
+
+                            m_statusLabel->setText(tr("MKV file loaded successfully"));
+                        } else {
+                            m_statusLabel->setText(tr("MKV loaded (NAL parsing failed)"));
+                        }
+
+                        // Close progress dialog
+                        progressDialog->close();
+                        delete progressDialog;
+
+                        // Move Log Viewer back to dock
+                        if (m_logViewer && m_logViewerDock) {
+                            m_logViewerDock->setWidget(m_logViewer);
+                            m_logViewerDock->show();
+                            m_toggleLogViewerAction->setChecked(true);
+                        }
+                    });
+                    nalWatcher->setFuture(nalFuture);
                 } else {
                     m_statusLabel->setText(tr("Failed to parse MKV structure"));
-                }
 
-                // Close progress dialog
-                progressDialog->close();
-                delete progressDialog;
+                    // Close progress dialog
+                    progressDialog->close();
+                    delete progressDialog;
 
-                // Move Log Viewer back to dock (without animation)
-                if (m_logViewer && m_logViewerDock) {
-                    m_logViewerDock->setWidget(m_logViewer);
-                    m_logViewerDock->show();
-                    m_toggleLogViewerAction->setChecked(true);
+                    // Move Log Viewer back to dock
+                    if (m_logViewer && m_logViewerDock) {
+                        m_logViewerDock->setWidget(m_logViewer);
+                        m_logViewerDock->show();
+                        m_toggleLogViewerAction->setChecked(true);
+                    }
                 }
             });
             watcher->setFuture(future);
@@ -1624,6 +1736,13 @@ void MainWindow::updateTSPanels() {
             m_propertyPanel, &PropertyPanel::displayPacket, Qt::UniqueConnection);
     connect(m_packetView, &PacketView::packetSelected,
             m_hexViewerPanel, &HexViewerPanel::displayPacket, Qt::UniqueConnection);
+
+    // Connect NAL Unit View signals
+    connect(m_nalUnitView, &NALUnitView::nalUnitSelected,
+            m_hexViewerPanel, &HexViewerPanel::displayNALUnit, Qt::UniqueConnection);
+    connect(m_nalUnitView, &NALUnitView::frameSelected,
+            this, &MainWindow::onFrameClicked, Qt::UniqueConnection);
+
     connect(m_propertyPanel, &PropertyPanel::addToGraphics,
             m_graphicsPanel, &GraphicsPanel::addParameter, Qt::UniqueConnection);
     connect(m_messagesPanel, &MessagesPanel::messageDoubleClicked,
@@ -1752,6 +1871,13 @@ void MainWindow::updateMP4Panels() {
     });
     qDebug() << "updateMP4Panels: connected explorer to hex viewer";
 
+    // Connect NAL Unit View signals
+    connect(m_nalUnitView, &NALUnitView::nalUnitSelected,
+            m_hexViewerPanel, &HexViewerPanel::displayNALUnit, Qt::UniqueConnection);
+    connect(m_nalUnitView, &NALUnitView::frameSelected,
+            this, &MainWindow::onFrameClicked, Qt::UniqueConnection);
+    qDebug() << "updateMP4Panels: connected NAL Unit View signals";
+
     // Update dock title
     m_explorerPanelDock->setWindowTitle(tr("MP4 Explorer"));
     qDebug() << "updateMP4Panels: updated dock title";
@@ -1803,6 +1929,12 @@ void MainWindow::updateMKVPanels() {
             m_hexViewerPanel->displayElement(element->offset, element->totalSize);
         }
     });
+
+    // Connect NAL Unit View signals
+    connect(m_nalUnitView, &NALUnitView::nalUnitSelected,
+            m_hexViewerPanel, &HexViewerPanel::displayNALUnit, Qt::UniqueConnection);
+    connect(m_nalUnitView, &NALUnitView::frameSelected,
+            this, &MainWindow::onFrameClicked, Qt::UniqueConnection);
 
     // Update dock title
     m_explorerPanelDock->setWindowTitle(tr("MKV Explorer"));
