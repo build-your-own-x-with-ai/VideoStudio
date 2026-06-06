@@ -1184,8 +1184,9 @@ void MainWindow::loadFile(const QString& fileName) {
                             m_nalUnitView->setNALUnitParser(m_nalUnitParser.get());
                             m_nalUnitView->buildNALUnitList();
 
-                            // Set NAL parser in hex viewer
+                            // Set NAL parser in hex viewer and property panel
                             m_hexViewerPanel->setNALUnitParser(m_nalUnitParser.get());
+                            m_propertyPanel->setNALUnitParser(m_nalUnitParser.get());
 
                             m_statusLabel->setText(tr("MP4 file loaded successfully"));
                         } else {
@@ -1286,8 +1287,9 @@ void MainWindow::loadFile(const QString& fileName) {
                             m_nalUnitView->setNALUnitParser(m_nalUnitParser.get());
                             m_nalUnitView->buildNALUnitList();
 
-                            // Set NAL parser in hex viewer
+                            // Set NAL parser in hex viewer and property panel
                             m_hexViewerPanel->setNALUnitParser(m_nalUnitParser.get());
+                            m_propertyPanel->setNALUnitParser(m_nalUnitParser.get());
 
                             m_statusLabel->setText(tr("MKV file loaded successfully"));
                         } else {
@@ -1874,6 +1876,8 @@ void MainWindow::updateMP4Panels() {
     // Connect NAL Unit View signals
     connect(m_nalUnitView, &NALUnitView::nalUnitSelected,
             m_hexViewerPanel, &HexViewerPanel::displayNALUnit, Qt::UniqueConnection);
+    connect(m_nalUnitView, &NALUnitView::nalUnitSelected,
+            m_propertyPanel, &PropertyPanel::displayNALUnit, Qt::UniqueConnection);
     connect(m_nalUnitView, &NALUnitView::frameSelected,
             this, &MainWindow::onFrameClicked, Qt::UniqueConnection);
     qDebug() << "updateMP4Panels: connected NAL Unit View signals";
@@ -1933,6 +1937,8 @@ void MainWindow::updateMKVPanels() {
     // Connect NAL Unit View signals
     connect(m_nalUnitView, &NALUnitView::nalUnitSelected,
             m_hexViewerPanel, &HexViewerPanel::displayNALUnit, Qt::UniqueConnection);
+    connect(m_nalUnitView, &NALUnitView::nalUnitSelected,
+            m_propertyPanel, &PropertyPanel::displayNALUnit, Qt::UniqueConnection);
     connect(m_nalUnitView, &NALUnitView::frameSelected,
             this, &MainWindow::onFrameClicked, Qt::UniqueConnection);
 

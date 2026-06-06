@@ -14,12 +14,14 @@ PropertyPanel::PropertyPanel(QWidget* parent)
     , m_mkvParser(nullptr)
     , m_aviParser(nullptr)
     , m_flvParser(nullptr)
+    , m_nalUnitParser(nullptr)
     , m_mode(PropertyMode::Sync)
     , m_lastPacketIndex(-1)
     , m_lastAtomOffset(-1)
     , m_lastElementOffset(-1)
     , m_lastChunkOffset(-1)
     , m_lastTagOffset(-1)
+    , m_lastNALIndex(-1)
     , m_selectedPID(0xFFFF)
 {
     QVBoxLayout* layout = new QVBoxLayout(this);
@@ -92,12 +94,14 @@ void PropertyPanel::setMP4Parser(MP4Parser* parser) {
     m_mkvParser = nullptr;
     m_aviParser = nullptr;
     m_flvParser = nullptr;
+    m_nalUnitParser = nullptr;
     m_treeWidget->clear();
     m_lastPacketIndex = -1;
     m_lastAtomOffset = -1;
     m_lastElementOffset = -1;
     m_lastChunkOffset = -1;
     m_lastTagOffset = -1;
+    m_lastNALIndex = -1;
 }
 
 void PropertyPanel::setMKVParser(MKVParser* parser) {
@@ -2309,6 +2313,121 @@ QString PropertyPanel::parseDescriptor(const uint8_t* data, int dataLen) {
 
     // Return descriptor tag info
     return QString("Descriptor 0x%1 (length: %2)").arg(tag, 2, 16, QChar('0')).arg(length);
+}
+
+void PropertyPanel::setNALUnitParser(NALUnitParser* parser) {
+    m_nalUnitParser = parser;
+}
+
+void PropertyPanel::displayNALUnit(int nalIndex) {
+    qDebug() << "PropertyPanel::displayNALUnit called with nalIndex:" << nalIndex;
+
+    if (!m_nalUnitParser || nalIndex < 0) {
+        qDebug() << "PropertyPanel::displayNALUnit: parser is null or invalid index";
+        return;
+    }
+
+    const NALUnitInfo* nalInfo = m_nalUnitParser->getNALUnit(nalIndex);
+    if (!nalInfo) {
+        qDebug() << "PropertyPanel::displayNALUnit: Failed to get NAL info for index" << nalIndex;
+        return;
+    }
+
+    qDebug() << "PropertyPanel::displayNALUnit: Displaying NAL unit type:" << nalInfo->typeName;
+
+    m_treeWidget->clear();
+    m_lastNALIndex = nalIndex;
+
+    // Create root item
+    QTreeWidgetItem* root = new QTreeWidgetItem(m_treeWidget);
+    root->setText(0, QString("NAL Unit #%1").arg(nalInfo->index));
+    root->setExpanded(true);
+
+    // Basic info
+    QTreeWidgetItem* typeItem = new QTreeWidgetItem(root);
+    typeItem->setText(0, "Type");
+    typeItem->setText(1, QString("%1 (%2)").arg(nalInfo->typeName).arg(nalInfo->nalUnitType));
+    typeItem->setForeground(1, QColor(100, 150, 255));
+
+    QTreeWidgetItem* offsetItem = new QTreeWidgetItem(root);
+    offsetItem->setText(0, "File Offset");
+    offsetItem->setText(1, QString("0x%1 (%2 bytes)").arg(nalInfo->fileOffset, 0, 16).arg(nalInfo->fileOffset));
+
+    QTreeWidgetItem* sizeItem = new QTreeWidgetItem(root);
+    sizeItem->setText(0, "Size");
+    sizeItem->setText(1, QString("%1 bytes").arg(nalInfo->size));
+
+    QTreeWidgetItem* frameItem = new QTreeWidgetItem(root);
+    frameItem->setText(0, "Frame Number");
+    frameItem->setText(1, QString::number(nalInfo->frameNumber));
+
+    // HEVC specific fields
+    if (nalInfo->layerId > 0 || nalInfo->temporalId >= 0) {
+        QTreeWidgetItem* hevcItem = new QTreeWidgetItem(root);
+        hevcItem->setText(0, "HEVC Info");
+        hevcItem->setExpanded(true);
+
+        if (nalInfo->layerId > 0) {
+            QTreeWidgetItem* layerItem = new QTreeWidgetItem(hevcItem);
+            layerItem->setText(0, "Layer ID");
+            layerItem->setText(1, QString::number(nalInfo->layerId));
+        }
+
+        if (nalInfo->temporalId >= 0) {
+            QTreeWidgetItem* temporalItem = new QTreeWidgetItem(hevcItem);
+            temporalItem->setText(0, "Temporal ID");
+            temporalItem->setText(1, QString::number(nalInfo->temporalId));
+        }
+    }
+
+    // Slice specific fields
+    if (nalInfo->isSlice) {
+        QTreeWidgetItem* sliceItem = new QTreeWidgetItem(root);
+        sliceItem->setText(0, "Slice Info");
+        sliceItem->setExpanded(true);
+
+        QTreeWidgetItem* sliceTypeItem = new QTreeWidgetItem(sliceItem);
+        sliceTypeItem->setText(0, "Slice Type");
+        sliceTypeItem->setText(1, nalInfo->sliceType);
+
+        // Color code slice type
+        if (nalInfo->sliceType == "I") {
+            sliceTypeItem->setForeground(1, QColor(50, 200, 50));
+        } else if (nalInfo->sliceType.contains("P")) {
+            sliceTypeItem->setForeground(1, QColor(120, 220, 120));
+        } else if (nalInfo->sliceType.contains("B")) {
+            sliceTypeItem->setForeground(1, QColor(200, 100, 200));
+        }
+
+        if (nalInfo->sliceQP >= 0) {
+            QTreeWidgetItem* qpItem = new QTreeWidgetItem(sliceItem);
+            qpItem->setText(0, "Quantization Parameter (QP)");
+            qpItem->setText(1, QString::number(nalInfo->sliceQP));
+        }
+    }
+
+    // Flags
+    QTreeWidgetItem* flagsItem = new QTreeWidgetItem(root);
+    flagsItem->setText(0, "Flags");
+    flagsItem->setExpanded(true);
+
+    QTreeWidgetItem* idrItem = new QTreeWidgetItem(flagsItem);
+    idrItem->setText(0, "IDR");
+    idrItem->setText(1, nalInfo->isIDR ? "Yes" : "No");
+    if (nalInfo->isIDR) {
+        idrItem->setForeground(1, QColor(50, 200, 50));
+    }
+
+    QTreeWidgetItem* keyframeItem = new QTreeWidgetItem(flagsItem);
+    keyframeItem->setText(0, "Keyframe");
+    keyframeItem->setText(1, nalInfo->isKeyFrame ? "Yes" : "No");
+    if (nalInfo->isKeyFrame) {
+        keyframeItem->setForeground(1, QColor(50, 200, 50));
+    }
+
+    QTreeWidgetItem* sliceFlagItem = new QTreeWidgetItem(flagsItem);
+    sliceFlagItem->setText(0, "Is Slice");
+    sliceFlagItem->setText(1, nalInfo->isSlice ? "Yes" : "No");
 }
 
 
