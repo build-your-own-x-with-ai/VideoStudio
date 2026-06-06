@@ -241,6 +241,68 @@ void HexViewerPanel::displayNALUnit(int nalIndex) {
     m_textEdit->setPlainText(output);
 }
 
+void HexViewerPanel::displayAudioFrame(int audioIndex) {
+    qDebug() << "HexViewerPanel::displayAudioFrame called with audioIndex:" << audioIndex;
+
+    if (!m_nalUnitParser || audioIndex < 0) {
+        qDebug() << "HexViewerPanel::displayAudioFrame: parser is null or invalid index";
+        return;
+    }
+
+    const AudioFrameInfo* audioInfo = m_nalUnitParser->getAudioFrame(audioIndex);
+    if (!audioInfo) {
+        qDebug() << "HexViewerPanel::displayAudioFrame: Failed to get audio frame info for index" << audioIndex;
+        return;
+    }
+
+    qDebug() << "HexViewerPanel::displayAudioFrame: Audio frame - type:" << audioInfo->frameName
+             << "offset:" << audioInfo->fileOffset << "size:" << audioInfo->size;
+
+    // Read audio frame data from file
+    QFile file(m_filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "HexViewerPanel::displayAudioFrame: Failed to open file" << m_filePath;
+        return;
+    }
+
+    if (!file.seek(audioInfo->fileOffset)) {
+        qDebug() << "HexViewerPanel::displayAudioFrame: Failed to seek to offset" << audioInfo->fileOffset;
+        file.close();
+        return;
+    }
+
+    QByteArray audioData = file.read(audioInfo->size);
+    file.close();
+
+    if (audioData.size() != audioInfo->size) {
+        qDebug() << "HexViewerPanel::displayAudioFrame: Read size mismatch, expected" << audioInfo->size << "got" << audioData.size();
+        return;
+    }
+
+    // Display the audio frame data
+    m_currentOffset = audioInfo->fileOffset;
+    m_currentSize = audioInfo->size;
+    m_textEdit->clear();
+
+    QString output;
+    output += QString("=== Audio Frame #%1 ===\n").arg(audioIndex);
+    output += QString("Type: %1\n").arg(audioInfo->frameName);
+    output += QString("Codec: %1\n").arg(audioInfo->codecType);
+    output += QString("Offset: 0x%1\n").arg(audioInfo->fileOffset, 0, 16);
+    output += QString("Size: %1 bytes\n").arg(audioInfo->size);
+    output += QString("Frame: %1\n").arg(audioInfo->frameNumber);
+    output += "\n";
+
+    // Display hex dump
+    for (int i = 0; i < audioData.size(); i += m_bytesPerRow) {
+        int chunkSize = qMin(m_bytesPerRow, audioData.size() - i);
+        QByteArray chunk = audioData.mid(i, chunkSize);
+        output += formatHexLine(audioInfo->fileOffset + i, chunk, m_bytesPerRow);
+    }
+
+    m_textEdit->setPlainText(output);
+}
+
 void HexViewerPanel::jumpToOffset(int64_t offset) {
     if (!m_tsParser) {
         return;

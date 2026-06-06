@@ -221,9 +221,9 @@ void NALUnitView::onItemClicked(QTreeWidgetItem* item, int column) {
             qDebug() << "NALUnitView::onItemClicked: Emitting nalUnitSelected signal with nalIndex:" << itemIndex;
             emit nalUnitSelected(itemIndex);
         } else {
-            // Audio frame - for now, just log it
-            // TODO: Add audioFrameSelected signal if needed
-            qDebug() << "NALUnitView::onItemClicked: Audio frame" << itemIndex << "clicked (not yet supported)";
+            // Audio frame
+            qDebug() << "NALUnitView::onItemClicked: Emitting audioFrameSelected signal with audioIndex:" << itemIndex;
+            emit audioFrameSelected(itemIndex);
         }
     } else {
         // Old format (backward compatibility)

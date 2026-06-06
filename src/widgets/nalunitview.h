@@ -31,6 +31,7 @@ signals:
     void nalUnitSelected(int nalIndex);
     void nalUnitDoubleClicked(int nalIndex);
     void frameSelected(int frameNumber);
+    void audioFrameSelected(int audioIndex);
 
 private slots:
     void onItemClicked(QTreeWidgetItem* item, int column);

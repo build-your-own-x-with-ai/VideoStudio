@@ -35,6 +35,7 @@ public:
     // Display packet/atom/element/chunk/tag at offset
     void displayPacket(int packetIndex);
     void displayNALUnit(int nalIndex);
+    void displayAudioFrame(int audioIndex);
     void displayAtom(int64_t offset, int64_t size);
     void displayElement(int64_t offset, int64_t size);
     void displayChunk(int64_t offset, int64_t size);
