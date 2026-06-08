@@ -2404,6 +2404,107 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
             qpItem->setText(0, "Quantization Parameter (QP)");
             qpItem->setText(1, QString::number(nalInfo->sliceQP));
         }
+
+        // Additional slice header fields
+        if (nalInfo->firstMbInSlice >= 0) {
+            QTreeWidgetItem* mbItem = new QTreeWidgetItem(sliceItem);
+            mbItem->setText(0, "First Macroblock");
+            mbItem->setText(1, QString::number(nalInfo->firstMbInSlice));
+        }
+
+        if (nalInfo->sliceTypeValue >= 0) {
+            QTreeWidgetItem* typeValItem = new QTreeWidgetItem(sliceItem);
+            typeValItem->setText(0, "Slice Type Value");
+            typeValItem->setText(1, QString::number(nalInfo->sliceTypeValue));
+        }
+
+        if (nalInfo->frameNum >= 0) {
+            QTreeWidgetItem* frameNumItem = new QTreeWidgetItem(sliceItem);
+            frameNumItem->setText(0, "Frame Number");
+            frameNumItem->setText(1, QString::number(nalInfo->frameNum));
+        }
+
+        if (nalInfo->picOrderCntLsb >= 0) {
+            QTreeWidgetItem* pocItem = new QTreeWidgetItem(sliceItem);
+            pocItem->setText(0, "POC LSB");
+            pocItem->setText(1, QString::number(nalInfo->picOrderCntLsb));
+        }
+
+        if (nalInfo->ppsId >= 0) {
+            QTreeWidgetItem* ppsIdItem = new QTreeWidgetItem(sliceItem);
+            ppsIdItem->setText(0, "PPS ID");
+            ppsIdItem->setText(1, QString::number(nalInfo->ppsId));
+        }
+
+        if (nalInfo->idrPicId >= 0) {
+            QTreeWidgetItem* idrIdItem = new QTreeWidgetItem(sliceItem);
+            idrIdItem->setText(0, "IDR Picture ID");
+            idrIdItem->setText(1, QString::number(nalInfo->idrPicId));
+        }
+
+        // Reference Lists (for P/B slices)
+        if ((nalInfo->sliceType == "P" || nalInfo->sliceType == "B") &&
+            (nalInfo->numRefIdxL0ActiveMinus1 >= 0 || nalInfo->refPicListModificationFlagL0)) {
+
+            QTreeWidgetItem* refListsItem = new QTreeWidgetItem(sliceItem);
+            refListsItem->setText(0, "Reference Lists");
+            refListsItem->setExpanded(true);
+            refListsItem->setForeground(0, QColor(100, 150, 255));
+
+            // List 0 (for P and B slices)
+            if (nalInfo->numRefIdxL0ActiveMinus1 >= 0 || nalInfo->refPicListModificationFlagL0) {
+                QTreeWidgetItem* l0Item = new QTreeWidgetItem(refListsItem);
+                l0Item->setText(0, "List 0 (L0)");
+
+                if (nalInfo->numRefIdxL0ActiveMinus1 >= 0) {
+                    QTreeWidgetItem* l0CountItem = new QTreeWidgetItem(l0Item);
+                    l0CountItem->setText(0, "Num Active Refs");
+                    l0CountItem->setText(1, QString::number(nalInfo->numRefIdxL0ActiveMinus1 + 1));
+                }
+
+                if (nalInfo->refPicListModificationFlagL0 && !nalInfo->refPicListL0.isEmpty()) {
+                    QTreeWidgetItem* l0ModItem = new QTreeWidgetItem(l0Item);
+                    l0ModItem->setText(0, "Modified");
+                    l0ModItem->setText(1, "Yes");
+
+                    QTreeWidgetItem* l0RefsItem = new QTreeWidgetItem(l0Item);
+                    l0RefsItem->setText(0, "Reference Indices");
+                    QStringList refIndices;
+                    for (int refIdx : nalInfo->refPicListL0) {
+                        refIndices << QString::number(refIdx);
+                    }
+                    l0RefsItem->setText(1, refIndices.join(", "));
+                }
+            }
+
+            // List 1 (for B slices only)
+            if (nalInfo->sliceType == "B" &&
+                (nalInfo->numRefIdxL1ActiveMinus1 >= 0 || nalInfo->refPicListModificationFlagL1)) {
+
+                QTreeWidgetItem* l1Item = new QTreeWidgetItem(refListsItem);
+                l1Item->setText(0, "List 1 (L1)");
+
+                if (nalInfo->numRefIdxL1ActiveMinus1 >= 0) {
+                    QTreeWidgetItem* l1CountItem = new QTreeWidgetItem(l1Item);
+                    l1CountItem->setText(0, "Num Active Refs");
+                    l1CountItem->setText(1, QString::number(nalInfo->numRefIdxL1ActiveMinus1 + 1));
+                }
+
+                if (nalInfo->refPicListModificationFlagL1 && !nalInfo->refPicListL1.isEmpty()) {
+                    QTreeWidgetItem* l1ModItem = new QTreeWidgetItem(l1Item);
+                    l1ModItem->setText(0, "Modified");
+                    l1ModItem->setText(1, "Yes");
+
+                    QTreeWidgetItem* l1RefsItem = new QTreeWidgetItem(l1Item);
+                    l1RefsItem->setText(0, "Reference Indices");
+                    QStringList refIndices;
+                    for (int refIdx : nalInfo->refPicListL1) {
+                        refIndices << QString::number(refIdx);
+                    }
+                    l1RefsItem->setText(1, refIndices.join(", "));
+                }
+            }
+        }
     }
 
     // Flags
@@ -2428,6 +2529,362 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
     QTreeWidgetItem* sliceFlagItem = new QTreeWidgetItem(flagsItem);
     sliceFlagItem->setText(0, "Is Slice");
     sliceFlagItem->setText(1, nalInfo->isSlice ? "Yes" : "No");
+
+    // H.264 SPS Info
+    if (nalInfo->nalUnitType == H264_NAL_SPS && nalInfo->spsProfileIdc >= 0) {
+        QTreeWidgetItem* spsItem = new QTreeWidgetItem(root);
+        spsItem->setText(0, "SPS (Sequence Parameter Set)");
+        spsItem->setExpanded(true);
+        spsItem->setForeground(0, QColor(255, 140, 0));
+
+        // Profile
+        QTreeWidgetItem* profileItem = new QTreeWidgetItem(spsItem);
+        profileItem->setText(0, "Profile");
+        QString profileName;
+        switch (nalInfo->spsProfileIdc) {
+            case 66: profileName = "Baseline"; break;
+            case 77: profileName = "Main"; break;
+            case 88: profileName = "Extended"; break;
+            case 100: profileName = "High"; break;
+            case 110: profileName = "High 10"; break;
+            case 122: profileName = "High 4:2:2"; break;
+            case 244: profileName = "High 4:4:4"; break;
+            default: profileName = QString("Profile %1").arg(nalInfo->spsProfileIdc); break;
+        }
+        profileItem->setText(1, QString("%1 (%2)").arg(profileName).arg(nalInfo->spsProfileIdc));
+
+        // Level
+        QTreeWidgetItem* levelItem = new QTreeWidgetItem(spsItem);
+        levelItem->setText(0, "Level");
+        levelItem->setText(1, QString("%1 (%2)").arg(nalInfo->spsLevelIdc / 10.0, 0, 'f', 1).arg(nalInfo->spsLevelIdc));
+
+        // Resolution
+        if (nalInfo->spsWidth > 0 && nalInfo->spsHeight > 0) {
+            QTreeWidgetItem* resItem = new QTreeWidgetItem(spsItem);
+            resItem->setText(0, "Resolution");
+            resItem->setText(1, QString("%1 × %2").arg(nalInfo->spsWidth).arg(nalInfo->spsHeight));
+        }
+
+        // Chroma Format
+        if (nalInfo->spsChromaFormat >= 0) {
+            QTreeWidgetItem* chromaItem = new QTreeWidgetItem(spsItem);
+            chromaItem->setText(0, "Chroma Format");
+            QString chromaName;
+            switch (nalInfo->spsChromaFormat) {
+                case 0: chromaName = "Monochrome (4:0:0)"; break;
+                case 1: chromaName = "4:2:0"; break;
+                case 2: chromaName = "4:2:2"; break;
+                case 3: chromaName = "4:4:4"; break;
+                default: chromaName = QString("Format %1").arg(nalInfo->spsChromaFormat); break;
+            }
+            chromaItem->setText(1, chromaName);
+        }
+
+        // Bit Depth
+        QTreeWidgetItem* bitDepthItem = new QTreeWidgetItem(spsItem);
+        bitDepthItem->setText(0, "Bit Depth");
+        bitDepthItem->setText(1, QString("Luma: %1-bit, Chroma: %2-bit")
+            .arg(nalInfo->spsBitDepthLuma).arg(nalInfo->spsBitDepthChroma));
+    }
+
+    // H.264 PPS Info
+    if (nalInfo->nalUnitType == H264_NAL_PPS) {
+        QTreeWidgetItem* ppsItem = new QTreeWidgetItem(root);
+        ppsItem->setText(0, "PPS (Picture Parameter Set)");
+        ppsItem->setExpanded(true);
+        ppsItem->setForeground(0, QColor(255, 140, 0));
+
+        // Entropy Coding Mode
+        QTreeWidgetItem* entropyItem = new QTreeWidgetItem(ppsItem);
+        entropyItem->setText(0, "Entropy Coding Mode");
+        entropyItem->setText(1, nalInfo->ppsEntropyCodingMode ? "CABAC" : "CAVLC");
+        entropyItem->setForeground(1, nalInfo->ppsEntropyCodingMode ? QColor(50, 200, 50) : QColor(200, 150, 50));
+
+        // Slice Groups
+        QTreeWidgetItem* sliceGroupsItem = new QTreeWidgetItem(ppsItem);
+        sliceGroupsItem->setText(0, "Slice Groups");
+        sliceGroupsItem->setText(1, QString::number(nalInfo->ppsNumSliceGroups));
+
+        // Deblocking Filter
+        QTreeWidgetItem* deblockItem = new QTreeWidgetItem(ppsItem);
+        deblockItem->setText(0, "Deblocking Filter");
+        deblockItem->setText(1, nalInfo->ppsDeblockingFilter ? "Enabled" : "Disabled");
+
+        // Weighted Prediction
+        QTreeWidgetItem* weightedItem = new QTreeWidgetItem(ppsItem);
+        weightedItem->setText(0, "Weighted Prediction");
+        weightedItem->setExpanded(true);
+
+        QTreeWidgetItem* wpPItem = new QTreeWidgetItem(weightedItem);
+        wpPItem->setText(0, "P-slices");
+        wpPItem->setText(1, nalInfo->ppsWeightedPred ? "Enabled" : "Disabled");
+
+        QTreeWidgetItem* wpBItem = new QTreeWidgetItem(weightedItem);
+        wpBItem->setText(0, "B-slices");
+        QString bipredName;
+        switch (nalInfo->ppsWeightedBipred) {
+            case 0: bipredName = "Disabled"; break;
+            case 1: bipredName = "Explicit"; break;
+            case 2: bipredName = "Implicit"; break;
+            default: bipredName = QString("Mode %1").arg(nalInfo->ppsWeightedBipred); break;
+        }
+        wpBItem->setText(1, bipredName);
+    }
+
+    // H.265 VPS Info
+    if (nalInfo->nalUnitType == HEVC_NAL_VPS) {
+        QTreeWidgetItem* vpsItem = new QTreeWidgetItem(root);
+        vpsItem->setText(0, "VPS (Video Parameter Set)");
+        vpsItem->setExpanded(true);
+        vpsItem->setForeground(0, QColor(255, 140, 0));
+
+        // Max Layers
+        QTreeWidgetItem* layersItem = new QTreeWidgetItem(vpsItem);
+        layersItem->setText(0, "Max Layers");
+        layersItem->setText(1, QString::number(nalInfo->vpsMaxLayers));
+
+        // Max Sub-Layers
+        QTreeWidgetItem* subLayersItem = new QTreeWidgetItem(vpsItem);
+        subLayersItem->setText(0, "Max Temporal Sub-Layers");
+        subLayersItem->setText(1, QString::number(nalInfo->vpsMaxSubLayers));
+    }
+
+    // H.265 SPS Info
+    if (nalInfo->nalUnitType == HEVC_NAL_SPS && nalInfo->spsProfileIdc >= 0) {
+        QTreeWidgetItem* spsItem = new QTreeWidgetItem(root);
+        spsItem->setText(0, "SPS (Sequence Parameter Set)");
+        spsItem->setExpanded(true);
+        spsItem->setForeground(0, QColor(255, 140, 0));
+
+        // Profile
+        QTreeWidgetItem* profileItem = new QTreeWidgetItem(spsItem);
+        profileItem->setText(0, "Profile");
+        QString profileName;
+        switch (nalInfo->spsProfileIdc) {
+            case 1: profileName = "Main"; break;
+            case 2: profileName = "Main 10"; break;
+            case 3: profileName = "Main Still Picture"; break;
+            case 4: profileName = "Rext (Range Extensions)"; break;
+            default: profileName = QString("Profile %1").arg(nalInfo->spsProfileIdc); break;
+        }
+        profileItem->setText(1, QString("%1 (%2)").arg(profileName).arg(nalInfo->spsProfileIdc));
+
+        // Level
+        QTreeWidgetItem* levelItem = new QTreeWidgetItem(spsItem);
+        levelItem->setText(0, "Level");
+        levelItem->setText(1, QString("%1 (%2)").arg(nalInfo->spsLevelIdc / 30.0, 0, 'f', 1).arg(nalInfo->spsLevelIdc));
+
+        // Resolution
+        if (nalInfo->spsWidth > 0 && nalInfo->spsHeight > 0) {
+            QTreeWidgetItem* resItem = new QTreeWidgetItem(spsItem);
+            resItem->setText(0, "Resolution");
+            resItem->setText(1, QString("%1 × %2").arg(nalInfo->spsWidth).arg(nalInfo->spsHeight));
+        }
+
+        // Chroma Format
+        if (nalInfo->spsChromaFormat >= 0) {
+            QTreeWidgetItem* chromaItem = new QTreeWidgetItem(spsItem);
+            chromaItem->setText(0, "Chroma Format");
+            QString chromaName;
+            switch (nalInfo->spsChromaFormat) {
+                case 0: chromaName = "Monochrome (4:0:0)"; break;
+                case 1: chromaName = "4:2:0"; break;
+                case 2: chromaName = "4:2:2"; break;
+                case 3: chromaName = "4:4:4"; break;
+                default: chromaName = QString("Format %1").arg(nalInfo->spsChromaFormat); break;
+            }
+            chromaItem->setText(1, chromaName);
+        }
+
+        // Bit Depth
+        QTreeWidgetItem* bitDepthItem = new QTreeWidgetItem(spsItem);
+        bitDepthItem->setText(0, "Bit Depth");
+        bitDepthItem->setText(1, QString("Luma: %1-bit, Chroma: %2-bit")
+            .arg(nalInfo->spsBitDepthLuma).arg(nalInfo->spsBitDepthChroma));
+    }
+}
+
+void PropertyPanel::displayAudioFrame(int audioIndex) {
+    if (!m_nalUnitParser) {
+        return;
+    }
+
+    const AudioFrameInfo* audioInfo = m_nalUnitParser->getAudioFrame(audioIndex);
+    if (!audioInfo) {
+        return;
+    }
+
+    m_treeWidget->clear();
+
+    // Root item
+    QTreeWidgetItem* root = new QTreeWidgetItem(m_treeWidget);
+    root->setText(0, QString("Audio Frame #%1").arg(audioInfo->index));
+    root->setExpanded(true);
+
+    // Basic info
+    QTreeWidgetItem* typeItem = new QTreeWidgetItem(root);
+    typeItem->setText(0, "Type");
+    typeItem->setText(1, audioInfo->frameName);
+    typeItem->setForeground(1, QColor(50, 100, 200));
+
+    QTreeWidgetItem* codecItem = new QTreeWidgetItem(root);
+    codecItem->setText(0, "Codec");
+    codecItem->setText(1, audioInfo->codecType);
+
+    QTreeWidgetItem* offsetItem = new QTreeWidgetItem(root);
+    offsetItem->setText(0, "File Offset");
+    offsetItem->setText(1, QString("0x%1 (%2)").arg(audioInfo->fileOffset, 0, 16).arg(audioInfo->fileOffset));
+
+    QTreeWidgetItem* sizeItem = new QTreeWidgetItem(root);
+    sizeItem->setText(0, "Size");
+    sizeItem->setText(1, QString("%1 bytes").arg(audioInfo->size));
+
+    QTreeWidgetItem* frameItem = new QTreeWidgetItem(root);
+    frameItem->setText(0, "Video Frame");
+    frameItem->setText(1, QString::number(audioInfo->frameNumber));
+
+    // ADTS header info (if AAC)
+    if (audioInfo->codecType == "AAC") {
+        QTreeWidgetItem* adtsItem = new QTreeWidgetItem(root);
+        adtsItem->setText(0, "ADTS Header");
+        adtsItem->setExpanded(true);
+
+        QTreeWidgetItem* hasAdtsItem = new QTreeWidgetItem(adtsItem);
+        hasAdtsItem->setText(0, "ADTS Present");
+        hasAdtsItem->setText(1, audioInfo->hasADTS ? "Yes" : "No (Raw AAC)");
+        hasAdtsItem->setForeground(1, audioInfo->hasADTS ? QColor(50, 200, 50) : QColor(200, 100, 100));
+
+        if (audioInfo->hasADTS) {
+            // Audio Object Type (Profile)
+            QTreeWidgetItem* profileItem = new QTreeWidgetItem(adtsItem);
+            profileItem->setText(0, "Profile");
+            QString profileName;
+            switch (audioInfo->audioObjectType) {
+                case AAC_MAIN: profileName = "AAC Main"; break;
+                case AAC_LC: profileName = "AAC-LC (Low Complexity)"; break;
+                case AAC_SSR: profileName = "AAC SSR"; break;
+                case AAC_LTP: profileName = "AAC LTP"; break;
+                case AAC_SBR: profileName = "HE-AAC (SBR)"; break;
+                case AAC_PS: profileName = "HE-AACv2 (PS)"; break;
+                default: profileName = QString("AAC Profile %1").arg(audioInfo->audioObjectType); break;
+            }
+            profileItem->setText(1, profileName);
+
+            // Sampling Frequency
+            QTreeWidgetItem* sampleRateItem = new QTreeWidgetItem(adtsItem);
+            sampleRateItem->setText(0, "Sampling Frequency");
+            sampleRateItem->setText(1, QString("%1 Hz").arg(audioInfo->samplingFrequency));
+
+            // Channel Configuration
+            QTreeWidgetItem* channelItem = new QTreeWidgetItem(adtsItem);
+            channelItem->setText(0, "Channel Configuration");
+            QString channelName;
+            switch (audioInfo->channelConfig) {
+                case AAC_CHANNEL_MONO: channelName = "1.0 (Mono)"; break;
+                case AAC_CHANNEL_STEREO: channelName = "2.0 (Stereo)"; break;
+                case AAC_CHANNEL_3_0: channelName = "3.0"; break;
+                case AAC_CHANNEL_4_0: channelName = "4.0"; break;
+                case AAC_CHANNEL_5_0: channelName = "5.0"; break;
+                case AAC_CHANNEL_5_1: channelName = "5.1"; break;
+                case AAC_CHANNEL_7_1: channelName = "7.1"; break;
+                default: channelName = QString("Config %1").arg(audioInfo->channelConfig); break;
+            }
+            channelItem->setText(1, channelName);
+
+            // Frame Length
+            QTreeWidgetItem* frameLenItem = new QTreeWidgetItem(adtsItem);
+            frameLenItem->setText(0, "ADTS Frame Length");
+            frameLenItem->setText(1, QString("%1 bytes").arg(audioInfo->frameLength));
+
+            // Protection
+            QTreeWidgetItem* protectionItem = new QTreeWidgetItem(adtsItem);
+            protectionItem->setText(0, "CRC Protection");
+            protectionItem->setText(1, audioInfo->protectionAbsent ? "Absent" : "Present");
+        }
+    }
+    // AC-3 / E-AC-3 info
+    else if (audioInfo->codecType == "AC-3" || audioInfo->codecType == "E-AC-3") {
+        QTreeWidgetItem* ac3Item = new QTreeWidgetItem(root);
+        ac3Item->setText(0, "AC-3 Header");
+        ac3Item->setExpanded(true);
+
+        if (audioInfo->samplingFrequency > 0) {
+            QTreeWidgetItem* sampleRateItem = new QTreeWidgetItem(ac3Item);
+            sampleRateItem->setText(0, "Sampling Frequency");
+            sampleRateItem->setText(1, QString("%1 Hz").arg(audioInfo->samplingFrequency));
+        }
+
+        if (audioInfo->channelConfig > 0) {
+            QTreeWidgetItem* channelItem = new QTreeWidgetItem(ac3Item);
+            channelItem->setText(0, "Channels");
+            QString channelName;
+            if (audioInfo->channelConfig == 1) channelName = "1.0 (Mono)";
+            else if (audioInfo->channelConfig == 2) channelName = "2.0 (Stereo)";
+            else if (audioInfo->channelConfig == 6) channelName = "5.1";
+            else channelName = QString("%1 channels").arg(audioInfo->channelConfig);
+            channelItem->setText(1, channelName);
+        }
+
+        if (audioInfo->bitrate > 0) {
+            QTreeWidgetItem* bitrateItem = new QTreeWidgetItem(ac3Item);
+            bitrateItem->setText(0, "Bitrate");
+            bitrateItem->setText(1, QString("%1 kbps").arg(audioInfo->bitrate));
+        }
+    }
+    // MP3 / MP2 info
+    else if (audioInfo->codecType == "MP3" || audioInfo->codecType == "MP2") {
+        QTreeWidgetItem* mp3Item = new QTreeWidgetItem(root);
+        mp3Item->setText(0, "MP3 Header");
+        mp3Item->setExpanded(true);
+
+        if (audioInfo->mpegVersion > 0) {
+            QTreeWidgetItem* versionItem = new QTreeWidgetItem(mp3Item);
+            versionItem->setText(0, "MPEG Version");
+            QString versionName;
+            switch (audioInfo->mpegVersion) {
+                case 3: versionName = "MPEG-1"; break;
+                case 2: versionName = "MPEG-2"; break;
+                case 0: versionName = "MPEG-2.5"; break;
+                default: versionName = QString("Version %1").arg(audioInfo->mpegVersion); break;
+            }
+            versionItem->setText(1, versionName);
+        }
+
+        if (audioInfo->layer > 0) {
+            QTreeWidgetItem* layerItem = new QTreeWidgetItem(mp3Item);
+            layerItem->setText(0, "Layer");
+            layerItem->setText(1, QString("Layer %1").arg(audioInfo->layer));
+        }
+
+        if (audioInfo->samplingFrequency > 0) {
+            QTreeWidgetItem* sampleRateItem = new QTreeWidgetItem(mp3Item);
+            sampleRateItem->setText(0, "Sampling Frequency");
+            sampleRateItem->setText(1, QString("%1 Hz").arg(audioInfo->samplingFrequency));
+        }
+
+        if (audioInfo->channelConfig > 0) {
+            QTreeWidgetItem* channelItem = new QTreeWidgetItem(mp3Item);
+            channelItem->setText(0, "Channels");
+            channelItem->setText(1, audioInfo->channelConfig == 1 ? "Mono" : "Stereo");
+        }
+
+        if (audioInfo->bitrate > 0) {
+            QTreeWidgetItem* bitrateItem = new QTreeWidgetItem(mp3Item);
+            bitrateItem->setText(0, "Bitrate");
+            bitrateItem->setText(1, QString("%1 kbps").arg(audioInfo->bitrate));
+        }
+    }
+    // Generic audio info for other codecs (Opus, Vorbis, FLAC)
+    else {
+        QTreeWidgetItem* audioDetailsItem = new QTreeWidgetItem(root);
+        audioDetailsItem->setText(0, "Audio Info");
+        audioDetailsItem->setExpanded(true);
+
+        QTreeWidgetItem* noteItem = new QTreeWidgetItem(audioDetailsItem);
+        noteItem->setText(0, "Note");
+        noteItem->setText(1, "Detailed header parsing not yet implemented for this codec");
+        noteItem->setForeground(1, QColor(150, 150, 150));
+    }
 }
 
 

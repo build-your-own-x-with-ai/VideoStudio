@@ -92,6 +92,11 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 ![Duplicate Frame Detection - Results](docs/screenshots/duplicate_detection_results.png)
 *Analysis results displaying unique frames, duplicate groups, and freeze frame statistics with detailed frame number listings*
 
+### NAL Unit List
+
+![NAL Unit List](docs/screenshots/nal_unit_list_ref.png)
+
+
 ## Requirements
 
 - **macOS**: 10.15 or later

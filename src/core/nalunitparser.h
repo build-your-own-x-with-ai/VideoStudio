@@ -51,7 +51,13 @@ private:
                                           int frameNumber, int64_t frameOffset);
 
     // Parse audio frames
-    void parseAudioFrames(const QString& filePath, AVFormatContext* formatContext, int audioStreamIndex);
+    void parseAudioFrames(const QString& filePath, AVFormatContext* formatContext, int audioStreamIndex, AVCodecID codecId);
+    void parseAudioFramesFromFile(const QString& filePath);
+
+    // Parse audio codec headers
+    void parseADTSHeader(const uint8_t* data, int size, AudioFrameInfo& info);
+    void parseAC3Header(const uint8_t* data, int size, AudioFrameInfo& info);
+    void parseMP3Header(const uint8_t* data, int size, AudioFrameInfo& info);
 
     // Format detection
     enum BitstreamFormat {
@@ -63,6 +69,25 @@ private:
     // NAL header parsing
     void parseH264NALHeader(const uint8_t* data, int size, NALUnitInfo& info);
     void parseH265NALHeader(const uint8_t* data, int size, NALUnitInfo& info);
+
+    // Detailed NAL unit parsing
+    void parseH264SPS(const uint8_t* data, int size, NALUnitInfo& info);
+    void parseH264PPS(const uint8_t* data, int size, NALUnitInfo& info);
+    void parseH265VPS(const uint8_t* data, int size, NALUnitInfo& info);
+    void parseH265SPS(const uint8_t* data, int size, NALUnitInfo& info);
+
+    // Slice header parsing
+    void parseH264SliceHeader(const uint8_t* data, int size, NALUnitInfo& info);
+    void parseH265SliceHeader(const uint8_t* data, int size, NALUnitInfo& info);
+
+    // Extradata parsing (avcC/hvcC from MP4/MKV)
+    QVector<NALUnitInfo> parseAVCCExtradata(const uint8_t* data, int size, AVCodecID codecId);
+    QVector<NALUnitInfo> parseHVCCExtradata(const uint8_t* data, int size, AVCodecID codecId);
+
+    // Exp-Golomb decoding helpers
+    uint32_t readUE(const uint8_t* data, int& bitPos, int maxBits);  // Read unsigned Exp-Golomb
+    int32_t readSE(const uint8_t* data, int& bitPos, int maxBits);   // Read signed Exp-Golomb
+    uint32_t readBits(const uint8_t* data, int& bitPos, int numBits); // Read n bits
 
     // Type name helpers
     QString getH264NALTypeName(int type) const;

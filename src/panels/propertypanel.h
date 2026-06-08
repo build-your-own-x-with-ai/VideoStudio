@@ -43,6 +43,7 @@ public:
     void displayChunk(int64_t offset);
     void displayTag(int64_t offset);
     void displayNALUnit(int nalIndex);
+    void displayAudioFrame(int audioIndex);
 
     // Set mode
     void setMode(PropertyMode mode);

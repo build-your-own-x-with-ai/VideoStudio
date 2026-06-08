@@ -51,7 +51,27 @@
       "Bash(plutil -p /Users/i/Code/VideoStudio/build/VideoStudio.app/Contents/Info.plist)",
       "Bash(sudo rm *)",
       "Bash(/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Users/i/Code/VideoStudio/build/VideoStudio.app)",
-      "Bash(grep -E \"\\\\.h$|\\\\.cpp$\")"
+      "Bash(grep -E \"\\\\.h$|\\\\.cpp$\")",
+      "Bash(rm -rf build)",
+      "Bash(mkdir build *)",
+      "Bash(ffprobe -v error -select_streams v:0 -show_entries frame=pict_type -of csv=p=0 ~/Movies/test_moving.mp4)",
+      "Bash(md5 test_frame_*.png)",
+      "Bash(md5 unique_*.png)",
+      "Bash(ffprobe -select_streams v -show_frames -show_entries frame=pict_type,key_frame,pkt_pts_time,coded_picture_number /Users/i/Movies/test_real_unique.mp4)",
+      "Bash(ffprobe -select_streams v -show_frames /Users/i/Movies/test_real_unique.mp4)",
+      "Bash(ffprobe -v error -select_streams a -show_entries stream=codec_type,codec_name -of default=noprint_wrappers=1 /Users/i/Movies/MusicPark.mp4)",
+      "Bash(ffprobe -v error -show_entries stream=codec_type,codec_name /Users/i/Movies/test_real_unique.mp4)",
+      "Bash(tee /tmp/vs_audio_log.txt)",
+      "Bash(pkill VideoStudio)",
+      "Bash(ffprobe *)",
+      "Bash(tee /tmp/vs_audio_hex_test.log)",
+      "Bash(awk -F',' 'NR>1 && $7==\"Yes\" {print $8}' /Users/i/nal_units.csv)",
+      "Bash(awk *)",
+      "Bash(pkill -f VideoStudio)",
+      "Bash(pkill -f VideoStudio sleep 1 ./VideoStudio.app/Contents/MacOS/VideoStudio)",
+      "Bash(screencapture -x /tmp/videostudio_arrows.png)",
+      "Bash(screencapture -x /tmp/videostudio_arrows2.png)",
+      "Bash(echo \"Started with PID: $!\")"
     ]
   }
 }

@@ -1880,6 +1880,8 @@ void MainWindow::updateMP4Panels() {
             m_propertyPanel, &PropertyPanel::displayNALUnit, Qt::UniqueConnection);
     connect(m_nalUnitView, &NALUnitView::audioFrameSelected,
             m_hexViewerPanel, &HexViewerPanel::displayAudioFrame, Qt::UniqueConnection);
+    connect(m_nalUnitView, &NALUnitView::audioFrameSelected,
+            m_propertyPanel, &PropertyPanel::displayAudioFrame, Qt::UniqueConnection);
     connect(m_nalUnitView, &NALUnitView::frameSelected,
             this, &MainWindow::onFrameClicked, Qt::UniqueConnection);
     qDebug() << "updateMP4Panels: connected NAL Unit View signals";
@@ -1943,6 +1945,8 @@ void MainWindow::updateMKVPanels() {
             m_propertyPanel, &PropertyPanel::displayNALUnit, Qt::UniqueConnection);
     connect(m_nalUnitView, &NALUnitView::audioFrameSelected,
             m_hexViewerPanel, &HexViewerPanel::displayAudioFrame, Qt::UniqueConnection);
+    connect(m_nalUnitView, &NALUnitView::audioFrameSelected,
+            m_propertyPanel, &PropertyPanel::displayAudioFrame, Qt::UniqueConnection);
     connect(m_nalUnitView, &NALUnitView::frameSelected,
             this, &MainWindow::onFrameClicked, Qt::UniqueConnection);
 
