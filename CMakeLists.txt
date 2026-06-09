@@ -16,40 +16,45 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent Network)
 # Find FFmpeg
 if(WIN32)
     # On Windows, use find_path/find_library
-    find_path(FFMPEG_INCLUDE_DIR libavcodec/avcodec.h
-        PATHS
+    set(FFMPEG_SEARCH_PATHS
+        "$ENV{FFMPEG_DIR}/include"
         "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/include"
         "C:/ffmpeg/include"
-        "$ENV{FFMPEG_DIR}/include"
+    )
+
+    set(FFMPEG_LIB_PATHS
+        "$ENV{FFMPEG_DIR}/lib"
+        "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/lib"
+        "C:/ffmpeg/lib"
+    )
+
+    find_path(FFMPEG_INCLUDE_DIR libavcodec/avcodec.h
+        PATHS ${FFMPEG_SEARCH_PATHS}
     )
 
     find_library(AVCODEC_LIBRARY avcodec
-        PATHS
-        "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/lib"
-        "C:/ffmpeg/lib"
-        "$ENV{FFMPEG_DIR}/lib"
+        PATHS ${FFMPEG_LIB_PATHS}
     )
     find_library(AVFORMAT_LIBRARY avformat
-        PATHS
-        "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/lib"
-        "C:/ffmpeg/lib"
-        "$ENV{FFMPEG_DIR}/lib"
+        PATHS ${FFMPEG_LIB_PATHS}
     )
     find_library(AVUTIL_LIBRARY avutil
-        PATHS
-        "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/lib"
-        "C:/ffmpeg/lib"
-        "$ENV{FFMPEG_DIR}/lib"
+        PATHS ${FFMPEG_LIB_PATHS}
     )
     find_library(SWSCALE_LIBRARY swscale
-        PATHS
-        "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/lib"
-        "C:/ffmpeg/lib"
-        "$ENV{FFMPEG_DIR}/lib"
+        PATHS ${FFMPEG_LIB_PATHS}
     )
+
+    if(NOT FFMPEG_INCLUDE_DIR OR NOT AVCODEC_LIBRARY OR NOT AVFORMAT_LIBRARY
+       OR NOT AVUTIL_LIBRARY OR NOT SWSCALE_LIBRARY)
+        message(FATAL_ERROR "FFmpeg not found. Please set FFMPEG_DIR environment variable or install FFmpeg.")
+    endif()
 
     set(FFMPEG_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR})
     set(FFMPEG_LIBRARIES ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${SWSCALE_LIBRARY})
+
+    message(STATUS "FFmpeg include: ${FFMPEG_INCLUDE_DIRS}")
+    message(STATUS "FFmpeg libraries: ${FFMPEG_LIBRARIES}")
 else()
     # On Unix-like systems, use pkg-config
     find_package(PkgConfig REQUIRED)
