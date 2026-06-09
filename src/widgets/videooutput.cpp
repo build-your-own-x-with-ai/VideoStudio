@@ -7,6 +7,7 @@
 extern "C" {
 #include <libavutil/imgutils.h>
 #include <libavutil/motion_vector.h>
+#include <libavutil/video_enc_params.h>
 }
 
 namespace VideoStudio {
@@ -184,6 +185,10 @@ void VideoOutput::drawOverlays(QPainter& painter, const QRect& videoRect) {
     if (isOverlayEnabled(OverlayType::FrameTypes)) {
         drawFrameTypeInfo(painter, videoRect);
     }
+
+    if (isOverlayEnabled(OverlayType::QuantizationParameter)) {
+        drawQPHeatmap(painter, videoRect);
+    }
 }
 
 void VideoOutput::drawMotionVectors(QPainter& painter, const QRect& videoRect) {
@@ -352,20 +357,20 @@ void VideoOutput::drawBlockBoundaries(QPainter& painter, const QRect& videoRect)
             return; // Skip individual block drawing
         }
 
-        // Otherwise, draw actual block boundaries with varying sizes
+        // Otherwise, draw actual block boundaries with enhanced color coding
 
-        // Use different colors for different block sizes
-        QMap<int, QColor> blockColors;
-        blockColors[64] = QColor(255, 0, 0, 180);    // Red for 64x64
-        blockColors[32] = QColor(255, 128, 0, 180);  // Orange for 32x32
-        blockColors[16] = QColor(255, 255, 0, 180);  // Yellow for 16x16
-        blockColors[8] = QColor(0, 255, 0, 180);     // Green for 8x8
-        blockColors[4] = QColor(0, 255, 255, 180);   // Cyan for 4x4
+        // Get QP data for color intensity adjustment
+        AVFrameSideData* encParamsSd = av_frame_get_side_data(m_currentFrame, AV_FRAME_DATA_VIDEO_ENC_PARAMS);
+        AVVideoEncParams* encParams = nullptr;
+        if (encParamsSd) {
+            encParams = reinterpret_cast<AVVideoEncParams*>(encParamsSd->data);
+        }
 
-        // Count block sizes for statistics
+        // Count block types and sizes for statistics
         QMap<int, int> blockSizeCount;
+        int intraCount = 0, interCount = 0, skipCount = 0;
 
-        // Draw each block boundary with enhanced information
+        // Draw each block with prediction mode color coding
         for (int i = 0; i < mvCount; ++i) {
             const AVMotionVector* mv = &mvs[i];
 
@@ -374,87 +379,143 @@ void VideoOutput::drawBlockBoundaries(QPainter& painter, const QRect& videoRect)
             int w = static_cast<int>(mv->w * scaleX);
             int h = static_cast<int>(mv->h * scaleY);
 
-            // Choose color based on block size
-            QColor color = QColor(255, 255, 0, 150); // Default yellow
-            int blockSize = mv->w; // Use width as block size indicator
-            if (blockColors.contains(blockSize)) {
-                color = blockColors[blockSize];
+            // Determine block prediction mode
+            bool isIntra = (mv->source == -1);
+            bool isSkip = (!isIntra && mv->motion_x == 0 && mv->motion_y == 0);
+
+            // Count block types
+            if (isIntra) {
+                intraCount++;
+            } else if (isSkip) {
+                skipCount++;
+            } else {
+                interCount++;
             }
 
-            // Count block sizes
-            blockSizeCount[blockSize]++;
+            // Base color by prediction mode
+            QColor baseColor;
+            if (isIntra) {
+                baseColor = QColor(255, 100, 100);  // Red for Intra
+            } else if (isSkip) {
+                baseColor = QColor(150, 150, 150);  // Gray for Skip
+            } else {
+                baseColor = QColor(100, 150, 255);  // Blue for Inter
+            }
 
-            // Draw block boundary with thicker line for larger blocks
-            int lineWidth = (blockSize >= 32) ? 2 : 1;
-            painter.setPen(QPen(color, lineWidth));
+            // Adjust color intensity based on QP (if available)
+            int blockQP = -1;
+            if (encParams && i < static_cast<int>(encParams->nb_blocks)) {
+                AVVideoBlockParams* block = av_video_enc_params_block(encParams, i);
+                blockQP = encParams->qp + block->delta_qp;
+
+                // Adjust alpha based on QP: high QP = more opaque (worse quality)
+                int alpha = 100 + (blockQP * 3);  // QP 0->100, QP 51->253
+                alpha = qMin(alpha, 200);
+                baseColor.setAlpha(alpha);
+            } else {
+                baseColor.setAlpha(150);
+            }
+
+            // Fill block with color
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(baseColor);
             painter.drawRect(x, y, w, h);
 
-            // Draw block size label for larger blocks (if zoom is sufficient)
-            if (m_zoomLevel >= 1.0 && w >= 32 && h >= 32) {
-                QString sizeLabel = QString("%1x%2").arg(mv->w).arg(mv->h);
+            // Draw block boundary
+            int blockSize = mv->w;
+            blockSizeCount[blockSize]++;
 
-                painter.setFont(QFont("Arial", 8, QFont::Bold));
-                QFontMetrics fm(painter.font());
-                QRect textRect = fm.boundingRect(sizeLabel);
-                int textWidth = textRect.width();
-                int textHeight = textRect.height();
-
-                // Calculate center position
-                int centerX = x + w / 2 - textWidth / 2;
-                int centerY = y + h / 2 - textHeight / 2;
-
-                // Draw semi-transparent black background
-                painter.setPen(Qt::NoPen);
-                painter.setBrush(QColor(0, 0, 0, 200));
-                painter.drawRect(centerX - 2, centerY - 2, textWidth + 4, textHeight + 4);
-
-                // Draw text in white
-                painter.setPen(Qt::white);
-                painter.drawText(centerX, centerY + textHeight - 2, sizeLabel);
+            // Boundary color based on block size
+            QColor borderColor;
+            if (blockSize >= 32) {
+                borderColor = QColor(255, 255, 0, 255);  // Yellow for large blocks
+            } else if (blockSize >= 16) {
+                borderColor = QColor(255, 200, 0, 200);  // Orange for medium blocks
+            } else {
+                borderColor = QColor(200, 200, 0, 150);  // Dim yellow for small blocks
             }
 
-            // Draw prediction mode indicator (source vs destination)
-            if (m_zoomLevel >= 1.5 && w >= 16 && h >= 16) {
-                // Draw small circle to indicate prediction direction
-                bool isIntra = (mv->source == -1);  // source == -1 means intra prediction
-                QColor predColor = isIntra ? QColor(255, 0, 0, 200) : QColor(0, 255, 0, 200);
-                painter.setBrush(predColor);
+            int lineWidth = (blockSize >= 32) ? 2 : 1;
+            painter.setPen(QPen(borderColor, lineWidth));
+            painter.drawRect(x, y, w, h);
+
+            // Draw reference frame index for Inter blocks (if zoom is sufficient)
+            if (!isIntra && m_zoomLevel >= 1.2 && w >= 20 && h >= 20) {
+                int refIdx = mv->source;
+                if (refIdx >= 0) {
+                    QString refText = QString::number(refIdx);
+
+                    painter.setFont(QFont("Arial", 9, QFont::Bold));
+                    QFontMetrics fm(painter.font());
+                    int textWidth = fm.horizontalAdvance(refText);
+                    int textHeight = fm.height();
+
+                    int centerX = x + w / 2 - textWidth / 2;
+                    int centerY = y + h / 2 + textHeight / 3;
+
+                    // Draw black background
+                    painter.setPen(Qt::NoPen);
+                    painter.setBrush(QColor(0, 0, 0, 200));
+                    painter.drawRect(centerX - 2, centerY - textHeight + 2, textWidth + 4, textHeight);
+
+                    // Draw white text
+                    painter.setPen(Qt::white);
+                    painter.drawText(centerX, centerY, refText);
+                }
+            }
+
+            // Draw QP value for blocks with significant QP (if zoom is sufficient)
+            if (blockQP >= 0 && m_zoomLevel >= 1.5 && w >= 24 && h >= 24) {
+                QString qpText = QString("Q%1").arg(blockQP);
+
+                painter.setFont(QFont("Arial", 7));
+                QFontMetrics fm(painter.font());
+                int textWidth = fm.horizontalAdvance(qpText);
+
+                // Draw in top-left corner
                 painter.setPen(Qt::NoPen);
-                int circleSize = qMax(3, qMin(8, w / 4));
-                painter.drawEllipse(QPoint(x + circleSize + 2, y + circleSize + 2), circleSize, circleSize);
+                painter.setBrush(QColor(0, 0, 0, 180));
+                painter.drawRect(x + 2, y + 2, textWidth + 3, 10);
+
+                painter.setPen(Qt::white);
+                painter.drawText(x + 3, y + 10, qpText);
             }
         }
 
-        // Draw block size statistics in top-left corner (if there are multiple block sizes)
-        if (blockSizeCount.size() > 1) {
-            int statsX = videoRect.left() + 10;
-            int statsY = videoRect.top() + 10;
+        // Draw prediction mode statistics legend
+        if (m_zoomLevel >= 0.8) {
+            int legendX = videoRect.left() + 10;
+            int legendY = videoRect.top() + 10;
             painter.setFont(QFont("Arial", 9, QFont::Bold));
 
-            for (auto it = blockSizeCount.constBegin(); it != blockSizeCount.constEnd(); ++it) {
-                int size = it.key();
-                int count = it.value();
-                QColor color = blockColors.value(size, QColor(255, 255, 255));
+            // Background for entire legend
+            int legendHeight = 60;
+            int legendWidth = 140;
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(QColor(0, 0, 0, 200));
+            painter.drawRect(legendX - 4, legendY - 4, legendWidth, legendHeight);
 
-                QString text = QString("%1x%1: %2").arg(size).arg(count);
-                QFontMetrics fm(painter.font());
-                int textWidth = fm.horizontalAdvance(text);
+            // Title
+            painter.setPen(Qt::white);
+            painter.drawText(legendX, legendY + 10, "Prediction Modes:");
 
-                // Draw semi-transparent black background for entire legend item
-                painter.setPen(Qt::NoPen);
-                painter.setBrush(QColor(0, 0, 0, 200));
-                painter.drawRect(statsX - 2, statsY - 2, textWidth + 20, 16);
+            // Intra blocks
+            painter.setBrush(QColor(255, 100, 100, 180));
+            painter.drawRect(legendX, legendY + 16, 12, 12);
+            painter.setPen(Qt::white);
+            painter.drawText(legendX + 16, legendY + 26, QString("Intra: %1").arg(intraCount));
 
-                // Draw color indicator
-                painter.setBrush(color);
-                painter.drawRect(statsX, statsY, 12, 12);
+            // Inter blocks
+            painter.setBrush(QColor(100, 150, 255, 180));
+            painter.drawRect(legendX, legendY + 32, 12, 12);
+            painter.setPen(Qt::white);
+            painter.drawText(legendX + 16, legendY + 42, QString("Inter: %1").arg(interCount));
 
-                // Draw text with white color
-                painter.setPen(Qt::white);
-                painter.drawText(statsX + 16, statsY + 10, text);
-
-                statsY += 16;
-            }
+            // Skip blocks
+            painter.setBrush(QColor(150, 150, 150, 180));
+            painter.drawRect(legendX, legendY + 48, 12, 12);
+            painter.setPen(Qt::white);
+            painter.drawText(legendX + 16, legendY + 58, QString("Skip: %1").arg(skipCount));
         }
     } else {
         // Fallback: Draw standard 16x16 macroblock grid aligned to video
@@ -759,6 +820,187 @@ QString VideoOutput::getBlockInfoAtPosition(const QPoint& pos, const QRect& vide
     }
 
     return info;
+}
+
+void VideoOutput::drawQPHeatmap(QPainter& painter, const QRect& videoRect) {
+    if (!m_currentFrame) {
+        return;
+    }
+
+    // Try to get video encoding parameters from side data
+    AVFrameSideData* sd = av_frame_get_side_data(m_currentFrame, AV_FRAME_DATA_VIDEO_ENC_PARAMS);
+
+    if (!sd) {
+        // Draw "No QP data" message
+        painter.setPen(QPen(QColor(255, 255, 0, 200), 1));
+        painter.setFont(QFont("Arial", 10));
+        painter.drawText(videoRect.adjusted(10, 10, -10, -10),
+                        Qt::AlignLeft | Qt::AlignTop,
+                        "No QP data available\n\n"
+                        "QP heatmap requires:\n"
+                        "1. Video must be decoded (not just demuxed)\n"
+                        "2. Codec must export encoding parameters\n"
+                        "3. Use 'export_side_data=venc_params' flag");
+        return;
+    }
+
+    // Parse AVVideoEncParams structure
+    const AVVideoEncParams* encParams = reinterpret_cast<const AVVideoEncParams*>(sd->data);
+
+    if (!encParams || encParams->nb_blocks == 0) {
+        painter.setPen(QPen(QColor(255, 255, 0, 200), 1));
+        painter.setFont(QFont("Arial", 10));
+        painter.drawText(videoRect.adjusted(10, 10, -10, -10),
+                        Qt::AlignLeft | Qt::AlignTop,
+                        "No block-level QP data in this frame");
+        return;
+    }
+
+    double scaleX = static_cast<double>(videoRect.width()) / m_currentFrame->width;
+    double scaleY = static_cast<double>(videoRect.height()) / m_currentFrame->height;
+
+    // Draw QP heatmap for each block
+    int minQP = 51;
+    int maxQP = 0;
+
+    for (unsigned int i = 0; i < encParams->nb_blocks; ++i) {
+        AVVideoBlockParams* block = av_video_enc_params_block(const_cast<AVVideoEncParams*>(encParams), i);
+
+        if (!block) {
+            continue;
+        }
+
+        // Get QP value - it might be in delta_qp or absolute
+        int qp = encParams->qp;  // Base QP
+        if (block->delta_qp) {
+            qp += block->delta_qp;
+        }
+
+        // Clamp QP to valid range
+        qp = qMax(0, qMin(51, qp));
+
+        // Track min/max QP for statistics
+        minQP = qMin(minQP, qp);
+        maxQP = qMax(maxQP, qp);
+
+        // Get block position and size
+        int blockX = block->src_x;
+        int blockY = block->src_y;
+        int blockW = block->w;
+        int blockH = block->h;
+
+        // Calculate block rectangle in screen coordinates
+        int x = videoRect.left() + static_cast<int>(blockX * scaleX);
+        int y = videoRect.top() + static_cast<int>(blockY * scaleY);
+        int w = static_cast<int>(blockW * scaleX);
+        int h = static_cast<int>(blockH * scaleY);
+
+        // Get color for this QP value
+        QColor qpColor = getQPColor(qp);
+        qpColor.setAlpha(160);  // Semi-transparent overlay
+
+        // Draw filled rectangle
+        painter.fillRect(x, y, w, h, qpColor);
+
+        // Draw QP value text if zoom is sufficient
+        if (m_zoomLevel >= 1.5 && w >= 24 && h >= 24) {
+            painter.setFont(QFont("Arial", 8, QFont::Bold));
+            painter.setPen(Qt::white);
+
+            QString qpText = QString::number(qp);
+            QFontMetrics fm(painter.font());
+            QRect textRect = fm.boundingRect(qpText);
+            int textX = x + w / 2 - textRect.width() / 2;
+            int textY = y + h / 2 + textRect.height() / 2 - 2;
+
+            // Draw text shadow for better visibility
+            painter.setPen(Qt::black);
+            painter.drawText(textX + 1, textY + 1, qpText);
+            painter.setPen(Qt::white);
+            painter.drawText(textX, textY, qpText);
+        }
+    }
+
+    // Draw QP statistics and legend in bottom-right corner
+    int legendX = videoRect.right() - 180;
+    int legendY = videoRect.bottom() - 120;
+
+    // Draw semi-transparent background
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(0, 0, 0, 200));
+    painter.drawRect(legendX, legendY, 170, 110);
+
+    // Draw title
+    painter.setFont(QFont("Arial", 10, QFont::Bold));
+    painter.setPen(Qt::white);
+    painter.drawText(legendX + 10, legendY + 15, "QP Heatmap");
+
+    // Draw statistics
+    painter.setFont(QFont("Arial", 9));
+    painter.drawText(legendX + 10, legendY + 35, QString("Min QP: %1").arg(minQP));
+    painter.drawText(legendX + 10, legendY + 50, QString("Max QP: %1").arg(maxQP));
+    painter.drawText(legendX + 10, legendY + 65, QString("Range: %1").arg(maxQP - minQP));
+
+    // Draw color scale legend
+    painter.setFont(QFont("Arial", 8));
+    int colorBarY = legendY + 80;
+    int colorBarWidth = 150;
+    int colorBarHeight = 20;
+    int colorBarX = legendX + 10;
+
+    // Draw gradient color bar
+    for (int i = 0; i < colorBarWidth; ++i) {
+        int qp = 51 * i / colorBarWidth;  // Map position to QP range 0-51
+        QColor color = getQPColor(qp);
+        painter.fillRect(colorBarX + i, colorBarY, 1, colorBarHeight, color);
+    }
+
+    // Draw color bar border
+    painter.setPen(Qt::white);
+    painter.setBrush(Qt::NoBrush);
+    painter.drawRect(colorBarX, colorBarY, colorBarWidth, colorBarHeight);
+
+    // Draw scale labels
+    painter.drawText(colorBarX - 5, colorBarY + colorBarHeight + 12, "0");
+    painter.drawText(colorBarX + colorBarWidth / 2 - 10, colorBarY + colorBarHeight + 12, "25");
+    painter.drawText(colorBarX + colorBarWidth - 15, colorBarY + colorBarHeight + 12, "51");
+
+    // Draw quality indicators
+    painter.setFont(QFont("Arial", 7));
+    painter.setPen(QColor(50, 200, 50));
+    painter.drawText(colorBarX, colorBarY - 5, "High Quality");
+    painter.setPen(QColor(255, 50, 50));
+    painter.drawText(colorBarX + colorBarWidth - 50, colorBarY - 5, "Low Quality");
+}
+
+QColor VideoOutput::getQPColor(int qp) const {
+    // QP range: 0-51 (H.264/H.265)
+    // Lower QP = Higher quality = Green
+    // Higher QP = Lower quality = Red
+
+    // Clamp QP to valid range
+    qp = qMax(0, qMin(51, qp));
+
+    // Map QP to color gradient: Green (QP=0) → Yellow (QP=25) → Red (QP=51)
+    double normalizedQP = qp / 51.0;
+
+    int r, g, b;
+
+    if (normalizedQP < 0.5) {
+        // Green to Yellow (QP 0-25)
+        double t = normalizedQP * 2.0;
+        r = static_cast<int>(255 * t);        // 0 → 255
+        g = 255;                               // 255 (constant)
+        b = 0;                                 // 0 (constant)
+    } else {
+        // Yellow to Red (QP 26-51)
+        double t = (normalizedQP - 0.5) * 2.0;
+        r = 255;                               // 255 (constant)
+        g = static_cast<int>(255 * (1.0 - t)); // 255 → 0
+        b = 0;                                 // 0 (constant)
+    }
+
+    return QColor(r, g, b);
 }
 
 } // namespace VideoStudio

@@ -18,7 +18,8 @@ enum class OverlayType {
     MotionVectors = 3,
     FrameTypes = 4,
     BlockSizes = 5,
-    ExtendedInfo = 6
+    ExtendedInfo = 6,
+    QuantizationParameter = 7  // QP Heatmap
 };
 
 class VideoOutput : public QWidget {
@@ -62,8 +63,10 @@ private:
     void drawMotionVectors(QPainter& painter, const QRect& videoRect);
     void drawBlockBoundaries(QPainter& painter, const QRect& videoRect);
     void drawFrameTypeInfo(QPainter& painter, const QRect& videoRect);
+    void drawQPHeatmap(QPainter& painter, const QRect& videoRect);
     void drawCursorInfo(QPainter& painter, const QRect& videoRect);
     QString getBlockInfoAtPosition(const QPoint& pos, const QRect& videoRect);
+    QColor getQPColor(int qp) const;
 
     QImage m_image;
     SwsContext* m_swsContext;
