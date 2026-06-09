@@ -1,0 +1,86 @@
+name: Build Windows x64
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.2'  # Use available Qt version on GitHub Actions
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc2019_64'
+        modules: 'qtmultimedia'
+        cache: true
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Install FFmpeg
+      run: |
+        choco install ffmpeg --version=7.0.2 -y
+
+    - name: Configure CMake
+      run: |
+        cmake -B build -G "Visual Studio 17 2022" -A x64 `
+          -DCMAKE_PREFIX_PATH="${env:Qt6_DIR}" `
+          -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Package
+      run: |
+        mkdir VideoStudio-Windows-x64
+        cp build/Release/VideoStudio.exe VideoStudio-Windows-x64/
+
+        # Copy Qt DLLs
+        windeployqt.exe --release --no-translations VideoStudio-Windows-x64/VideoStudio.exe
+
+        # Copy FFmpeg DLLs (from choco install location)
+        $ffmpegPath = "C:\ProgramData\chocolatey\lib\ffmpeg\tools\ffmpeg\bin"
+        cp "$ffmpegPath\avcodec-*.dll" VideoStudio-Windows-x64/ -ErrorAction SilentlyContinue
+        cp "$ffmpegPath\avformat-*.dll" VideoStudio-Windows-x64/ -ErrorAction SilentlyContinue
+        cp "$ffmpegPath\avutil-*.dll" VideoStudio-Windows-x64/ -ErrorAction SilentlyContinue
+        cp "$ffmpegPath\swscale-*.dll" VideoStudio-Windows-x64/ -ErrorAction SilentlyContinue
+        cp "$ffmpegPath\swresample-*.dll" VideoStudio-Windows-x64/ -ErrorAction SilentlyContinue
+
+        # Create README
+        @"
+        VideoStudio - Windows x64 Build
+
+        Usage:
+        1. Extract all files to a folder
+        2. Run VideoStudio.exe
+
+        Requirements:
+        - Windows 10/11 (64-bit)
+        - Visual C++ Redistributable 2019 or later
+
+        Build Date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+        "@ | Out-File -FilePath VideoStudio-Windows-x64/README.txt -Encoding UTF8
+
+    - name: Create ZIP archive
+      run: |
+        Compress-Archive -Path VideoStudio-Windows-x64 -DestinationPath VideoStudio-Windows-x64.zip
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: VideoStudio-Windows-x64
+        path: VideoStudio-Windows-x64.zip
+        retention-days: 30

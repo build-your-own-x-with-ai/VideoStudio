@@ -8,17 +8,58 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 # Find Qt6
-set(CMAKE_PREFIX_PATH "$ENV{HOME}/Qt/6.11.0/macos" ${CMAKE_PREFIX_PATH})
+if(APPLE)
+    set(CMAKE_PREFIX_PATH "$ENV{HOME}/Qt/6.11.0/macos" ${CMAKE_PREFIX_PATH})
+endif()
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent Network)
 
-# Find FFmpeg using pkg-config
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(FFMPEG REQUIRED
-    libavcodec
-    libavformat
-    libavutil
-    libswscale
-)
+# Find FFmpeg
+if(WIN32)
+    # On Windows, use find_path/find_library
+    find_path(FFMPEG_INCLUDE_DIR libavcodec/avcodec.h
+        PATHS
+        "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/include"
+        "C:/ffmpeg/include"
+        "$ENV{FFMPEG_DIR}/include"
+    )
+
+    find_library(AVCODEC_LIBRARY avcodec
+        PATHS
+        "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/lib"
+        "C:/ffmpeg/lib"
+        "$ENV{FFMPEG_DIR}/lib"
+    )
+    find_library(AVFORMAT_LIBRARY avformat
+        PATHS
+        "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/lib"
+        "C:/ffmpeg/lib"
+        "$ENV{FFMPEG_DIR}/lib"
+    )
+    find_library(AVUTIL_LIBRARY avutil
+        PATHS
+        "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/lib"
+        "C:/ffmpeg/lib"
+        "$ENV{FFMPEG_DIR}/lib"
+    )
+    find_library(SWSCALE_LIBRARY swscale
+        PATHS
+        "C:/ProgramData/chocolatey/lib/ffmpeg/tools/ffmpeg/lib"
+        "C:/ffmpeg/lib"
+        "$ENV{FFMPEG_DIR}/lib"
+    )
+
+    set(FFMPEG_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR})
+    set(FFMPEG_LIBRARIES ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${SWSCALE_LIBRARY})
+else()
+    # On Unix-like systems, use pkg-config
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(FFMPEG REQUIRED
+        libavcodec
+        libavformat
+        libavutil
+        libswscale
+    )
+endif()
 
 # Source files
 set(SOURCES
