@@ -11,7 +11,7 @@ set(CMAKE_AUTOUIC ON)
 if(APPLE)
     set(CMAKE_PREFIX_PATH "$ENV{HOME}/Qt/6.11.0/macos" ${CMAKE_PREFIX_PATH})
 endif()
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent Network Multimedia)
 
 # Find FFmpeg
 if(WIN32)
@@ -185,6 +185,7 @@ target_link_libraries(VideoStudio PRIVATE
     Qt6::Widgets
     Qt6::Concurrent
     Qt6::Network
+    Qt6::Multimedia
     ${FFMPEG_LIBRARIES}
 )
 

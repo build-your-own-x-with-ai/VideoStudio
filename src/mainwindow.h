@@ -9,6 +9,8 @@
 #include <QFuture>
 #include <QFutureWatcher>
 #include <QtConcurrent>
+#include <QMediaPlayer>
+#include <QAudioOutput>
 #include <memory>
 
 class QProgressBar;
@@ -176,6 +178,10 @@ private:
 
     QTimer* m_playbackTimer;
     bool m_isPlaying;
+
+    // Audio playback
+    QMediaPlayer* m_mediaPlayer;
+    QAudioOutput* m_audioOutput;
 
     QProgressBar* m_progressBar;  // Progress bar for loading operations
     QLabel* m_statusLabel;        // Status label for messages

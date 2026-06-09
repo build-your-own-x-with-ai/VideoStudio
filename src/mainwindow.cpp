@@ -113,6 +113,8 @@ MainWindow::MainWindow(QWidget* parent)
     , m_epgPanelDock(nullptr)
     , m_playbackTimer(new QTimer(this))
     , m_isPlaying(false)
+    , m_mediaPlayer(new QMediaPlayer(this))
+    , m_audioOutput(new QAudioOutput(this))
     , m_progressBar(nullptr)
     , m_statusLabel(nullptr)
     , m_overlayMotionVectorsAction(nullptr)
@@ -130,6 +132,10 @@ MainWindow::MainWindow(QWidget* parent)
 
     // Set static instance for message handler
     s_instance = this;
+
+    // Setup audio playback
+    m_mediaPlayer->setAudioOutput(m_audioOutput);
+    m_audioOutput->setVolume(0.5);  // 50% volume by default
 
     createWidgets();
     createDockWidgets();
@@ -1039,6 +1045,10 @@ void MainWindow::loadFile(const QString& fileName) {
 
             qDebug() << "Video loaded successfully!";
 
+            // Start audio playback
+            m_mediaPlayer->setSource(QUrl::fromLocalFile(fileName));
+            // Don't auto-play, wait for user to press Play button
+
             // Show video info in status bar
             QString info = QString("%1 | %2x%3 | %4 fps | %5 frames")
                 .arg(m_decoder->getCodecName())
@@ -1448,18 +1458,28 @@ void MainWindow::play() {
                 updateFrameLabel(0, frameCount);
             }
         }
+        // Restart audio from beginning
+        m_mediaPlayer->setPosition(0);
     }
 
     m_isPlaying = true;
     double frameRate = m_decoder->getFrameRate();
     int interval = frameRate > 0 ? static_cast<int>(1000.0 / frameRate) : 40;
     m_playbackTimer->start(interval);
+
+    // Start audio playback
+    m_mediaPlayer->play();
+
     m_statusLabel->setText(tr("Playing..."));
 }
 
 void MainWindow::pause() {
     m_isPlaying = false;
     m_playbackTimer->stop();
+
+    // Pause audio playback
+    m_mediaPlayer->pause();
+
     m_statusLabel->setText(tr("Paused"));
 }
 
@@ -1530,6 +1550,13 @@ void MainWindow::onFrameClicked(int frameNumber) {
                 .arg(frameNumber)
                 .arg(m_decoder->getFrameCount()));
             updateFrameLabel(frameNumber, m_decoder->getFrameCount());
+
+            // Sync audio position to current frame
+            double frameRate = m_decoder->getFrameRate();
+            if (frameRate > 0) {
+                qint64 positionMs = static_cast<qint64>(frameNumber * 1000.0 / frameRate);
+                m_mediaPlayer->setPosition(positionMs);
+            }
         }
     }
 }
