@@ -107,6 +107,28 @@ struct NALUnitInfo {
     int spsBitDepthLuma;        // Luma bit depth (8, 10, 12)
     int spsBitDepthChroma;      // Chroma bit depth
 
+    // SPS additional fields
+    bool spsConstraintSet0Flag; // Constraint set 0 flag
+    bool spsConstraintSet1Flag; // Constraint set 1 flag
+    bool spsConstraintSet2Flag; // Constraint set 2 flag
+    bool spsConstraintSet3Flag; // Constraint set 3 flag
+    int spsMaxNumRefFrames;     // Maximum number of reference frames
+    bool spsFrameMbsOnlyFlag;   // true=progressive, false=interlaced possible
+    int spsPicOrderCntType;     // POC type (0, 1, or 2)
+    int spsLog2MaxFrameNum;     // log2_max_frame_num_minus4 + 4
+    int spsLog2MaxPicOrderCntLsb; // log2_max_pic_order_cnt_lsb_minus4 + 4
+    bool spsGapsInFrameNumAllowed; // Gaps in frame_num allowed
+
+    // SPS VUI (Video Usability Information) parameters
+    bool spsVuiPresent;         // VUI parameters present
+    int spsAspectRatioIdc;      // Aspect ratio IDC (0-255)
+    int spsSarWidth;            // SAR width (if aspect_ratio_idc == 255)
+    int spsSarHeight;           // SAR height (if aspect_ratio_idc == 255)
+    bool spsTimingInfoPresent;  // Timing info present in VUI
+    int spsNumUnitsInTick;      // Frame rate numerator
+    int spsTimeScale;           // Frame rate denominator
+    bool spsFixedFrameRate;     // Fixed frame rate flag
+
     // H.264 PPS (Picture Parameter Set) fields
     bool ppsEntropyCodingMode;  // false=CAVLC, true=CABAC
     int ppsNumSliceGroups;      // Number of slice groups
@@ -114,9 +136,56 @@ struct NALUnitInfo {
     bool ppsWeightedPred;       // Weighted prediction for P slices
     int ppsWeightedBipred;      // Weighted prediction for B slices (0=none, 1=explicit, 2=implicit)
 
+    // PPS additional fields
+    int ppsPicInitQp;           // Initial QP value (pic_init_qp_minus26 + 26)
+    int ppsChromaQpIndexOffset; // Chroma QP offset
+    bool ppsConstainedIntraPred; // Constrained intra prediction
+    bool ppsRedundantPicCnt;    // Redundant picture count present
+    bool ppsTransform8x8Mode;   // 8x8 transform mode (High profiles)
+
     // H.265 VPS (Video Parameter Set) fields
     int vpsMaxLayers;           // Maximum number of layers
     int vpsMaxSubLayers;        // Maximum temporal sub-layers
+    int vpsTemporalIdNesting;   // Temporal ID nesting flag
+
+    // H.265 SPS additional fields
+    bool hevcSpsPresent;        // HEVC SPS parsed flag
+    int hevcSpsMaxSubLayersMinus1; // Max temporal sub-layers - 1
+    bool hevcSpsTemporalIdNesting; // Temporal ID nesting
+    int hevcSpsSeqParameterSetId;  // SPS ID
+    bool hevcConformanceWindowFlag; // Cropping present
+    int hevcConfWinLeftOffset;   // Conformance window left
+    int hevcConfWinRightOffset;  // Conformance window right
+    int hevcConfWinTopOffset;    // Conformance window top
+    int hevcConfWinBottomOffset; // Conformance window bottom
+
+    // HEVC profile/tier/level
+    bool hevcGeneralTierFlag;    // General tier (false=Main, true=High)
+    bool hevcGeneralProgressiveSourceFlag;
+    bool hevcGeneralInterlacedSourceFlag;
+    bool hevcGeneralFrameOnlyConstraintFlag;
+
+    // HEVC VUI parameters
+    bool hevcVuiPresent;
+    int hevcVuiAspectRatioIdc;
+    int hevcVuiSarWidth;
+    int hevcVuiSarHeight;
+    bool hevcVuiTimingInfoPresent;
+    int hevcVuiNumUnitsInTick;
+    int hevcVuiTimeScale;
+
+    // H.265 PPS additional fields
+    bool hevcPpsPresent;
+    int hevcPpsPicParameterSetId;
+    int hevcPpsSeqParameterSetId;
+    bool hevcPpsCabacInitPresent;
+    int hevcPpsNumRefIdxL0DefaultActive; // Num ref idx L0
+    int hevcPpsNumRefIdxL1DefaultActive; // Num ref idx L1
+    int hevcPpsInitQpMinus26;
+    bool hevcPpsConstrainedIntraPred;
+    bool hevcPpsTransformSkipEnabled;
+    bool hevcPpsCuQpDeltaEnabled;
+    bool hevcPpsTransquantBypassEnabled;
 
     NALUnitInfo()
         : index(0), fileOffset(0), size(0), frameNumber(0),
@@ -131,9 +200,33 @@ struct NALUnitInfo {
           isIDR(false), isKeyFrame(false),
           spsProfileIdc(-1), spsLevelIdc(-1), spsWidth(0), spsHeight(0),
           spsChromaFormat(-1), spsBitDepthLuma(8), spsBitDepthChroma(8),
+          spsConstraintSet0Flag(false), spsConstraintSet1Flag(false),
+          spsConstraintSet2Flag(false), spsConstraintSet3Flag(false),
+          spsMaxNumRefFrames(0), spsFrameMbsOnlyFlag(true),
+          spsPicOrderCntType(-1), spsLog2MaxFrameNum(0), spsLog2MaxPicOrderCntLsb(0),
+          spsGapsInFrameNumAllowed(false),
+          spsVuiPresent(false), spsAspectRatioIdc(0), spsSarWidth(0), spsSarHeight(0),
+          spsTimingInfoPresent(false), spsNumUnitsInTick(0), spsTimeScale(0),
+          spsFixedFrameRate(false),
           ppsEntropyCodingMode(false), ppsNumSliceGroups(1), ppsDeblockingFilter(true),
           ppsWeightedPred(false), ppsWeightedBipred(0),
-          vpsMaxLayers(1), vpsMaxSubLayers(1)
+          ppsPicInitQp(26), ppsChromaQpIndexOffset(0),
+          ppsConstainedIntraPred(false), ppsRedundantPicCnt(false),
+          ppsTransform8x8Mode(false),
+          vpsMaxLayers(1), vpsMaxSubLayers(1), vpsTemporalIdNesting(0),
+          hevcSpsPresent(false), hevcSpsMaxSubLayersMinus1(0), hevcSpsTemporalIdNesting(false),
+          hevcSpsSeqParameterSetId(0),
+          hevcConformanceWindowFlag(false), hevcConfWinLeftOffset(0), hevcConfWinRightOffset(0),
+          hevcConfWinTopOffset(0), hevcConfWinBottomOffset(0),
+          hevcGeneralTierFlag(false), hevcGeneralProgressiveSourceFlag(false),
+          hevcGeneralInterlacedSourceFlag(false), hevcGeneralFrameOnlyConstraintFlag(false),
+          hevcVuiPresent(false), hevcVuiAspectRatioIdc(0), hevcVuiSarWidth(0), hevcVuiSarHeight(0),
+          hevcVuiTimingInfoPresent(false), hevcVuiNumUnitsInTick(0), hevcVuiTimeScale(0),
+          hevcPpsPresent(false), hevcPpsPicParameterSetId(0), hevcPpsSeqParameterSetId(0),
+          hevcPpsCabacInitPresent(false), hevcPpsNumRefIdxL0DefaultActive(0),
+          hevcPpsNumRefIdxL1DefaultActive(0), hevcPpsInitQpMinus26(0),
+          hevcPpsConstrainedIntraPred(false), hevcPpsTransformSkipEnabled(false),
+          hevcPpsCuQpDeltaEnabled(false), hevcPpsTransquantBypassEnabled(false)
     {}
 };
 

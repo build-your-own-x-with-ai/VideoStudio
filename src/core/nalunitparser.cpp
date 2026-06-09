@@ -319,11 +319,13 @@ void NALUnitParser::parseH265NALHeader(const uint8_t* data, int size, NALUnitInf
         parseH265SliceHeader(data, size, info);
     }
 
-    // Parse detailed VPS/SPS if applicable
+    // Parse detailed VPS/SPS/PPS if applicable
     if (info.nalUnitType == HEVC_NAL_VPS) {
         parseH265VPS(data, size, info);
     } else if (info.nalUnitType == HEVC_NAL_SPS) {
         parseH265SPS(data, size, info);
+    } else if (info.nalUnitType == HEVC_NAL_PPS) {
+        parseH265PPS(data, size, info);
     }
 }
 
@@ -707,7 +709,14 @@ void NALUnitParser::parseH264SPS(const uint8_t* data, int size, NALUnitInfo& inf
 
     // Profile and level
     info.spsProfileIdc = readBits(data, bitPos, 8);
-    bitPos += 8;  // Skip constraint flags
+
+    // Constraint flags
+    info.spsConstraintSet0Flag = readBits(data, bitPos, 1) != 0;
+    info.spsConstraintSet1Flag = readBits(data, bitPos, 1) != 0;
+    info.spsConstraintSet2Flag = readBits(data, bitPos, 1) != 0;
+    info.spsConstraintSet3Flag = readBits(data, bitPos, 1) != 0;
+    bitPos += 4;  // Skip reserved 4 bits
+
     info.spsLevelIdc = readBits(data, bitPos, 8);
 
     // SPS ID
@@ -738,14 +747,14 @@ void NALUnitParser::parseH264SPS(const uint8_t* data, int size, NALUnitInfo& inf
         info.spsBitDepthChroma = 8;
     }
 
-    // Skip log2_max_frame_num
-    readUE(data, bitPos, maxBits);
+    // log2_max_frame_num_minus4
+    info.spsLog2MaxFrameNum = readUE(data, bitPos, maxBits) + 4;
 
     // pic_order_cnt_type
-    uint32_t poc_type = readUE(data, bitPos, maxBits);
-    if (poc_type == 0) {
-        readUE(data, bitPos, maxBits);  // log2_max_pic_order_cnt_lsb
-    } else if (poc_type == 1) {
+    info.spsPicOrderCntType = readUE(data, bitPos, maxBits);
+    if (info.spsPicOrderCntType == 0) {
+        info.spsLog2MaxPicOrderCntLsb = readUE(data, bitPos, maxBits) + 4;
+    } else if (info.spsPicOrderCntType == 1) {
         // Skip POC type 1 parameters
         bitPos++;  // delta_pic_order_always_zero_flag
         readSE(data, bitPos, maxBits);  // offset_for_non_ref_pic
@@ -757,10 +766,10 @@ void NALUnitParser::parseH264SPS(const uint8_t* data, int size, NALUnitInfo& inf
     }
 
     // max_num_ref_frames
-    readUE(data, bitPos, maxBits);
+    info.spsMaxNumRefFrames = readUE(data, bitPos, maxBits);
 
     // gaps_in_frame_num_value_allowed_flag
-    bitPos++;
+    info.spsGapsInFrameNumAllowed = readBits(data, bitPos, 1) != 0;
 
     // Width and height
     uint32_t pic_width_in_mbs = readUE(data, bitPos, maxBits) + 1;
@@ -770,9 +779,64 @@ void NALUnitParser::parseH264SPS(const uint8_t* data, int size, NALUnitInfo& inf
     info.spsHeight = pic_height_in_map_units * 16;
 
     // frame_mbs_only_flag
-    uint32_t frame_mbs_only = readBits(data, bitPos, 1);
-    if (!frame_mbs_only) {
+    info.spsFrameMbsOnlyFlag = readBits(data, bitPos, 1) != 0;
+    if (!info.spsFrameMbsOnlyFlag) {
         info.spsHeight *= 2;  // Interlaced
+        bitPos++;  // mb_adaptive_frame_field_flag
+    }
+
+    // direct_8x8_inference_flag
+    bitPos++;
+
+    // frame_cropping_flag
+    if (readBits(data, bitPos, 1)) {
+        readUE(data, bitPos, maxBits);  // frame_crop_left_offset
+        readUE(data, bitPos, maxBits);  // frame_crop_right_offset
+        readUE(data, bitPos, maxBits);  // frame_crop_top_offset
+        readUE(data, bitPos, maxBits);  // frame_crop_bottom_offset
+    }
+
+    // vui_parameters_present_flag
+    info.spsVuiPresent = readBits(data, bitPos, 1) != 0;
+    if (info.spsVuiPresent) {
+        // aspect_ratio_info_present_flag
+        if (readBits(data, bitPos, 1)) {
+            info.spsAspectRatioIdc = readBits(data, bitPos, 8);
+            if (info.spsAspectRatioIdc == 255) {  // Extended_SAR
+                info.spsSarWidth = readBits(data, bitPos, 16);
+                info.spsSarHeight = readBits(data, bitPos, 16);
+            }
+        }
+
+        // overscan_info_present_flag
+        if (readBits(data, bitPos, 1)) {
+            bitPos++;  // overscan_appropriate_flag
+        }
+
+        // video_signal_type_present_flag
+        if (readBits(data, bitPos, 1)) {
+            bitPos += 3;  // video_format
+            bitPos++;     // video_full_range_flag
+            if (readBits(data, bitPos, 1)) {  // colour_description_present_flag
+                bitPos += 8;  // colour_primaries
+                bitPos += 8;  // transfer_characteristics
+                bitPos += 8;  // matrix_coefficients
+            }
+        }
+
+        // chroma_loc_info_present_flag
+        if (readBits(data, bitPos, 1)) {
+            readUE(data, bitPos, maxBits);  // chroma_sample_loc_type_top_field
+            readUE(data, bitPos, maxBits);  // chroma_sample_loc_type_bottom_field
+        }
+
+        // timing_info_present_flag
+        info.spsTimingInfoPresent = readBits(data, bitPos, 1) != 0;
+        if (info.spsTimingInfoPresent) {
+            info.spsNumUnitsInTick = readBits(data, bitPos, 32);
+            info.spsTimeScale = readBits(data, bitPos, 32);
+            info.spsFixedFrameRate = readBits(data, bitPos, 1) != 0;
+        }
     }
 }
 
@@ -791,7 +855,7 @@ void NALUnitParser::parseH264PPS(const uint8_t* data, int size, NALUnitInfo& inf
     // Entropy coding mode
     info.ppsEntropyCodingMode = readBits(data, bitPos, 1) != 0;
 
-    // Skip pic_order_present_flag
+    // pic_order_present_flag
     bitPos++;
 
     // num_slice_groups
@@ -811,13 +875,29 @@ void NALUnitParser::parseH264PPS(const uint8_t* data, int size, NALUnitInfo& inf
     info.ppsWeightedPred = readBits(data, bitPos, 1) != 0;
     info.ppsWeightedBipred = readBits(data, bitPos, 2);
 
-    // Skip QP parameters
-    readSE(data, bitPos, maxBits);  // pic_init_qp
-    readSE(data, bitPos, maxBits);  // pic_init_qs
-    readSE(data, bitPos, maxBits);  // chroma_qp_index_offset
+    // pic_init_qp_minus26
+    info.ppsPicInitQp = readSE(data, bitPos, maxBits) + 26;
 
-    // Deblocking filter
+    // Skip pic_init_qs_minus26
+    readSE(data, bitPos, maxBits);
+
+    // chroma_qp_index_offset
+    info.ppsChromaQpIndexOffset = readSE(data, bitPos, maxBits);
+
+    // Deblocking filter control present flag
     info.ppsDeblockingFilter = readBits(data, bitPos, 1) != 0;
+
+    // constrained_intra_pred_flag
+    info.ppsConstainedIntraPred = readBits(data, bitPos, 1) != 0;
+
+    // redundant_pic_cnt_present_flag
+    info.ppsRedundantPicCnt = readBits(data, bitPos, 1) != 0;
+
+    // Check if more data exists for extended PPS (High profiles)
+    if (bitPos < maxBits - 8) {
+        // transform_8x8_mode_flag
+        info.ppsTransform8x8Mode = readBits(data, bitPos, 1) != 0;
+    }
 }
 
 void NALUnitParser::parseH265VPS(const uint8_t* data, int size, NALUnitInfo& info) {
@@ -845,55 +925,319 @@ void NALUnitParser::parseH265SPS(const uint8_t* data, int size, NALUnitInfo& inf
     int bitPos = 16;  // Skip NAL header (2 bytes)
     int maxBits = size * 8;
 
+    info.hevcSpsPresent = true;
+
     // Skip VPS ID
     readBits(data, bitPos, 4);
 
-    // max_sub_layers
-    uint32_t max_sub_layers = readBits(data, bitPos, 3) + 1;
+    // max_sub_layers_minus1
+    info.hevcSpsMaxSubLayersMinus1 = readBits(data, bitPos, 3);
+    uint32_t max_sub_layers = info.hevcSpsMaxSubLayersMinus1 + 1;
 
-    // Skip temporal_id_nesting_flag
-    bitPos++;
+    // temporal_id_nesting_flag
+    info.hevcSpsTemporalIdNesting = readBits(data, bitPos, 1) != 0;
 
-    // Profile, tier, level (simplified)
+    // Profile Tier Level
+    // general_profile_space
+    readBits(data, bitPos, 2);
+
+    // general_tier_flag
+    info.hevcGeneralTierFlag = readBits(data, bitPos, 1) != 0;
+
+    // general_profile_idc
     info.spsProfileIdc = readBits(data, bitPos, 5);
-    bitPos += 32;  // Skip profile compatibility flags
-    bitPos++;  // progressive_source_flag
-    bitPos++;  // interlaced_source_flag
-    bitPos++;  // non_packed_constraint_flag
-    bitPos++;  // frame_only_constraint_flag
-    bitPos += 43;  // reserved
-    bitPos++;  // inbld_flag (if present)
+
+    // general_profile_compatibility_flags (32 bits)
+    bitPos += 32;
+
+    // general_progressive_source_flag
+    info.hevcGeneralProgressiveSourceFlag = readBits(data, bitPos, 1) != 0;
+
+    // general_interlaced_source_flag
+    info.hevcGeneralInterlacedSourceFlag = readBits(data, bitPos, 1) != 0;
+
+    // general_non_packed_constraint_flag
+    readBits(data, bitPos, 1);
+
+    // general_frame_only_constraint_flag
+    info.hevcGeneralFrameOnlyConstraintFlag = readBits(data, bitPos, 1) != 0;
+
+    // Skip 43 reserved bits + 1 inbld_flag
+    bitPos += 44;
+
+    // general_level_idc
     info.spsLevelIdc = readBits(data, bitPos, 8);
 
-    // Skip sub-layer info
+    // Skip sub-layer profile/level flags
     for (uint32_t i = 0; i < max_sub_layers - 1 && i < 7; i++) {
-        bitPos += 2;  // profile/level present flags
+        bitPos += 2;  // profile_present_flag, level_present_flag
     }
 
-    // SPS ID
-    readUE(data, bitPos, maxBits);
+    // Skip sub-layer profile/level data
+    for (uint32_t i = 0; i < max_sub_layers - 1 && i < 7; i++) {
+        bitPos += 88;  // Rough approximation
+    }
 
-    // Chroma format
+    // sps_seq_parameter_set_id
+    info.hevcSpsSeqParameterSetId = readUE(data, bitPos, maxBits);
+
+    // chroma_format_idc
     info.spsChromaFormat = readUE(data, bitPos, maxBits);
     if (info.spsChromaFormat == 3) {
         bitPos++;  // separate_colour_plane_flag
     }
 
-    // Width and height
+    // pic_width_in_luma_samples
     info.spsWidth = readUE(data, bitPos, maxBits);
+
+    // pic_height_in_luma_samples
     info.spsHeight = readUE(data, bitPos, maxBits);
 
-    // Conformance window (cropping)
-    if (readBits(data, bitPos, 1)) {
-        readUE(data, bitPos, maxBits);  // left_offset
-        readUE(data, bitPos, maxBits);  // right_offset
-        readUE(data, bitPos, maxBits);  // top_offset
-        readUE(data, bitPos, maxBits);  // bottom_offset
+    // conformance_window_flag
+    info.hevcConformanceWindowFlag = readBits(data, bitPos, 1) != 0;
+    if (info.hevcConformanceWindowFlag) {
+        info.hevcConfWinLeftOffset = readUE(data, bitPos, maxBits);
+        info.hevcConfWinRightOffset = readUE(data, bitPos, maxBits);
+        info.hevcConfWinTopOffset = readUE(data, bitPos, maxBits);
+        info.hevcConfWinBottomOffset = readUE(data, bitPos, maxBits);
+
+        // Apply cropping to width/height
+        int subWidthC = (info.spsChromaFormat == 1 || info.spsChromaFormat == 2) ? 2 : 1;
+        int subHeightC = (info.spsChromaFormat == 1) ? 2 : 1;
+        info.spsWidth -= (info.hevcConfWinLeftOffset + info.hevcConfWinRightOffset) * subWidthC;
+        info.spsHeight -= (info.hevcConfWinTopOffset + info.hevcConfWinBottomOffset) * subHeightC;
     }
 
-    // Bit depth
+    // bit_depth_luma_minus8
     info.spsBitDepthLuma = readUE(data, bitPos, maxBits) + 8;
+
+    // bit_depth_chroma_minus8
     info.spsBitDepthChroma = readUE(data, bitPos, maxBits) + 8;
+
+    // log2_max_pic_order_cnt_lsb_minus4
+    info.spsLog2MaxPicOrderCntLsb = readUE(data, bitPos, maxBits) + 4;
+
+    // sps_sub_layer_ordering_info_present_flag
+    bool subLayerOrderingInfoPresent = readBits(data, bitPos, 1) != 0;
+    int startLayer = subLayerOrderingInfoPresent ? 0 : max_sub_layers - 1;
+    for (int i = startLayer; i <= (int)max_sub_layers - 1 && i < 8; i++) {
+        readUE(data, bitPos, maxBits);  // sps_max_dec_pic_buffering_minus1
+        readUE(data, bitPos, maxBits);  // sps_max_num_reorder_pics
+        readUE(data, bitPos, maxBits);  // sps_max_latency_increase_plus1
+    }
+
+    // log2_min_luma_coding_block_size_minus3
+    readUE(data, bitPos, maxBits);
+
+    // log2_diff_max_min_luma_coding_block_size
+    readUE(data, bitPos, maxBits);
+
+    // log2_min_luma_transform_block_size_minus2
+    readUE(data, bitPos, maxBits);
+
+    // log2_diff_max_min_luma_transform_block_size
+    readUE(data, bitPos, maxBits);
+
+    // max_transform_hierarchy_depth_inter
+    readUE(data, bitPos, maxBits);
+
+    // max_transform_hierarchy_depth_intra
+    readUE(data, bitPos, maxBits);
+
+    // scaling_list_enabled_flag
+    if (readBits(data, bitPos, 1)) {
+        // Skip scaling list data (complex)
+        bitPos += 200;  // Rough approximation
+    }
+
+    // amp_enabled_flag
+    bitPos++;
+
+    // sample_adaptive_offset_enabled_flag
+    bitPos++;
+
+    // pcm_enabled_flag
+    if (readBits(data, bitPos, 1)) {
+        bitPos += 4;  // pcm_sample_bit_depth_luma_minus1
+        bitPos += 4;  // pcm_sample_bit_depth_chroma_minus1
+        readUE(data, bitPos, maxBits);  // log2_min_pcm_luma_coding_block_size_minus3
+        readUE(data, bitPos, maxBits);  // log2_diff_max_min_pcm_luma_coding_block_size
+        bitPos++;  // pcm_loop_filter_disabled_flag
+    }
+
+    // num_short_term_ref_pic_sets
+    uint32_t numShortTermRefPicSets = readUE(data, bitPos, maxBits);
+    // Skip short term reference picture sets (complex)
+    for (uint32_t i = 0; i < numShortTermRefPicSets && i < 64; i++) {
+        bitPos += 50;  // Rough approximation per set
+    }
+
+    // long_term_ref_pics_present_flag
+    if (readBits(data, bitPos, 1)) {
+        uint32_t numLongTermRefPics = readUE(data, bitPos, maxBits);
+        for (uint32_t i = 0; i < numLongTermRefPics && i < 32; i++) {
+            bitPos += info.spsLog2MaxPicOrderCntLsb + 1;
+        }
+    }
+
+    // sps_temporal_mvp_enabled_flag
+    bitPos++;
+
+    // strong_intra_smoothing_enabled_flag
+    bitPos++;
+
+    // vui_parameters_present_flag
+    info.hevcVuiPresent = readBits(data, bitPos, 1) != 0;
+    if (info.hevcVuiPresent && bitPos < maxBits - 100) {
+        // aspect_ratio_info_present_flag
+        if (readBits(data, bitPos, 1)) {
+            info.hevcVuiAspectRatioIdc = readBits(data, bitPos, 8);
+            if (info.hevcVuiAspectRatioIdc == 255) {  // EXTENDED_SAR
+                info.hevcVuiSarWidth = readBits(data, bitPos, 16);
+                info.hevcVuiSarHeight = readBits(data, bitPos, 16);
+            }
+        }
+
+        // overscan_info_present_flag
+        if (readBits(data, bitPos, 1)) {
+            bitPos++;  // overscan_appropriate_flag
+        }
+
+        // video_signal_type_present_flag
+        if (readBits(data, bitPos, 1)) {
+            bitPos += 3;  // video_format
+            bitPos++;     // video_full_range_flag
+            if (readBits(data, bitPos, 1)) {  // colour_description_present_flag
+                bitPos += 8;  // colour_primaries
+                bitPos += 8;  // transfer_characteristics
+                bitPos += 8;  // matrix_coeffs
+            }
+        }
+
+        // chroma_loc_info_present_flag
+        if (readBits(data, bitPos, 1)) {
+            readUE(data, bitPos, maxBits);  // chroma_sample_loc_type_top_field
+            readUE(data, bitPos, maxBits);  // chroma_sample_loc_type_bottom_field
+        }
+
+        // neutral_chroma_indication_flag
+        bitPos++;
+
+        // field_seq_flag
+        bitPos++;
+
+        // frame_field_info_present_flag
+        bitPos++;
+
+        // default_display_window_flag
+        if (readBits(data, bitPos, 1)) {
+            readUE(data, bitPos, maxBits);  // def_disp_win_left_offset
+            readUE(data, bitPos, maxBits);  // def_disp_win_right_offset
+            readUE(data, bitPos, maxBits);  // def_disp_win_top_offset
+            readUE(data, bitPos, maxBits);  // def_disp_win_bottom_offset
+        }
+
+        // vui_timing_info_present_flag
+        info.hevcVuiTimingInfoPresent = readBits(data, bitPos, 1) != 0;
+        if (info.hevcVuiTimingInfoPresent) {
+            info.hevcVuiNumUnitsInTick = readBits(data, bitPos, 32);
+            info.hevcVuiTimeScale = readBits(data, bitPos, 32);
+        }
+    }
+}
+
+void NALUnitParser::parseH265PPS(const uint8_t* data, int size, NALUnitInfo& info) {
+    if (size < 3) return;
+
+    int bitPos = 16;  // Skip NAL header (2 bytes)
+    int maxBits = size * 8;
+
+    info.hevcPpsPresent = true;
+
+    // pps_pic_parameter_set_id
+    info.hevcPpsPicParameterSetId = readUE(data, bitPos, maxBits);
+
+    // pps_seq_parameter_set_id
+    info.hevcPpsSeqParameterSetId = readUE(data, bitPos, maxBits);
+
+    // dependent_slice_segments_enabled_flag
+    bitPos++;
+
+    // output_flag_present_flag
+    bitPos++;
+
+    // num_extra_slice_header_bits
+    readBits(data, bitPos, 3);
+
+    // sign_data_hiding_enabled_flag
+    bitPos++;
+
+    // cabac_init_present_flag
+    info.hevcPpsCabacInitPresent = readBits(data, bitPos, 1) != 0;
+
+    // num_ref_idx_l0_default_active_minus1
+    info.hevcPpsNumRefIdxL0DefaultActive = readUE(data, bitPos, maxBits) + 1;
+
+    // num_ref_idx_l1_default_active_minus1
+    info.hevcPpsNumRefIdxL1DefaultActive = readUE(data, bitPos, maxBits) + 1;
+
+    // init_qp_minus26
+    info.hevcPpsInitQpMinus26 = readSE(data, bitPos, maxBits);
+
+    // constrained_intra_pred_flag
+    info.hevcPpsConstrainedIntraPred = readBits(data, bitPos, 1) != 0;
+
+    // transform_skip_enabled_flag
+    info.hevcPpsTransformSkipEnabled = readBits(data, bitPos, 1) != 0;
+
+    // cu_qp_delta_enabled_flag
+    info.hevcPpsCuQpDeltaEnabled = readBits(data, bitPos, 1) != 0;
+    if (info.hevcPpsCuQpDeltaEnabled) {
+        readUE(data, bitPos, maxBits);  // diff_cu_qp_delta_depth
+    }
+
+    // pps_cb_qp_offset
+    readSE(data, bitPos, maxBits);
+
+    // pps_cr_qp_offset
+    readSE(data, bitPos, maxBits);
+
+    // pps_slice_chroma_qp_offsets_present_flag
+    bitPos++;
+
+    // weighted_pred_flag
+    bitPos++;
+
+    // weighted_bipred_flag
+    bitPos++;
+
+    // transquant_bypass_enabled_flag
+    info.hevcPpsTransquantBypassEnabled = readBits(data, bitPos, 1) != 0;
+
+    // tiles_enabled_flag
+    bool tilesEnabled = readBits(data, bitPos, 1) != 0;
+
+    // entropy_coding_sync_enabled_flag
+    bitPos++;
+
+    if (tilesEnabled && bitPos < maxBits - 20) {
+        // num_tile_columns_minus1
+        readUE(data, bitPos, maxBits);
+
+        // num_tile_rows_minus1
+        readUE(data, bitPos, maxBits);
+
+        // uniform_spacing_flag
+        if (!readBits(data, bitPos, 1)) {
+            // Skip tile column/row widths
+            bitPos += 100;  // Rough approximation
+        }
+
+        // loop_filter_across_tiles_enabled_flag
+        bitPos++;
+    }
+
+    // Remaining PPS fields are complex, skip for now
 }
 
 QVector<NALUnitInfo> NALUnitParser::parseAVCCExtradata(const uint8_t* data, int size, AVCodecID codecId) {

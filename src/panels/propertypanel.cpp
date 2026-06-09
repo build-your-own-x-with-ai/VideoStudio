@@ -2553,6 +2553,19 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
         }
         profileItem->setText(1, QString("%1 (%2)").arg(profileName).arg(nalInfo->spsProfileIdc));
 
+        // Constraint flags
+        if (nalInfo->spsConstraintSet0Flag || nalInfo->spsConstraintSet1Flag ||
+            nalInfo->spsConstraintSet2Flag || nalInfo->spsConstraintSet3Flag) {
+            QTreeWidgetItem* constraintItem = new QTreeWidgetItem(spsItem);
+            constraintItem->setText(0, "Constraint Flags");
+            QStringList flags;
+            if (nalInfo->spsConstraintSet0Flag) flags << "Set0";
+            if (nalInfo->spsConstraintSet1Flag) flags << "Set1";
+            if (nalInfo->spsConstraintSet2Flag) flags << "Set2";
+            if (nalInfo->spsConstraintSet3Flag) flags << "Set3";
+            constraintItem->setText(1, flags.join(", "));
+        }
+
         // Level
         QTreeWidgetItem* levelItem = new QTreeWidgetItem(spsItem);
         levelItem->setText(0, "Level");
@@ -2585,6 +2598,101 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
         bitDepthItem->setText(0, "Bit Depth");
         bitDepthItem->setText(1, QString("Luma: %1-bit, Chroma: %2-bit")
             .arg(nalInfo->spsBitDepthLuma).arg(nalInfo->spsBitDepthChroma));
+
+        // Frame/Field Mode
+        QTreeWidgetItem* frameModeItem = new QTreeWidgetItem(spsItem);
+        frameModeItem->setText(0, "Frame Mode");
+        frameModeItem->setText(1, nalInfo->spsFrameMbsOnlyFlag ? "Progressive" : "Interlaced Possible");
+
+        // Reference Frames
+        if (nalInfo->spsMaxNumRefFrames > 0) {
+            QTreeWidgetItem* refFramesItem = new QTreeWidgetItem(spsItem);
+            refFramesItem->setText(0, "Max Reference Frames");
+            refFramesItem->setText(1, QString::number(nalInfo->spsMaxNumRefFrames));
+        }
+
+        // POC (Picture Order Count) Info
+        if (nalInfo->spsPicOrderCntType >= 0) {
+            QTreeWidgetItem* pocItem = new QTreeWidgetItem(spsItem);
+            pocItem->setText(0, "POC Type");
+            pocItem->setText(1, QString::number(nalInfo->spsPicOrderCntType));
+
+            if (nalInfo->spsPicOrderCntType == 0 && nalInfo->spsLog2MaxPicOrderCntLsb > 0) {
+                QTreeWidgetItem* pocLsbItem = new QTreeWidgetItem(spsItem);
+                pocLsbItem->setText(0, "Max POC LSB");
+                pocLsbItem->setText(1, QString::number(1 << nalInfo->spsLog2MaxPicOrderCntLsb));
+            }
+        }
+
+        // Frame Number
+        if (nalInfo->spsLog2MaxFrameNum > 0) {
+            QTreeWidgetItem* frameNumItem = new QTreeWidgetItem(spsItem);
+            frameNumItem->setText(0, "Max Frame Num");
+            frameNumItem->setText(1, QString::number(1 << nalInfo->spsLog2MaxFrameNum));
+        }
+
+        // Gaps in Frame Num
+        QTreeWidgetItem* gapsItem = new QTreeWidgetItem(spsItem);
+        gapsItem->setText(0, "Gaps in Frame Num");
+        gapsItem->setText(1, nalInfo->spsGapsInFrameNumAllowed ? "Allowed" : "Not Allowed");
+
+        // VUI Parameters
+        if (nalInfo->spsVuiPresent) {
+            QTreeWidgetItem* vuiItem = new QTreeWidgetItem(spsItem);
+            vuiItem->setText(0, "VUI Parameters");
+            vuiItem->setExpanded(false);
+            vuiItem->setForeground(0, QColor(100, 150, 255));
+
+            // Aspect Ratio
+            if (nalInfo->spsAspectRatioIdc > 0) {
+                QTreeWidgetItem* aspectItem = new QTreeWidgetItem(vuiItem);
+                aspectItem->setText(0, "Aspect Ratio");
+                QString aspectStr;
+                if (nalInfo->spsAspectRatioIdc == 255) {
+                    aspectStr = QString("Extended SAR %1:%2").arg(nalInfo->spsSarWidth).arg(nalInfo->spsSarHeight);
+                } else {
+                    // Common aspect ratios
+                    static const char* aspectNames[] = {
+                        "", "1:1 (Square)", "12:11", "10:11", "16:11", "40:33",
+                        "24:11", "20:11", "32:11", "80:33", "18:11", "15:11",
+                        "64:33", "160:99", "4:3", "3:2", "2:1"
+                    };
+                    if (nalInfo->spsAspectRatioIdc < 17) {
+                        aspectStr = QString("%1 (IDC %2)").arg(aspectNames[nalInfo->spsAspectRatioIdc]).arg(nalInfo->spsAspectRatioIdc);
+                    } else {
+                        aspectStr = QString("IDC %1").arg(nalInfo->spsAspectRatioIdc);
+                    }
+                }
+                aspectItem->setText(1, aspectStr);
+            }
+
+            // Timing Info
+            if (nalInfo->spsTimingInfoPresent) {
+                QTreeWidgetItem* timingItem = new QTreeWidgetItem(vuiItem);
+                timingItem->setText(0, "Timing Info");
+
+                QTreeWidgetItem* tickItem = new QTreeWidgetItem(timingItem);
+                tickItem->setText(0, "Num Units in Tick");
+                tickItem->setText(1, QString::number(nalInfo->spsNumUnitsInTick));
+
+                QTreeWidgetItem* timeScaleItem = new QTreeWidgetItem(timingItem);
+                timeScaleItem->setText(0, "Time Scale");
+                timeScaleItem->setText(1, QString::number(nalInfo->spsTimeScale));
+
+                QTreeWidgetItem* fixedItem = new QTreeWidgetItem(timingItem);
+                fixedItem->setText(0, "Fixed Frame Rate");
+                fixedItem->setText(1, nalInfo->spsFixedFrameRate ? "Yes" : "No");
+
+                // Calculate frame rate
+                if (nalInfo->spsNumUnitsInTick > 0 && nalInfo->spsTimeScale > 0) {
+                    double frameRate = (double)nalInfo->spsTimeScale / (2.0 * nalInfo->spsNumUnitsInTick);
+                    QTreeWidgetItem* fpsItem = new QTreeWidgetItem(timingItem);
+                    fpsItem->setText(0, "Frame Rate");
+                    fpsItem->setText(1, QString("%1 fps").arg(frameRate, 0, 'f', 3));
+                    fpsItem->setForeground(1, QColor(50, 200, 50));
+                }
+            }
+        }
     }
 
     // H.264 PPS Info
@@ -2605,10 +2713,42 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
         sliceGroupsItem->setText(0, "Slice Groups");
         sliceGroupsItem->setText(1, QString::number(nalInfo->ppsNumSliceGroups));
 
+        // Initial QP
+        if (nalInfo->ppsPicInitQp != 26) {
+            QTreeWidgetItem* qpItem = new QTreeWidgetItem(ppsItem);
+            qpItem->setText(0, "Initial QP");
+            qpItem->setText(1, QString::number(nalInfo->ppsPicInitQp));
+        }
+
+        // Chroma QP Offset
+        if (nalInfo->ppsChromaQpIndexOffset != 0) {
+            QTreeWidgetItem* chromaQpItem = new QTreeWidgetItem(ppsItem);
+            chromaQpItem->setText(0, "Chroma QP Offset");
+            chromaQpItem->setText(1, QString::number(nalInfo->ppsChromaQpIndexOffset));
+        }
+
         // Deblocking Filter
         QTreeWidgetItem* deblockItem = new QTreeWidgetItem(ppsItem);
-        deblockItem->setText(0, "Deblocking Filter");
-        deblockItem->setText(1, nalInfo->ppsDeblockingFilter ? "Enabled" : "Disabled");
+        deblockItem->setText(0, "Deblocking Filter Control");
+        deblockItem->setText(1, nalInfo->ppsDeblockingFilter ? "Present" : "Not Present");
+
+        // Constrained Intra Prediction
+        QTreeWidgetItem* constrainedItem = new QTreeWidgetItem(ppsItem);
+        constrainedItem->setText(0, "Constrained Intra Pred");
+        constrainedItem->setText(1, nalInfo->ppsConstainedIntraPred ? "Enabled" : "Disabled");
+
+        // Redundant Picture Count
+        QTreeWidgetItem* redundantItem = new QTreeWidgetItem(ppsItem);
+        redundantItem->setText(0, "Redundant Pic Count");
+        redundantItem->setText(1, nalInfo->ppsRedundantPicCnt ? "Present" : "Not Present");
+
+        // Transform 8x8 Mode (High profiles only)
+        if (nalInfo->ppsTransform8x8Mode) {
+            QTreeWidgetItem* transform8x8Item = new QTreeWidgetItem(ppsItem);
+            transform8x8Item->setText(0, "8×8 Transform");
+            transform8x8Item->setText(1, "Enabled");
+            transform8x8Item->setForeground(1, QColor(50, 200, 50));
+        }
 
         // Weighted Prediction
         QTreeWidgetItem* weightedItem = new QTreeWidgetItem(ppsItem);
@@ -2650,7 +2790,7 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
     }
 
     // H.265 SPS Info
-    if (nalInfo->nalUnitType == HEVC_NAL_SPS && nalInfo->spsProfileIdc >= 0) {
+    if (nalInfo->nalUnitType == HEVC_NAL_SPS && nalInfo->hevcSpsPresent) {
         QTreeWidgetItem* spsItem = new QTreeWidgetItem(root);
         spsItem->setText(0, "SPS (Sequence Parameter Set)");
         spsItem->setExpanded(true);
@@ -2669,6 +2809,11 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
         }
         profileItem->setText(1, QString("%1 (%2)").arg(profileName).arg(nalInfo->spsProfileIdc));
 
+        // Tier
+        QTreeWidgetItem* tierItem = new QTreeWidgetItem(spsItem);
+        tierItem->setText(0, "Tier");
+        tierItem->setText(1, nalInfo->hevcGeneralTierFlag ? "High" : "Main");
+
         // Level
         QTreeWidgetItem* levelItem = new QTreeWidgetItem(spsItem);
         levelItem->setText(0, "Level");
@@ -2679,6 +2824,17 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
             QTreeWidgetItem* resItem = new QTreeWidgetItem(spsItem);
             resItem->setText(0, "Resolution");
             resItem->setText(1, QString("%1 × %2").arg(nalInfo->spsWidth).arg(nalInfo->spsHeight));
+
+            // Show cropping info if present
+            if (nalInfo->hevcConformanceWindowFlag) {
+                QTreeWidgetItem* cropItem = new QTreeWidgetItem(resItem);
+                cropItem->setText(0, "Conformance Window");
+                cropItem->setText(1, QString("L:%1 R:%2 T:%3 B:%4")
+                    .arg(nalInfo->hevcConfWinLeftOffset)
+                    .arg(nalInfo->hevcConfWinRightOffset)
+                    .arg(nalInfo->hevcConfWinTopOffset)
+                    .arg(nalInfo->hevcConfWinBottomOffset));
+            }
         }
 
         // Chroma Format
@@ -2701,6 +2857,174 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
         bitDepthItem->setText(0, "Bit Depth");
         bitDepthItem->setText(1, QString("Luma: %1-bit, Chroma: %2-bit")
             .arg(nalInfo->spsBitDepthLuma).arg(nalInfo->spsBitDepthChroma));
+
+        // Source Scan Type
+        QTreeWidgetItem* scanItem = new QTreeWidgetItem(spsItem);
+        scanItem->setText(0, "Source Scan Type");
+        QString scanType;
+        if (nalInfo->hevcGeneralProgressiveSourceFlag && !nalInfo->hevcGeneralInterlacedSourceFlag) {
+            scanType = "Progressive";
+        } else if (!nalInfo->hevcGeneralProgressiveSourceFlag && nalInfo->hevcGeneralInterlacedSourceFlag) {
+            scanType = "Interlaced";
+        } else if (nalInfo->hevcGeneralProgressiveSourceFlag && nalInfo->hevcGeneralInterlacedSourceFlag) {
+            scanType = "Mixed";
+        } else {
+            scanType = "Unknown";
+        }
+        scanItem->setText(1, scanType);
+
+        // Frame Only Constraint
+        if (nalInfo->hevcGeneralFrameOnlyConstraintFlag) {
+            QTreeWidgetItem* frameOnlyItem = new QTreeWidgetItem(spsItem);
+            frameOnlyItem->setText(0, "Frame Only Constraint");
+            frameOnlyItem->setText(1, "Yes");
+        }
+
+        // Temporal Layers
+        if (nalInfo->hevcSpsMaxSubLayersMinus1 >= 0) {
+            QTreeWidgetItem* subLayersItem = new QTreeWidgetItem(spsItem);
+            subLayersItem->setText(0, "Max Temporal Sub-Layers");
+            subLayersItem->setText(1, QString::number(nalInfo->hevcSpsMaxSubLayersMinus1 + 1));
+
+            if (nalInfo->hevcSpsTemporalIdNesting) {
+                QTreeWidgetItem* nestingItem = new QTreeWidgetItem(subLayersItem);
+                nestingItem->setText(0, "Temporal ID Nesting");
+                nestingItem->setText(1, "Enabled");
+            }
+        }
+
+        // POC
+        if (nalInfo->spsLog2MaxPicOrderCntLsb > 0) {
+            QTreeWidgetItem* pocItem = new QTreeWidgetItem(spsItem);
+            pocItem->setText(0, "Max POC LSB");
+            pocItem->setText(1, QString::number(1 << nalInfo->spsLog2MaxPicOrderCntLsb));
+        }
+
+        // VUI Parameters
+        if (nalInfo->hevcVuiPresent) {
+            QTreeWidgetItem* vuiItem = new QTreeWidgetItem(spsItem);
+            vuiItem->setText(0, "VUI Parameters");
+            vuiItem->setExpanded(false);
+            vuiItem->setForeground(0, QColor(100, 150, 255));
+
+            // Aspect Ratio
+            if (nalInfo->hevcVuiAspectRatioIdc > 0) {
+                QTreeWidgetItem* aspectItem = new QTreeWidgetItem(vuiItem);
+                aspectItem->setText(0, "Aspect Ratio");
+                QString aspectStr;
+                if (nalInfo->hevcVuiAspectRatioIdc == 255) {
+                    aspectStr = QString("Extended SAR %1:%2")
+                        .arg(nalInfo->hevcVuiSarWidth).arg(nalInfo->hevcVuiSarHeight);
+                } else {
+                    // HEVC uses same aspect ratio table as H.264
+                    static const char* aspectNames[] = {
+                        "", "1:1 (Square)", "12:11", "10:11", "16:11", "40:33",
+                        "24:11", "20:11", "32:11", "80:33", "18:11", "15:11",
+                        "64:33", "160:99", "4:3", "3:2", "2:1"
+                    };
+                    if (nalInfo->hevcVuiAspectRatioIdc < 17) {
+                        aspectStr = QString("%1 (IDC %2)")
+                            .arg(aspectNames[nalInfo->hevcVuiAspectRatioIdc])
+                            .arg(nalInfo->hevcVuiAspectRatioIdc);
+                    } else {
+                        aspectStr = QString("IDC %1").arg(nalInfo->hevcVuiAspectRatioIdc);
+                    }
+                }
+                aspectItem->setText(1, aspectStr);
+            }
+
+            // Timing Info
+            if (nalInfo->hevcVuiTimingInfoPresent) {
+                QTreeWidgetItem* timingItem = new QTreeWidgetItem(vuiItem);
+                timingItem->setText(0, "Timing Info");
+
+                QTreeWidgetItem* tickItem = new QTreeWidgetItem(timingItem);
+                tickItem->setText(0, "Num Units in Tick");
+                tickItem->setText(1, QString::number(nalInfo->hevcVuiNumUnitsInTick));
+
+                QTreeWidgetItem* timeScaleItem = new QTreeWidgetItem(timingItem);
+                timeScaleItem->setText(0, "Time Scale");
+                timeScaleItem->setText(1, QString::number(nalInfo->hevcVuiTimeScale));
+
+                // Calculate frame rate
+                if (nalInfo->hevcVuiNumUnitsInTick > 0 && nalInfo->hevcVuiTimeScale > 0) {
+                    double frameRate = (double)nalInfo->hevcVuiTimeScale / (double)nalInfo->hevcVuiNumUnitsInTick;
+                    QTreeWidgetItem* fpsItem = new QTreeWidgetItem(timingItem);
+                    fpsItem->setText(0, "Frame Rate");
+                    fpsItem->setText(1, QString("%1 fps").arg(frameRate, 0, 'f', 3));
+                    fpsItem->setForeground(1, QColor(50, 200, 50));
+                }
+            }
+        }
+    }
+
+    // H.265 PPS Info
+    if (nalInfo->nalUnitType == HEVC_NAL_PPS && nalInfo->hevcPpsPresent) {
+        QTreeWidgetItem* ppsItem = new QTreeWidgetItem(root);
+        ppsItem->setText(0, "PPS (Picture Parameter Set)");
+        ppsItem->setExpanded(true);
+        ppsItem->setForeground(0, QColor(255, 140, 0));
+
+        // PPS ID
+        QTreeWidgetItem* ppsIdItem = new QTreeWidgetItem(ppsItem);
+        ppsIdItem->setText(0, "PPS ID");
+        ppsIdItem->setText(1, QString::number(nalInfo->hevcPpsPicParameterSetId));
+
+        // SPS ID
+        QTreeWidgetItem* spsIdItem = new QTreeWidgetItem(ppsItem);
+        spsIdItem->setText(0, "SPS ID");
+        spsIdItem->setText(1, QString::number(nalInfo->hevcPpsSeqParameterSetId));
+
+        // CABAC Init Present
+        if (nalInfo->hevcPpsCabacInitPresent) {
+            QTreeWidgetItem* cabacItem = new QTreeWidgetItem(ppsItem);
+            cabacItem->setText(0, "CABAC Init Present");
+            cabacItem->setText(1, "Yes");
+            cabacItem->setForeground(1, QColor(50, 200, 50));
+        }
+
+        // Reference Indices
+        QTreeWidgetItem* refItem = new QTreeWidgetItem(ppsItem);
+        refItem->setText(0, "Default Active References");
+        refItem->setExpanded(true);
+
+        QTreeWidgetItem* l0Item = new QTreeWidgetItem(refItem);
+        l0Item->setText(0, "List 0 (L0)");
+        l0Item->setText(1, QString::number(nalInfo->hevcPpsNumRefIdxL0DefaultActive));
+
+        QTreeWidgetItem* l1Item = new QTreeWidgetItem(refItem);
+        l1Item->setText(0, "List 1 (L1)");
+        l1Item->setText(1, QString::number(nalInfo->hevcPpsNumRefIdxL1DefaultActive));
+
+        // Initial QP
+        QTreeWidgetItem* qpItem = new QTreeWidgetItem(ppsItem);
+        qpItem->setText(0, "Initial QP");
+        qpItem->setText(1, QString("%1 (Offset: %2)")
+            .arg(nalInfo->hevcPpsInitQpMinus26 + 26)
+            .arg(nalInfo->hevcPpsInitQpMinus26));
+
+        // Constrained Intra Pred
+        QTreeWidgetItem* constrainedItem = new QTreeWidgetItem(ppsItem);
+        constrainedItem->setText(0, "Constrained Intra Pred");
+        constrainedItem->setText(1, nalInfo->hevcPpsConstrainedIntraPred ? "Enabled" : "Disabled");
+
+        // Transform Skip
+        QTreeWidgetItem* transformSkipItem = new QTreeWidgetItem(ppsItem);
+        transformSkipItem->setText(0, "Transform Skip");
+        transformSkipItem->setText(1, nalInfo->hevcPpsTransformSkipEnabled ? "Enabled" : "Disabled");
+
+        // CU QP Delta
+        QTreeWidgetItem* cuQpItem = new QTreeWidgetItem(ppsItem);
+        cuQpItem->setText(0, "CU QP Delta");
+        cuQpItem->setText(1, nalInfo->hevcPpsCuQpDeltaEnabled ? "Enabled" : "Disabled");
+
+        // Transquant Bypass
+        if (nalInfo->hevcPpsTransquantBypassEnabled) {
+            QTreeWidgetItem* bypassItem = new QTreeWidgetItem(ppsItem);
+            bypassItem->setText(0, "Transquant Bypass");
+            bypassItem->setText(1, "Enabled");
+            bypassItem->setForeground(1, QColor(50, 200, 50));
+        }
     }
 }
 

@@ -12,6 +12,7 @@ OverlayPanel::OverlayPanel(QWidget* parent)
     , m_motionVectorsCheckBox(nullptr)
     , m_partitionsCheckBox(nullptr)
     , m_frameTypesCheckBox(nullptr)
+    , m_qpHeatmapCheckBox(nullptr)
 {
     createUI();
 }
@@ -35,6 +36,10 @@ void OverlayPanel::setFrameTypesChecked(bool checked) {
     m_frameTypesCheckBox->setChecked(checked);
 }
 
+void OverlayPanel::setQPHeatmapChecked(bool checked) {
+    m_qpHeatmapCheckBox->setChecked(checked);
+}
+
 void OverlayPanel::createUI() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(5, 5, 5, 5);
@@ -54,6 +59,10 @@ void OverlayPanel::createUI() {
     m_frameTypesCheckBox = new QCheckBox(tr("Frame Type Info (ALT+4)"), overlayGroup);
     connect(m_frameTypesCheckBox, &QCheckBox::toggled, this, &OverlayPanel::onFrameTypesToggled);
     overlayLayout->addWidget(m_frameTypesCheckBox);
+
+    m_qpHeatmapCheckBox = new QCheckBox(tr("QP Heatmap (ALT+5)"), overlayGroup);
+    connect(m_qpHeatmapCheckBox, &QCheckBox::toggled, this, &OverlayPanel::onQPHeatmapToggled);
+    overlayLayout->addWidget(m_qpHeatmapCheckBox);
 
     mainLayout->addWidget(overlayGroup);
     mainLayout->addStretch();
@@ -78,6 +87,13 @@ void OverlayPanel::onFrameTypesToggled(bool checked) {
         m_videoOutput->setOverlay(OverlayType::FrameTypes, checked);
     }
     emit frameTypesToggled(checked);
+}
+
+void OverlayPanel::onQPHeatmapToggled(bool checked) {
+    if (m_videoOutput) {
+        m_videoOutput->setOverlay(OverlayType::QuantizationParameter, checked);
+    }
+    emit qpHeatmapToggled(checked);
 }
 
 } // namespace VideoStudio

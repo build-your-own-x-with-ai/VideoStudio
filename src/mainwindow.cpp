@@ -120,6 +120,7 @@ MainWindow::MainWindow(QWidget* parent)
     , m_overlayMotionVectorsAction(nullptr)
     , m_overlayPartitionsAction(nullptr)
     , m_overlayFrameTypesAction(nullptr)
+    , m_overlayQPHeatmapAction(nullptr)
     , m_filePathLabel(nullptr)
 {
     setWindowTitle("VideoStudio - Professional Video Analysis Tool - https://github.com/build-your-own-x-with-ai - 作者：AI开发日志");
@@ -245,6 +246,9 @@ void MainWindow::createWidgets() {
     });
     connect(m_overlayPanel, &OverlayPanel::frameTypesToggled, this, [this](bool checked) {
         m_overlayFrameTypesAction->setChecked(checked);
+    });
+    connect(m_overlayPanel, &OverlayPanel::qpHeatmapToggled, this, [this](bool checked) {
+        m_overlayQPHeatmapAction->setChecked(checked);
     });
 
     m_gopViewer = new GOPViewer(this);
@@ -750,6 +754,11 @@ void MainWindow::createMenus() {
     m_overlayFrameTypesAction->setShortcut(Qt::ALT | Qt::Key_4);
     connect(m_overlayFrameTypesAction, &QAction::triggered, this, &MainWindow::toggleFrameTypes);
 
+    m_overlayQPHeatmapAction = overlayMenu->addAction(tr("&QP Heatmap"));
+    m_overlayQPHeatmapAction->setCheckable(true);
+    m_overlayQPHeatmapAction->setShortcut(Qt::ALT | Qt::Key_5);
+    connect(m_overlayQPHeatmapAction, &QAction::triggered, this, &MainWindow::toggleQPHeatmap);
+
     overlayMenu->addSeparator();
 
     m_cursorModeAction = overlayMenu->addAction(tr("&Cursor Mode (Block Inspector)"));
@@ -1017,6 +1026,7 @@ void MainWindow::loadFile(const QString& fileName) {
             m_thumbnailBar->setDecoder(m_decoder.get());
             m_gopViewer->setFrameIndex(&m_decoder->getFrameIndex());
             m_bufferPanel->setDecoder(m_decoder.get());
+            m_blockStatsPanel->setVideoDecoder(m_decoder.get());
 
             // Generate thumbnails in background (already async)
             m_thumbnailBar->generateThumbnails();
@@ -1698,6 +1708,13 @@ void MainWindow::toggleFrameTypes() {
     bool checked = m_videoOutput->isOverlayEnabled(OverlayType::FrameTypes);
     m_overlayFrameTypesAction->setChecked(checked);
     m_overlayPanel->setFrameTypesChecked(checked);
+}
+
+void MainWindow::toggleQPHeatmap() {
+    m_videoOutput->toggleOverlay(OverlayType::QuantizationParameter);
+    bool checked = m_videoOutput->isOverlayEnabled(OverlayType::QuantizationParameter);
+    m_overlayQPHeatmapAction->setChecked(checked);
+    m_overlayPanel->setQPHeatmapChecked(checked);
 }
 
 void MainWindow::toggleCursorMode() {

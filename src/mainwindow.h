@@ -86,6 +86,7 @@ private slots:
     void toggleMotionVectors();
     void togglePartitions();
     void toggleFrameTypes();
+    void toggleQPHeatmap();
     void toggleCursorMode();
     void toggleStandardGridMode();
     void saveStreamInfo();
@@ -189,6 +190,7 @@ private:
     QAction* m_overlayMotionVectorsAction;
     QAction* m_overlayPartitionsAction;
     QAction* m_overlayFrameTypesAction;
+    QAction* m_overlayQPHeatmapAction;
     QAction* m_cursorModeAction;
     QAction* m_standardGridModeAction;
 

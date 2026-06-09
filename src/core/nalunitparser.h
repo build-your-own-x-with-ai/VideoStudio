@@ -75,6 +75,7 @@ private:
     void parseH264PPS(const uint8_t* data, int size, NALUnitInfo& info);
     void parseH265VPS(const uint8_t* data, int size, NALUnitInfo& info);
     void parseH265SPS(const uint8_t* data, int size, NALUnitInfo& info);
+    void parseH265PPS(const uint8_t* data, int size, NALUnitInfo& info);
 
     // Slice header parsing
     void parseH264SliceHeader(const uint8_t* data, int size, NALUnitInfo& info);

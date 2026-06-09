@@ -118,6 +118,9 @@ bool VideoDecoder::openFile(const QString& filePath) {
     // Enable motion vector export (critical for block statistics)
     m_codecContext->flags2 |= AV_CODEC_FLAG2_EXPORT_MVS;
 
+    // Enable video encoding parameters export (for QP heatmap)
+    m_codecContext->export_side_data |= AV_CODEC_EXPORT_DATA_VIDEO_ENC_PARAMS;
+
     // Set codec options to export motion vectors
     AVDictionary* opts = nullptr;
     av_dict_set(&opts, "flags2", "+export_mvs", 0);
