@@ -1519,13 +1519,18 @@ void MainWindow::stepForward() {
         m_videoOutput->displayFrame(frame);
         m_blockStatsPanel->updateStatistics(frame);
         int currentFrame = m_decoder->getCurrentFrameNumber();
+        int frameCount = m_decoder->getFrameCount();
+        // getCurrentFrameNumber() returns next position, clamp for display
+        if (currentFrame >= frameCount) {
+            currentFrame = frameCount - 1;
+        }
         m_barChart->setCurrentFrame(currentFrame);
         m_thumbnailBar->setCurrentFrame(currentFrame);
         m_gopViewer->setCurrentFrame(currentFrame);
         m_statusLabel->setText(tr("Frame %1 / %2")
             .arg(currentFrame)
-            .arg(m_decoder->getFrameCount()));
-        updateFrameLabel(currentFrame, m_decoder->getFrameCount());
+            .arg(frameCount));
+        updateFrameLabel(currentFrame, frameCount);
     } else {
         // Reached end of video
         pause();
