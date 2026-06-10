@@ -74,6 +74,12 @@ void GOPViewer::toggleDisplayMode() {
     QSize hint = sizeHint();
     setMinimumSize(hint);
     resize(hint);
+
+    // Pre-generate thumbnails in background if switching to thumbnail mode
+    if (m_showThumbnails && m_videoDecoder && m_frameIndex) {
+        QTimer::singleShot(100, this, &GOPViewer::generateThumbnails);
+    }
+
     update();
 }
 
@@ -332,37 +338,6 @@ void GOPViewer::drawFrame(QPainter& painter, int frameNumber, int x, int y, int 
     }
 
     if (m_showThumbnails && m_videoDecoder) {
-        // Try to get cached thumbnail
-        if (!m_thumbnailCache.contains(frameNumber)) {
-            // Render thumbnail from decoder
-            if (m_videoDecoder->seekToFrame(frameNumber)) {
-                AVFrame* avFrame = m_videoDecoder->getCurrentFrame();
-                if (avFrame && avFrame->data[0]) {
-                    // Convert to RGB
-                    SwsContext* swsContext = sws_getContext(
-                        avFrame->width, avFrame->height, (AVPixelFormat)avFrame->format,
-                        w, h - 12, AV_PIX_FMT_RGB24,
-                        SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
-
-                    if (swsContext) {
-                        int rgbLinesize = w * 3;
-                        uint8_t* rgbData = new uint8_t[rgbLinesize * (h - 12)];
-                        uint8_t* dstData[1] = { rgbData };
-                        int dstLinesize[1] = { rgbLinesize };
-
-                        sws_scale(swsContext, avFrame->data, avFrame->linesize, 0, avFrame->height,
-                                 dstData, dstLinesize);
-
-                        QImage img(rgbData, w, h - 12, rgbLinesize, QImage::Format_RGB888);
-                        m_thumbnailCache[frameNumber] = QPixmap::fromImage(img.copy());
-
-                        delete[] rgbData;
-                        sws_freeContext(swsContext);
-                    }
-                }
-            }
-        }
-
         if (m_thumbnailCache.contains(frameNumber)) {
             painter.drawPixmap(x, y, m_thumbnailCache[frameNumber]);
         }
@@ -385,6 +360,53 @@ void GOPViewer::drawFrame(QPainter& painter, int frameNumber, int x, int y, int 
     }
 }
 
+void GOPViewer::generateThumbnails() {
+    if (!m_videoDecoder || !m_frameIndex || !m_showThumbnails) {
+        return;
+    }
+
+    // Only generate first 200 thumbnails to avoid excessive memory
+    int maxThumbnails = 200;
+    int count = 0;
+
+    for (const GOPInfo& gop : m_gops) {
+        for (int frameIdx = gop.startFrame; frameIdx <= gop.endFrame && count < maxThumbnails; ++frameIdx) {
+            if (!m_thumbnailCache.contains(frameIdx)) {
+                if (m_videoDecoder->seekToFrame(frameIdx)) {
+                    AVFrame* avFrame = m_videoDecoder->getCurrentFrame();
+                    if (avFrame && avFrame->data[0]) {
+                        int w = m_frameWidth;
+                        int h = m_frameHeight - 12;
+                        SwsContext* swsContext = sws_getContext(
+                            avFrame->width, avFrame->height, (AVPixelFormat)avFrame->format,
+                            w, h, AV_PIX_FMT_RGB24,
+                            SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
+
+                        if (swsContext) {
+                            int rgbLinesize = w * 3;
+                            uint8_t* rgbData = new uint8_t[rgbLinesize * h];
+                            uint8_t* dstData[1] = { rgbData };
+                            int dstLinesize[1] = { rgbLinesize };
+
+                            sws_scale(swsContext, avFrame->data, avFrame->linesize, 0, avFrame->height,
+                                     dstData, dstLinesize);
+
+                            QImage img(rgbData, w, h, rgbLinesize, QImage::Format_RGB888);
+                            m_thumbnailCache[frameIdx] = QPixmap::fromImage(img.copy());
+
+                            delete[] rgbData;
+                            sws_freeContext(swsContext);
+                        }
+                    }
+                }
+                count++;
+            }
+        }
+        if (count >= maxThumbnails) break;
+    }
+
+    update();
+}
 
 void GOPViewer::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
