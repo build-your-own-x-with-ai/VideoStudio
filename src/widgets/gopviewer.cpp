@@ -185,7 +185,7 @@ void GOPViewer::drawGOPStructure(QPainter& painter) {
         // Draw GOP label
         painter.setPen(QColor(180, 180, 180));
         painter.setFont(QFont("Arial", 9));
-        QString gopLabel = QString("GOP %1:").arg(gopIdx);
+        QString gopLabel = QString("GOP %1:").arg(gopIdx + 1);
         painter.drawText(m_leftMargin, y + m_frameHeight / 2 + 4, gopLabel);
 
         int x = m_leftMargin + 70;
