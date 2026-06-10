@@ -1528,7 +1528,7 @@ void MainWindow::stepForward() {
         m_thumbnailBar->setCurrentFrame(currentFrame);
         m_gopViewer->setCurrentFrame(currentFrame);
         m_statusLabel->setText(tr("Frame %1 / %2")
-            .arg(currentFrame)
+            .arg(currentFrame + 1)
             .arg(frameCount));
         updateFrameLabel(currentFrame, frameCount);
     } else {
@@ -1554,7 +1554,7 @@ void MainWindow::stepBackward() {
                 m_thumbnailBar->setCurrentFrame(currentFrame - 1);
                 m_gopViewer->setCurrentFrame(currentFrame - 1);
                 m_statusLabel->setText(tr("Frame %1 / %2")
-                    .arg(currentFrame - 1)
+                    .arg(currentFrame)
                     .arg(m_decoder->getFrameCount()));
                 updateFrameLabel(currentFrame - 1, m_decoder->getFrameCount());
             }
@@ -1578,7 +1578,7 @@ void MainWindow::onFrameClicked(int frameNumber) {
             m_thumbnailBar->setCurrentFrame(frameNumber);
             m_gopViewer->setCurrentFrame(frameNumber);
             m_statusLabel->setText(tr("Frame %1 / %2")
-                .arg(frameNumber)
+                .arg(frameNumber + 1)
                 .arg(m_decoder->getFrameCount()));
             updateFrameLabel(frameNumber, m_decoder->getFrameCount());
 
@@ -1761,7 +1761,7 @@ void MainWindow::updateUI() {
 void MainWindow::updateFrameLabel(int currentFrame, int totalFrames) {
     QLabel* frameLabel = findChild<QLabel*>("frameLabel");
     if (frameLabel) {
-        frameLabel->setText(tr("Frame: %1 / %2").arg(currentFrame).arg(totalFrames));
+        frameLabel->setText(tr("Frame: %1 / %2").arg(currentFrame + 1).arg(totalFrames));
     }
 }
 
