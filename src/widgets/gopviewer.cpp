@@ -13,18 +13,15 @@ GOPViewer::GOPViewer(QWidget* parent)
     : QWidget(parent)
     , m_frameIndex(nullptr)
     , m_currentFrame(0)
-    , m_viewStartFrame(0)
-    , m_viewEndFrame(100)
-    , m_framesPerRow(20)
-    , m_frameWidth(40)
-    , m_frameHeight(30)
-    , m_horizontalSpacing(10)
-    , m_verticalSpacing(40)
-    , m_leftMargin(20)
-    , m_topMargin(20)
-    , m_autoScroll(true)
+    , m_showThumbnails(false)
+    , m_frameWidth(30)
+    , m_frameHeight(24)
+    , m_horizontalSpacing(4)
+    , m_verticalSpacing(10)
+    , m_leftMargin(10)
+    , m_topMargin(10)
 {
-    setMinimumHeight(200);
+    setMinimumHeight(150);
     setMouseTracking(true);
 }
 
@@ -34,34 +31,51 @@ GOPViewer::~GOPViewer() {
 void GOPViewer::setFrameIndex(const FrameIndex* frameIndex) {
     m_frameIndex = frameIndex;
     if (m_frameIndex) {
-        // Reset view to start from frame 0
-        m_viewStartFrame = 0;
-        m_viewEndFrame = qMin(100, m_frameIndex->frameCount() - 1);
         analyzeGOPStructure();
     }
+    updateGeometry();
     update();
 }
 
 void GOPViewer::setCurrentFrame(int frameNumber) {
     m_currentFrame = frameNumber;
+    update();
+}
 
-    // Auto-scroll to show current frame if it's outside the visible range
-    // Only auto-scroll if the flag is enabled (not during user interaction)
-    if (m_autoScroll && m_frameIndex && frameNumber >= 0) {
-        if (frameNumber < m_viewStartFrame || frameNumber > m_viewEndFrame) {
-            // Center the view around the current frame
-            int visibleFrames = m_viewEndFrame - m_viewStartFrame + 1;
-            m_viewStartFrame = qMax(0, frameNumber - visibleFrames / 2);
-            m_viewEndFrame = qMin(m_frameIndex->frameCount() - 1, m_viewStartFrame + visibleFrames - 1);
+void GOPViewer::toggleDisplayMode() {
+    m_showThumbnails = !m_showThumbnails;
+    if (m_showThumbnails) {
+        m_frameWidth = 60;
+        m_frameHeight = 45;
+        m_horizontalSpacing = 6;
+    } else {
+        m_frameWidth = 30;
+        m_frameHeight = 24;
+        m_horizontalSpacing = 4;
+    }
+    updateGeometry();
+    update();
+}
 
-            // Adjust if we hit the end
-            if (m_viewEndFrame == m_frameIndex->frameCount() - 1) {
-                m_viewStartFrame = qMax(0, m_viewEndFrame - visibleFrames + 1);
-            }
-        }
+QSize GOPViewer::sizeHint() const {
+    if (m_gops.isEmpty()) {
+        return QSize(800, 150);
     }
 
-    update();
+    // Find the longest GOP
+    int maxGOPSize = 0;
+    for (const GOPInfo& gop : m_gops) {
+        int gopSize = gop.endFrame - gop.startFrame + 1;
+        maxGOPSize = qMax(maxGOPSize, gopSize);
+    }
+
+    // Calculate total width needed (longest GOP + margins)
+    int totalWidth = m_leftMargin + 70 + maxGOPSize * (m_frameWidth + m_horizontalSpacing) + m_leftMargin;
+
+    // Calculate height for all GOPs
+    int totalHeight = m_topMargin + m_gops.size() * (m_frameHeight + m_verticalSpacing) + 30;
+
+    return QSize(totalWidth, totalHeight);
 }
 
 void GOPViewer::setDuplicateFrames(const QSet<int>& duplicateFrames) {
@@ -73,8 +87,7 @@ void GOPViewer::clear() {
     m_frameIndex = nullptr;
     m_gops.clear();
     m_currentFrame = 0;
-    m_viewStartFrame = 0;
-    m_viewEndFrame = 100;
+    updateGeometry();
     update();
 }
 
@@ -140,83 +153,44 @@ void GOPViewer::paintEvent(QPaintEvent* event) {
 }
 
 void GOPViewer::drawGOPStructure(QPainter& painter) {
-    // Calculate frames per row based on widget width
-    int availableWidth = width() - 2 * m_leftMargin;
-    m_framesPerRow = qMax(10, availableWidth / (m_frameWidth + m_horizontalSpacing));
+    int y = m_topMargin;
+    int maxX = 0;
 
-    // Draw frames
-    for (int i = m_viewStartFrame; i <= m_viewEndFrame && i < m_frameIndex->frameCount(); ++i) {
-        const FrameInfo* frame = m_frameIndex->getFrame(i);
-        if (!frame) continue;
+    // Draw all GOPs (scrolling handled by QScrollArea)
+    for (int gopIdx = 0; gopIdx < m_gops.size(); ++gopIdx) {
+        const GOPInfo& gop = m_gops[gopIdx];
 
-        int x = frameToX(i);
-        int y = frameToY(i);
+        // Draw GOP label
+        painter.setPen(QColor(180, 180, 180));
+        painter.setFont(QFont("Arial", 9));
+        QString gopLabel = QString("GOP %1:").arg(gopIdx);
+        painter.drawText(m_leftMargin, y + m_frameHeight / 2 + 4, gopLabel);
 
-        drawFrame(painter, i, x, y, m_frameWidth, m_frameHeight);
-    }
+        int x = m_leftMargin + 70;
 
-    // Draw dependency arrows
-    painter.setOpacity(0.5);
-    for (int i = m_viewStartFrame; i <= m_viewEndFrame && i < m_frameIndex->frameCount(); ++i) {
-        const FrameInfo* frame = m_frameIndex->getFrame(i);
-        if (!frame) continue;
+        // Draw all frames in this GOP
+        for (int frameIdx = gop.startFrame; frameIdx <= gop.endFrame; ++frameIdx) {
+            const FrameInfo* frame = m_frameIndex->getFrame(frameIdx);
+            if (!frame) continue;
 
-        if (frame->frameType == AV_PICTURE_TYPE_P) {
-            // P-frame depends on previous I or P frame
-            for (int j = i - 1; j >= m_viewStartFrame; --j) {
-                const FrameInfo* refFrame = m_frameIndex->getFrame(j);
-                if (refFrame && (refFrame->frameType == AV_PICTURE_TYPE_I ||
-                                 refFrame->frameType == AV_PICTURE_TYPE_P)) {
-                    int fromX = frameToX(j) + m_frameWidth / 2;
-                    int fromY = frameToY(j) + m_frameHeight;
-                    int toX = frameToX(i) + m_frameWidth / 2;
-                    int toY = frameToY(i);
-                    drawDependencyArrow(painter, fromX, fromY, toX, toY);
-                    break;
-                }
-            }
-        } else if (frame->frameType == AV_PICTURE_TYPE_B) {
-            // B-frame depends on surrounding I/P frames
-            // Find previous reference
-            for (int j = i - 1; j >= m_viewStartFrame; --j) {
-                const FrameInfo* refFrame = m_frameIndex->getFrame(j);
-                if (refFrame && (refFrame->frameType == AV_PICTURE_TYPE_I ||
-                                 refFrame->frameType == AV_PICTURE_TYPE_P)) {
-                    int fromX = frameToX(j) + m_frameWidth / 2;
-                    int fromY = frameToY(j) + m_frameHeight;
-                    int toX = frameToX(i) + m_frameWidth / 2;
-                    int toY = frameToY(i);
-                    drawDependencyArrow(painter, fromX, fromY, toX, toY);
-                    break;
-                }
-            }
-            // Find next reference
-            for (int j = i + 1; j <= m_viewEndFrame && j < m_frameIndex->frameCount(); ++j) {
-                const FrameInfo* refFrame = m_frameIndex->getFrame(j);
-                if (refFrame && (refFrame->frameType == AV_PICTURE_TYPE_I ||
-                                 refFrame->frameType == AV_PICTURE_TYPE_P)) {
-                    int fromX = frameToX(j) + m_frameWidth / 2;
-                    int fromY = frameToY(j) + m_frameHeight;
-                    int toX = frameToX(i) + m_frameWidth / 2;
-                    int toY = frameToY(i);
-                    drawDependencyArrow(painter, fromX, fromY, toX, toY);
-                    break;
-                }
-            }
+            drawFrame(painter, frameIdx, x, y, m_frameWidth, m_frameHeight);
+            x += m_frameWidth + m_horizontalSpacing;
         }
+
+        maxX = qMax(maxX, x);
+        y += m_frameHeight + m_verticalSpacing;
     }
-    painter.setOpacity(1.0);
 
-    // Draw scroll indicator at the bottom
-    if (m_frameIndex && m_frameIndex->frameCount() > 0) {
-        QString scrollInfo = QString("Showing frames %1-%2 of %3 (Use mouse wheel to scroll)")
-            .arg(m_viewStartFrame)
-            .arg(qMin(m_viewEndFrame, m_frameIndex->frameCount() - 1))
-            .arg(m_frameIndex->frameCount());
+    // Debug output
+    qDebug() << "GOPViewer: drew" << m_gops.size() << "GOPs, maxX =" << maxX
+             << "sizeHint width =" << sizeHint().width();
 
+    // Draw scroll info at bottom
+    if (!m_gops.isEmpty()) {
+        QString scrollInfo = QString("Showing all %1 GOPs").arg(m_gops.size());
         painter.setPen(QColor(150, 150, 150));
         painter.setFont(QFont("Arial", 9));
-        painter.drawText(QRect(10, height() - 20, width() - 20, 15), Qt::AlignCenter, scrollInfo);
+        painter.drawText(QRect(10, y + 5, width() - 20, 15), Qt::AlignCenter, scrollInfo);
     }
 }
 
@@ -262,114 +236,62 @@ void GOPViewer::drawFrame(QPainter& painter, int frameNumber, int x, int y, int 
     // Draw frame rectangle
     painter.drawRect(x, y, w, h);
 
-    // Draw duplicate marker overlay if this is a duplicate frame
-    if (m_duplicateFrames.contains(frameNumber) && frameNumber != m_currentFrame) {
-        // Draw a small "D" badge in the corner
+    // Draw duplicate marker if this is a duplicate frame
+    if (m_duplicateFrames.contains(frameNumber)) {
         painter.setPen(Qt::NoPen);
         painter.setBrush(QColor(255, 165, 0));
-        painter.drawEllipse(x + w - 12, y + 2, 10, 10);
+        painter.drawEllipse(x + w - 10, y + 2, 8, 8);
         painter.setPen(Qt::black);
-        painter.setFont(QFont("Arial", 7, QFont::Bold));
-        painter.drawText(QRect(x + w - 12, y + 2, 10, 10), Qt::AlignCenter, "D");
+        painter.setFont(QFont("Arial", 6, QFont::Bold));
+        painter.drawText(QRect(x + w - 10, y + 2, 8, 8), Qt::AlignCenter, "D");
     }
 
-    // Draw frame type label
-    painter.setPen(Qt::white);
-    painter.setFont(QFont("Arial", 10, QFont::Bold));
-    painter.drawText(QRect(x, y, w, h), Qt::AlignCenter, frameLabel);
-
-    // Draw frame number below
-    painter.setFont(QFont("Arial", 8));
-    painter.drawText(QRect(x, y + h + 2, w, 15), Qt::AlignCenter, QString::number(frameNumber));
-}
-
-void GOPViewer::drawDependencyArrow(QPainter& painter, int fromX, int fromY, int toX, int toY) {
-    painter.setPen(QPen(QColor(150, 150, 150, 150), 1));
-
-    // Draw curved arrow
-    QPainterPath path;
-    path.moveTo(fromX, fromY);
-
-    // Calculate control point for bezier curve
-    int midY = (fromY + toY) / 2;
-    path.quadTo(fromX, midY, toX, toY);
-
-    painter.drawPath(path);
-
-    // Draw arrowhead
-    double angle = std::atan2(toY - midY, toX - fromX);
-    int arrowSize = 5;
-    QPointF p1(toX - arrowSize * std::cos(angle - M_PI / 6),
-               toY - arrowSize * std::sin(angle - M_PI / 6));
-    QPointF p2(toX - arrowSize * std::cos(angle + M_PI / 6),
-               toY - arrowSize * std::sin(angle + M_PI / 6));
-    painter.drawLine(QPointF(toX, toY), p1);
-    painter.drawLine(QPointF(toX, toY), p2);
-}
-
-int GOPViewer::frameToX(int frameNumber) const {
-    int col = (frameNumber - m_viewStartFrame) % m_framesPerRow;
-    return m_leftMargin + col * (m_frameWidth + m_horizontalSpacing);
-}
-
-int GOPViewer::frameToY(int frameNumber) const {
-    int row = (frameNumber - m_viewStartFrame) / m_framesPerRow;
-    return m_topMargin + row * (m_frameHeight + m_verticalSpacing);
-}
-
-int GOPViewer::pixelToFrame(int x, int y) const {
-    int col = (x - m_leftMargin) / (m_frameWidth + m_horizontalSpacing);
-    int row = (y - m_topMargin) / (m_frameHeight + m_verticalSpacing);
-
-    // Check if click is within frame bounds
-    int frameX = m_leftMargin + col * (m_frameWidth + m_horizontalSpacing);
-    int frameY = m_topMargin + row * (m_frameHeight + m_verticalSpacing);
-
-    if (x < frameX || x > frameX + m_frameWidth ||
-        y < frameY || y > frameY + m_frameHeight) {
-        return -1; // Click was in spacing area
+    if (m_showThumbnails) {
+        // Thumbnail mode - show frame type with frame number
+        painter.setPen(Qt::white);
+        painter.setFont(QFont("Arial", 10, QFont::Bold));
+        painter.drawText(QRect(x, y, w, h - 12), Qt::AlignCenter, frameLabel);
+        painter.setFont(QFont("Arial", 8));
+        painter.drawText(QRect(x, y + h - 12, w, 12), Qt::AlignCenter, QString::number(frameNumber));
+    } else {
+        // Text mode - just show frame type
+        painter.setPen(Qt::white);
+        painter.setFont(QFont("Arial", 10, QFont::Bold));
+        painter.drawText(QRect(x, y, w, h), Qt::AlignCenter, frameLabel);
     }
-
-    int frameNumber = m_viewStartFrame + row * m_framesPerRow + col;
-    return frameNumber;
 }
+
 
 void GOPViewer::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
-        int frameNumber = pixelToFrame(event->pos().x(), event->pos().y());
-        if (frameNumber >= m_viewStartFrame && frameNumber <= m_viewEndFrame && frameNumber >= 0) {
-            if (m_frameIndex && frameNumber < m_frameIndex->frameCount()) {
-                // Temporarily disable auto-scroll when user clicks a frame
-                m_autoScroll = false;
-                emit frameClicked(frameNumber);
-                // Re-enable auto-scroll after a short delay
-                QTimer::singleShot(100, this, [this]() {
-                    m_autoScroll = true;
-                });
+        int x = event->pos().x();
+        int y = event->pos().y();
+
+        // Find which GOP row was clicked
+        int rowY = m_topMargin;
+        for (int gopIdx = 0; gopIdx < m_gops.size(); ++gopIdx) {
+            if (y >= rowY && y < rowY + m_frameHeight) {
+                const GOPInfo& gop = m_gops[gopIdx];
+                int frameX = m_leftMargin + 70;
+
+                // Find which frame was clicked in this GOP
+                for (int frameIdx = gop.startFrame; frameIdx <= gop.endFrame; ++frameIdx) {
+                    if (x >= frameX && x < frameX + m_frameWidth) {
+                        emit frameClicked(frameIdx);
+                        return;
+                    }
+                    frameX += m_frameWidth + m_horizontalSpacing;
+                }
+                return;
             }
+            rowY += m_frameHeight + m_verticalSpacing;
         }
     }
 }
 
 void GOPViewer::wheelEvent(QWheelEvent* event) {
-    if (!m_frameIndex) {
-        return;
-    }
-
-    int delta = event->angleDelta().y();
-    int scrollAmount = 5;
-
-    if (delta > 0) {
-        // Scroll up (show earlier frames)
-        m_viewStartFrame = qMax(0, m_viewStartFrame - scrollAmount);
-        m_viewEndFrame = qMax(m_viewStartFrame + 100, m_viewEndFrame - scrollAmount);
-    } else {
-        // Scroll down (show later frames)
-        m_viewStartFrame = qMin(m_frameIndex->frameCount() - 1, m_viewStartFrame + scrollAmount);
-        m_viewEndFrame = qMin(m_frameIndex->frameCount() - 1, m_viewEndFrame + scrollAmount);
-    }
-
-    update();
+    // Let QScrollArea handle scrolling
+    event->ignore();
 }
 
 void GOPViewer::resizeEvent(QResizeEvent* event) {

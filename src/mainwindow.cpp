@@ -322,7 +322,12 @@ void MainWindow::createDockWidgets() {
 
     // GOP viewer dock (top, tabbed with bar chart, NOT with thumbnails)
     m_gopViewerDock = new QDockWidget(tr("GOP Structure"), this);
-    m_gopViewerDock->setWidget(m_gopViewer);
+    QScrollArea* gopScrollArea = new QScrollArea(this);
+    gopScrollArea->setWidget(m_gopViewer);
+    gopScrollArea->setWidgetResizable(false);
+    gopScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    gopScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_gopViewerDock->setWidget(gopScrollArea);
     m_gopViewerDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::TopDockWidgetArea, m_gopViewerDock);
     tabifyDockWidget(m_barChartDock, m_gopViewerDock);  // Tab with bar chart, not thumbnails
@@ -701,6 +706,12 @@ void MainWindow::createMenus() {
         m_blockStatsPanelDock->show();
         m_logViewerDock->show();
     })->setShortcut(Qt::Key_F9);
+
+    viewMenu->addSeparator();
+
+    QAction* toggleGOPModeAction = viewMenu->addAction(tr("GOP: Toggle Thumbnail/Text"));
+    toggleGOPModeAction->setShortcut(Qt::ALT | Qt::Key_T);
+    connect(toggleGOPModeAction, &QAction::triggered, this, &MainWindow::toggleGOPDisplayMode);
 
     viewMenu->addAction(tr("Layout 6 (All Visible)"), this, [this]() {
         // Show panels on left and right sides to utilize black space around video
@@ -1731,6 +1742,10 @@ void MainWindow::toggleStandardGridMode() {
     bool enabled = !m_videoOutput->isStandardGridMode();
     m_videoOutput->setStandardGridMode(enabled);
     m_standardGridModeAction->setChecked(enabled);
+}
+
+void MainWindow::toggleGOPDisplayMode() {
+    m_gopViewer->toggleDisplayMode();
 }
 
 void MainWindow::updateUI() {

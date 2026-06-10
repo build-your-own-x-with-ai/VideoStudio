@@ -89,6 +89,7 @@ private slots:
     void toggleQPHeatmap();
     void toggleCursorMode();
     void toggleStandardGridMode();
+    void toggleGOPDisplayMode();
     void saveStreamInfo();
     void exportFrameAsYUV();
     void exportFrameRangeAsYUV();

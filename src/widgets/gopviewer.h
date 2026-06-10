@@ -28,6 +28,8 @@ public:
     void setCurrentFrame(int frameNumber);
     void setDuplicateFrames(const QSet<int>& duplicateFrames);
     void clear();
+    void toggleDisplayMode();
+    QSize sizeHint() const override;
 
 signals:
     void frameClicked(int frameNumber);
@@ -42,20 +44,12 @@ private:
     void analyzeGOPStructure();
     void drawGOPStructure(QPainter& painter);
     void drawFrame(QPainter& painter, int frameNumber, int x, int y, int width, int height);
-    void drawDependencyArrow(QPainter& painter, int fromX, int fromY, int toX, int toY);
-
-    int frameToX(int frameNumber) const;
-    int frameToY(int frameNumber) const;
-    int pixelToFrame(int x, int y) const;
 
     const FrameIndex* m_frameIndex;
     QVector<GOPInfo> m_gops;
     QSet<int> m_duplicateFrames;
     int m_currentFrame;
-    int m_viewStartFrame;
-    int m_viewEndFrame;
-    int m_framesPerRow;
-    bool m_autoScroll;  // Flag to control auto-scrolling
+    bool m_showThumbnails;
 
     // Layout parameters
     int m_frameWidth;
