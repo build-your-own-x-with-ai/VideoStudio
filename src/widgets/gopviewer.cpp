@@ -365,12 +365,21 @@ void GOPViewer::generateThumbnails() {
         return;
     }
 
-    // Only generate first 200 thumbnails to avoid excessive memory
-    int maxThumbnails = 200;
+    // Generate in batches to avoid UI freeze
+    int batchSize = 50;
+    int startIdx = m_thumbnailCache.size();
     int count = 0;
 
     for (const GOPInfo& gop : m_gops) {
-        for (int frameIdx = gop.startFrame; frameIdx <= gop.endFrame && count < maxThumbnails; ++frameIdx) {
+        for (int frameIdx = gop.startFrame; frameIdx <= gop.endFrame; ++frameIdx) {
+            if (frameIdx < startIdx) continue;
+            if (count >= batchSize) {
+                // Schedule next batch
+                QTimer::singleShot(100, this, &GOPViewer::generateThumbnails);
+                update();
+                return;
+            }
+
             if (!m_thumbnailCache.contains(frameIdx)) {
                 if (m_videoDecoder->seekToFrame(frameIdx)) {
                     AVFrame* avFrame = m_videoDecoder->getCurrentFrame();
@@ -402,7 +411,6 @@ void GOPViewer::generateThumbnails() {
                 count++;
             }
         }
-        if (count >= maxThumbnails) break;
     }
 
     update();
