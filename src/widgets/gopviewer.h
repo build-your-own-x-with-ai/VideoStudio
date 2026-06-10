@@ -4,10 +4,13 @@
 #include <QWidget>
 #include <QVector>
 #include <QSet>
+#include <QPixmap>
+#include <QMap>
 
 namespace VideoStudio {
 
 class FrameIndex;
+class VideoDecoder;
 
 struct GOPInfo {
     int startFrame;
@@ -25,6 +28,7 @@ public:
     ~GOPViewer();
 
     void setFrameIndex(const FrameIndex* frameIndex);
+    void setVideoDecoder(VideoDecoder* decoder);
     void setCurrentFrame(int frameNumber);
     void setDuplicateFrames(const QSet<int>& duplicateFrames);
     void clear();
@@ -46,8 +50,10 @@ private:
     void drawFrame(QPainter& painter, int frameNumber, int x, int y, int width, int height);
 
     const FrameIndex* m_frameIndex;
+    VideoDecoder* m_videoDecoder;
     QVector<GOPInfo> m_gops;
     QSet<int> m_duplicateFrames;
+    QMap<int, QPixmap> m_thumbnailCache;
     int m_currentFrame;
     bool m_showThumbnails;
 

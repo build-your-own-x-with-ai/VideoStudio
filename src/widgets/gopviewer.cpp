@@ -1,5 +1,6 @@
 #include "widgets/gopviewer.h"
 #include "core/framedata.h"
+#include "core/videodecoder.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QMouseEvent>
@@ -7,11 +8,17 @@
 #include <QTimer>
 #include <cmath>
 
+extern "C" {
+#include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
+}
+
 namespace VideoStudio {
 
 GOPViewer::GOPViewer(QWidget* parent)
     : QWidget(parent)
     , m_frameIndex(nullptr)
+    , m_videoDecoder(nullptr)
     , m_currentFrame(0)
     , m_showThumbnails(false)
     , m_frameWidth(30)
@@ -33,9 +40,16 @@ void GOPViewer::setFrameIndex(const FrameIndex* frameIndex) {
     if (m_frameIndex) {
         analyzeGOPStructure();
     }
+    m_thumbnailCache.clear();
     QSize hint = sizeHint();
     setMinimumSize(hint);
     resize(hint);
+    update();
+}
+
+void GOPViewer::setVideoDecoder(VideoDecoder* decoder) {
+    m_videoDecoder = decoder;
+    m_thumbnailCache.clear();
     update();
 }
 
@@ -55,6 +69,7 @@ void GOPViewer::toggleDisplayMode() {
         m_frameHeight = 24;
         m_horizontalSpacing = 4;
     }
+    m_thumbnailCache.clear();
     QSize hint = sizeHint();
     setMinimumSize(hint);
     resize(hint);
@@ -91,6 +106,7 @@ void GOPViewer::clear() {
     m_frameIndex = nullptr;
     m_gops.clear();
     m_currentFrame = 0;
+    m_thumbnailCache.clear();
     QSize hint = sizeHint();
     setMinimumSize(hint);
     resize(hint);
@@ -252,8 +268,47 @@ void GOPViewer::drawFrame(QPainter& painter, int frameNumber, int x, int y, int 
         painter.drawText(QRect(x + w - 10, y + 2, 8, 8), Qt::AlignCenter, "D");
     }
 
-    if (m_showThumbnails) {
-        // Thumbnail mode - show frame type with frame number
+    if (m_showThumbnails && m_videoDecoder) {
+        // Try to get cached thumbnail
+        if (!m_thumbnailCache.contains(frameNumber)) {
+            // Render thumbnail from decoder
+            if (m_videoDecoder->seekToFrame(frameNumber)) {
+                AVFrame* avFrame = m_videoDecoder->getCurrentFrame();
+                if (avFrame && avFrame->data[0]) {
+                    // Convert to RGB
+                    SwsContext* swsContext = sws_getContext(
+                        avFrame->width, avFrame->height, (AVPixelFormat)avFrame->format,
+                        w, h - 12, AV_PIX_FMT_RGB24,
+                        SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
+
+                    if (swsContext) {
+                        int rgbLinesize = w * 3;
+                        uint8_t* rgbData = new uint8_t[rgbLinesize * (h - 12)];
+                        uint8_t* dstData[1] = { rgbData };
+                        int dstLinesize[1] = { rgbLinesize };
+
+                        sws_scale(swsContext, avFrame->data, avFrame->linesize, 0, avFrame->height,
+                                 dstData, dstLinesize);
+
+                        QImage img(rgbData, w, h - 12, rgbLinesize, QImage::Format_RGB888);
+                        m_thumbnailCache[frameNumber] = QPixmap::fromImage(img.copy());
+
+                        delete[] rgbData;
+                        sws_freeContext(swsContext);
+                    }
+                }
+            }
+        }
+
+        if (m_thumbnailCache.contains(frameNumber)) {
+            painter.drawPixmap(x, y, m_thumbnailCache[frameNumber]);
+        }
+
+        painter.setFont(QFont("Arial", 7));
+        painter.setPen(Qt::white);
+        painter.drawText(QRect(x, y + h - 12, w, 12), Qt::AlignCenter, QString::number(frameNumber));
+    } else if (m_showThumbnails) {
+        // Thumbnail mode but no decoder - show frame type with frame number
         painter.setPen(Qt::white);
         painter.setFont(QFont("Arial", 10, QFont::Bold));
         painter.drawText(QRect(x, y, w, h - 12), Qt::AlignCenter, frameLabel);

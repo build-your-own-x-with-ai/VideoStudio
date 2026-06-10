@@ -1040,6 +1040,7 @@ void MainWindow::loadFile(const QString& fileName) {
             m_streamPanel->setDecoder(m_decoder.get());
             m_thumbnailBar->setDecoder(m_decoder.get());
             m_gopViewer->setFrameIndex(&m_decoder->getFrameIndex());
+            m_gopViewer->setVideoDecoder(m_decoder.get());
             m_bufferPanel->setDecoder(m_decoder.get());
             m_blockStatsPanel->setVideoDecoder(m_decoder.get());
 
