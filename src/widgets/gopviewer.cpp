@@ -33,7 +33,9 @@ void GOPViewer::setFrameIndex(const FrameIndex* frameIndex) {
     if (m_frameIndex) {
         analyzeGOPStructure();
     }
-    updateGeometry();
+    QSize hint = sizeHint();
+    setMinimumSize(hint);
+    resize(hint);
     update();
 }
 
@@ -53,7 +55,9 @@ void GOPViewer::toggleDisplayMode() {
         m_frameHeight = 24;
         m_horizontalSpacing = 4;
     }
-    updateGeometry();
+    QSize hint = sizeHint();
+    setMinimumSize(hint);
+    resize(hint);
     update();
 }
 
@@ -87,7 +91,9 @@ void GOPViewer::clear() {
     m_frameIndex = nullptr;
     m_gops.clear();
     m_currentFrame = 0;
-    updateGeometry();
+    QSize hint = sizeHint();
+    setMinimumSize(hint);
+    resize(hint);
     update();
 }
 

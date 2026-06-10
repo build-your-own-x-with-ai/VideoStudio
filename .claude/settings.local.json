@@ -71,7 +71,11 @@
       "Bash(pkill -f VideoStudio sleep 1 ./VideoStudio.app/Contents/MacOS/VideoStudio)",
       "Bash(screencapture -x /tmp/videostudio_arrows.png)",
       "Bash(screencapture -x /tmp/videostudio_arrows2.png)",
-      "Bash(echo \"Started with PID: $!\")"
+      "Bash(echo \"Started with PID: $!\")",
+      "Bash(grep -A5 -E \"\\(error|warning:|Linking|Built target VideoStudio$\\)\")",
+      "Bash(grep -E \"\\(error|warning:|Linking|Built target VideoStudio$\\)\")",
+      "Bash(./generate_qp_test_video.sh)",
+      "Bash(bash scripts/test_partition_visualization.sh)"
     ]
   }
 }
