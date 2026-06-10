@@ -713,6 +713,10 @@ void MainWindow::createMenus() {
     toggleGOPModeAction->setShortcut(Qt::ALT | Qt::Key_T);
     connect(toggleGOPModeAction, &QAction::triggered, this, &MainWindow::toggleGOPDisplayMode);
 
+    QAction* toggleGOPDependencyAction = viewMenu->addAction(tr("GOP: Toggle Dependency Arrows"));
+    toggleGOPDependencyAction->setShortcut(Qt::ALT | Qt::Key_D);
+    connect(toggleGOPDependencyAction, &QAction::triggered, this, &MainWindow::toggleGOPDependencyArrows);
+
     viewMenu->addAction(tr("Layout 6 (All Visible)"), this, [this]() {
         // Show panels on left and right sides to utilize black space around video
 
@@ -1752,6 +1756,10 @@ void MainWindow::toggleStandardGridMode() {
 
 void MainWindow::toggleGOPDisplayMode() {
     m_gopViewer->toggleDisplayMode();
+}
+
+void MainWindow::toggleGOPDependencyArrows() {
+    m_gopViewer->toggleDependencyArrows();
 }
 
 void MainWindow::updateUI() {

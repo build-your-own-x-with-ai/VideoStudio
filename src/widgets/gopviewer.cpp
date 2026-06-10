@@ -21,6 +21,7 @@ GOPViewer::GOPViewer(QWidget* parent)
     , m_videoDecoder(nullptr)
     , m_currentFrame(0)
     , m_showThumbnails(false)
+    , m_showDependencies(false)
     , m_frameWidth(30)
     , m_frameHeight(24)
     , m_horizontalSpacing(4)
@@ -99,6 +100,11 @@ QSize GOPViewer::sizeHint() const {
 
 void GOPViewer::setDuplicateFrames(const QSet<int>& duplicateFrames) {
     m_duplicateFrames = duplicateFrames;
+    update();
+}
+
+void GOPViewer::toggleDependencyArrows() {
+    m_showDependencies = !m_showDependencies;
     update();
 }
 
@@ -203,6 +209,11 @@ void GOPViewer::drawGOPStructure(QPainter& painter) {
         y += m_frameHeight + m_verticalSpacing;
     }
 
+    // Draw dependency arrows if enabled
+    if (m_showDependencies) {
+        drawDependencyArrows(painter);
+    }
+
     // Debug output
     qDebug() << "GOPViewer: drew" << m_gops.size() << "GOPs, maxX =" << maxX
              << "sizeHint width =" << sizeHint().width();
@@ -213,6 +224,58 @@ void GOPViewer::drawGOPStructure(QPainter& painter) {
         painter.setPen(QColor(150, 150, 150));
         painter.setFont(QFont("Arial", 9));
         painter.drawText(QRect(10, y + 5, width() - 20, 15), Qt::AlignCenter, scrollInfo);
+    }
+}
+
+void GOPViewer::drawDependencyArrows(QPainter& painter) {
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    for (int gopIdx = 0; gopIdx < m_gops.size(); ++gopIdx) {
+        const GOPInfo& gop = m_gops[gopIdx];
+        int gopY = m_topMargin + gopIdx * (m_frameHeight + m_verticalSpacing);
+
+        for (int frameIdx = gop.startFrame; frameIdx <= gop.endFrame; ++frameIdx) {
+            const FrameInfo* frame = m_frameIndex->getFrame(frameIdx);
+            if (!frame) continue;
+
+            if (frame->frameType == AV_PICTURE_TYPE_P || frame->frameType == AV_PICTURE_TYPE_B) {
+                int frameOffset = frameIdx - gop.startFrame;
+                int x2 = m_leftMargin + 70 + frameOffset * (m_frameWidth + m_horizontalSpacing) + m_frameWidth / 2;
+                int y2 = gopY + m_frameHeight / 2;
+
+                int refFrame = gop.iFrameIndex;
+                for (int i = frameIdx - 1; i >= gop.startFrame; --i) {
+                    const FrameInfo* refInfo = m_frameIndex->getFrame(i);
+                    if (refInfo && (refInfo->frameType == AV_PICTURE_TYPE_I || refInfo->frameType == AV_PICTURE_TYPE_P)) {
+                        refFrame = i;
+                        break;
+                    }
+                }
+
+                int refOffset = refFrame - gop.startFrame;
+                int x1 = m_leftMargin + 70 + refOffset * (m_frameWidth + m_horizontalSpacing) + m_frameWidth / 2;
+                int y1 = gopY + m_frameHeight / 2;
+
+                QColor arrowColor = (frame->frameType == AV_PICTURE_TYPE_P) ?
+                    QColor(100, 100, 255, 180) : QColor(100, 255, 100, 180);
+                painter.setPen(QPen(arrowColor, 1.5));
+
+                QPainterPath path;
+                path.moveTo(x1, y1);
+                int controlY = y1 - 15;
+                path.quadTo((x1 + x2) / 2, controlY, x2, y2);
+                painter.drawPath(path);
+
+                double angle = std::atan2(y2 - controlY, x2 - (x1 + x2) / 2);
+                int arrowSize = 5;
+                QPointF p1(x2 - arrowSize * std::cos(angle - M_PI / 6),
+                          y2 - arrowSize * std::sin(angle - M_PI / 6));
+                QPointF p2(x2 - arrowSize * std::cos(angle + M_PI / 6),
+                          y2 - arrowSize * std::sin(angle + M_PI / 6));
+                painter.drawLine(QPointF(x2, y2), p1);
+                painter.drawLine(QPointF(x2, y2), p2);
+            }
+        }
     }
 }
 

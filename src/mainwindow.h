@@ -90,6 +90,7 @@ private slots:
     void toggleCursorMode();
     void toggleStandardGridMode();
     void toggleGOPDisplayMode();
+    void toggleGOPDependencyArrows();
     void saveStreamInfo();
     void exportFrameAsYUV();
     void exportFrameRangeAsYUV();

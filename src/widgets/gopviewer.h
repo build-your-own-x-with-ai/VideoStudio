@@ -33,6 +33,7 @@ public:
     void setDuplicateFrames(const QSet<int>& duplicateFrames);
     void clear();
     void toggleDisplayMode();
+    void toggleDependencyArrows();
     QSize sizeHint() const override;
 
 signals:
@@ -47,6 +48,7 @@ protected:
 private:
     void analyzeGOPStructure();
     void drawGOPStructure(QPainter& painter);
+    void drawDependencyArrows(QPainter& painter);
     void drawFrame(QPainter& painter, int frameNumber, int x, int y, int width, int height);
 
     const FrameIndex* m_frameIndex;
@@ -56,6 +58,7 @@ private:
     QMap<int, QPixmap> m_thumbnailCache;
     int m_currentFrame;
     bool m_showThumbnails;
+    bool m_showDependencies;
 
     // Layout parameters
     int m_frameWidth;
