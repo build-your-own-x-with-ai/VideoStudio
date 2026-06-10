@@ -134,6 +134,7 @@ private:
     std::unique_ptr<NALUnitParser> m_nalUnitParser;
     QTabWidget* m_centralTabs;
     VideoOutput* m_videoOutput;
+    QScrollArea* m_videoScrollArea;
     BarChart* m_barChart;
     AreaChart* m_areaChart;
     ThumbnailBar* m_thumbnailBar;

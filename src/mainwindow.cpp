@@ -200,9 +200,13 @@ void MainWindow::createWidgets() {
     m_centralTabs = new QTabWidget(this);
     setCentralWidget(m_centralTabs);
 
-    // Create video output
+    // Create video output with scroll area
     m_videoOutput = new VideoOutput(this);
-    m_centralTabs->addTab(m_videoOutput, "Video");
+    m_videoScrollArea = new QScrollArea(this);
+    m_videoScrollArea->setWidget(m_videoOutput);
+    m_videoScrollArea->setWidgetResizable(false);
+    m_videoScrollArea->setAlignment(Qt::AlignCenter);
+    m_centralTabs->addTab(m_videoScrollArea, "Video");
 
     // Create packet view (will be shown only for TS files)
     m_packetView = new PacketView(this);

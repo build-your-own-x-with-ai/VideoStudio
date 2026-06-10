@@ -139,6 +139,10 @@ void VideoOutput::paintEvent(QPaintEvent* event) {
         // If zoom is 1.0 (fit mode), scale to fit widget
         if (m_zoomLevel == 1.0) {
             scaledSize.scale(size(), Qt::KeepAspectRatio);
+        } else {
+            // When zoomed, set widget size to scaled image size
+            setMinimumSize(scaledSize);
+            resize(scaledSize);
         }
 
         QRect targetRect(
@@ -158,6 +162,32 @@ void VideoOutput::paintEvent(QPaintEvent* event) {
         // Draw cursor info if cursor mode is enabled
         if (m_cursorModeEnabled) {
             drawCursorInfo(painter, targetRect);
+        }
+
+        // Draw zoom level indicator (bottom-right corner)
+        if (m_zoomLevel != 1.0) {
+            QString zoomText = QString("%1%").arg(static_cast<int>(m_zoomLevel * 100));
+            painter.setFont(QFont("Arial", 12, QFont::Bold));
+            QFontMetrics fm(painter.font());
+            int textWidth = fm.horizontalAdvance(zoomText);
+            int textHeight = fm.height();
+
+            int padding = 8;
+            int boxWidth = textWidth + padding * 2;
+            int boxHeight = textHeight + padding;
+
+            // Position in bottom-right corner
+            int boxX = width() - boxWidth - 10;
+            int boxY = height() - boxHeight - 10;
+
+            // Draw semi-transparent background
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(QColor(0, 0, 0, 180));
+            painter.drawRoundedRect(boxX, boxY, boxWidth, boxHeight, 4, 4);
+
+            // Draw text
+            painter.setPen(Qt::white);
+            painter.drawText(boxX + padding, boxY + textHeight, zoomText);
         }
     }
 }
@@ -438,6 +468,25 @@ void VideoOutput::drawBlockBoundaries(QPainter& painter, const QRect& videoRect)
             int lineWidth = (blockSize >= 32) ? 2 : 1;
             painter.setPen(QPen(borderColor, lineWidth));
             painter.drawRect(x, y, w, h);
+
+            // Draw sub-partition boundaries for blocks >= 8x8 (at higher zoom)
+            if (m_zoomLevel >= 1.5 && blockSize >= 8) {
+                // Draw 4x4 sub-partitions with thin dark lines
+                painter.setPen(QPen(QColor(50, 50, 50, 200), 1, Qt::SolidLine));
+
+                // Horizontal 4x4 lines
+                int subSizeScreen = w / 4;
+                for (int j = 1; j < 4; j++) {
+                    int subY = y + j * subSizeScreen;
+                    painter.drawLine(x, subY, x + w, subY);
+                }
+
+                // Vertical 4x4 lines
+                for (int j = 1; j < 4; j++) {
+                    int subX = x + j * subSizeScreen;
+                    painter.drawLine(subX, y, subX, y + h);
+                }
+            }
 
             // Draw reference frame index for Inter blocks (if zoom is sufficient)
             if (!isIntra && m_zoomLevel >= 1.2 && w >= 20 && h >= 20) {
