@@ -92,10 +92,6 @@
         <translation>视频加载成功</translation>
     </message>
     <message>
-        <source>&amp;Open...</source>
-        <translation>打开(&amp;O)...</translation>
-    </message>
-    <message>
         <source>Open &amp;Recent</source>
         <translation>最近打开(&amp;R)</translation>
     </message>
@@ -294,6 +290,223 @@
     <message>
         <source>Fit</source>
         <translation>适应</translation>
+    </message>
+    <message>
+        <source>Thumbnails</source>
+        <translation>缩略图</translation>
+    </message>
+    <message>
+        <source>Frame Size Distribution</source>
+        <translation>帧大小分布</translation>
+    </message>
+    <message>
+        <source>Bitstream Distribution</source>
+        <translation>比特流分布</translation>
+    </message>
+    <message>
+        <source>Stream Info</source>
+        <translation>流信息</translation>
+    </message>
+    <message>
+        <source>Overlays</source>
+        <translation>叠加层</translation>
+    </message>
+    <message>
+        <source>GOP Structure</source>
+        <translation>GOP结构</translation>
+    </message>
+    <message>
+        <source>Explorer</source>
+        <translation>浏览器</translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation>属性</translation>
+    </message>
+    <message>
+        <source>Hex Viewer</source>
+        <translation>十六进制查看器</translation>
+    </message>
+    <message>
+        <source>Messages</source>
+        <translation>消息</translation>
+    </message>
+    <message>
+        <source>TR 101-290</source>
+        <translation>TR 101-290</translation>
+    </message>
+    <message>
+        <source>Time Dynamics</source>
+        <translation>时间动态</translation>
+    </message>
+    <message>
+        <source>Bitrate</source>
+        <translation>码率</translation>
+    </message>
+    <message>
+        <source>Buffer</source>
+        <translation>缓冲</translation>
+    </message>
+    <message>
+        <source>Graphics</source>
+        <translation>图形</translation>
+    </message>
+    <message>
+        <source>Comments</source>
+        <translation>注释</translation>
+    </message>
+    <message>
+        <source>EPG</source>
+        <translation>电子节目指南</translation>
+    </message>
+    <message>
+        <source>Block Statistics</source>
+        <translation>块统计</translation>
+    </message>
+    <message>
+        <source>Log Viewer</source>
+        <translation>日志查看器</translation>
+    </message>
+</context>
+<context>
+    <name>VideoStudio::OverlayPanel</name>
+    <message>
+        <source>Video Overlays</source>
+        <translation>视频叠加层</translation>
+    </message>
+    <message>
+        <source>Motion Vectors (ALT+3)</source>
+        <translation>运动矢量 (ALT+3)</translation>
+    </message>
+    <message>
+        <source>Partitions/Blocks (ALT+2)</source>
+        <translation>分区/块 (ALT+2)</translation>
+    </message>
+    <message>
+        <source>Frame Type Info (ALT+4)</source>
+        <translation>帧类型信息 (ALT+4)</translation>
+    </message>
+    <message>
+        <source>QP Heatmap (ALT+5)</source>
+        <translation>QP热力图 (ALT+5)</translation>
+    </message>
+</context>
+<context>
+    <name>VideoStudio::PropertyPanel</name>
+    <message>
+        <source>Sync</source>
+        <translation>同步</translation>
+    </message>
+    <message>
+        <source>Compare</source>
+        <translation>比较</translation>
+    </message>
+    <message>
+        <source>Dump</source>
+        <translation>导出</translation>
+    </message>
+    <message>
+        <source>Compare with previous packet</source>
+        <translation>与前一个包比较</translation>
+    </message>
+    <message>
+        <source>Dump elementary stream</source>
+        <translation>导出基本流</translation>
+    </message>
+    <message>
+        <source>Property</source>
+        <translation>属性</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation>类型</translation>
+    </message>
+    <message>
+        <source>File Offset</source>
+        <translation>文件偏移</translation>
+    </message>
+    <message>
+        <source>Size</source>
+        <translation>大小</translation>
+    </message>
+    <message>
+        <source>Frame Number</source>
+        <translation>帧号</translation>
+    </message>
+    <message>
+        <source>Slice Info</source>
+        <translation>切片信息</translation>
+    </message>
+    <message>
+        <source>Slice Type</source>
+        <translation>切片类型</translation>
+    </message>
+    <message>
+        <source>Quantization Parameter (QP)</source>
+        <translation>量化参数 (QP)</translation>
+    </message>
+    <message>
+        <source>First Macroblock</source>
+        <translation>首个宏块</translation>
+    </message>
+    <message>
+        <source>Slice Type Value</source>
+        <translation>切片类型值</translation>
+    </message>
+    <message>
+        <source>POC LSB</source>
+        <translation>POC LSB</translation>
+    </message>
+    <message>
+        <source>PPS ID</source>
+        <translation>PPS ID</translation>
+    </message>
+    <message>
+        <source>Reference Lists</source>
+        <translation>参考列表</translation>
+    </message>
+    <message>
+        <source>List 0 (L0)</source>
+        <translation>列表 0 (L0)</translation>
+    </message>
+    <message>
+        <source>Flags</source>
+        <translation>标志</translation>
+    </message>
+    <message>
+        <source>IDR</source>
+        <translation>IDR</translation>
+    </message>
+    <message>
+        <source>Keyframe</source>
+        <translation>关键帧</translation>
+    </message>
+    <message>
+        <source>Is Slice</source>
+        <translation>是切片</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation>是</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <translation>否</translation>
+    </message>
+</context>
+<context>
+    <name>VideoStudio::StreamPanel</name>
+    <message>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation>值</translation>
+    </message>
+    <message>
+        <source>stream type</source>
+        <translation>流类型</translation>
     </message>
 </context>
 <context>

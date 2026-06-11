@@ -23,7 +23,7 @@ void StreamPanel::setupUI() {
     layout->setContentsMargins(0, 0, 0, 0);
 
     m_treeWidget = new QTreeWidget(this);
-    m_treeWidget->setHeaderLabels(QStringList() << "Name" << "Value" << "%");
+    m_treeWidget->setHeaderLabels(QStringList() << tr("Name") << tr("Value") << "%");
     m_treeWidget->setColumnWidth(0, 200);
     m_treeWidget->setColumnWidth(1, 150);
     m_treeWidget->setAlternatingRowColors(true);

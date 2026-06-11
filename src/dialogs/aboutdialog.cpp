@@ -36,7 +36,7 @@ AboutDialog::AboutDialog(QWidget* parent)
     aboutLayout->addWidget(titleLabel);
 
     // Version
-    QLabel* versionLabel = new QLabel("<p><b>版本:</b> 1.1</p>", aboutTab);
+    QLabel* versionLabel = new QLabel("<p><b>版本:</b> 1.2</p>", aboutTab);
     versionLabel->setAlignment(Qt::AlignCenter);
     aboutLayout->addWidget(versionLabel);
 

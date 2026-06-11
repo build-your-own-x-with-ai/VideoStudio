@@ -51,24 +51,24 @@ void PropertyPanel::createToolbar() {
     m_toolbar->setIconSize(QSize(16, 16));
 
     // Mode actions
-    m_syncAction = m_toolbar->addAction("Sync");
+    m_syncAction = m_toolbar->addAction(tr("Sync"));
     m_syncAction->setCheckable(true);
     m_syncAction->setChecked(true);
-    m_syncAction->setToolTip("Auto-update when clicking packets");
+    m_syncAction->setToolTip(tr("Auto-update when clicking packets"));
     connect(m_syncAction, &QAction::triggered, this, [this]() {
         setMode(PropertyMode::Sync);
     });
 
-    m_compareAction = m_toolbar->addAction("Compare");
+    m_compareAction = m_toolbar->addAction(tr("Compare"));
     m_compareAction->setCheckable(true);
-    m_compareAction->setToolTip("Compare with previous packet");
+    m_compareAction->setToolTip(tr("Compare with previous packet"));
     connect(m_compareAction, &QAction::triggered, this, [this]() {
         setMode(PropertyMode::Compare);
     });
 
-    m_dumpAction = m_toolbar->addAction("Dump");
+    m_dumpAction = m_toolbar->addAction(tr("Dump"));
     m_dumpAction->setCheckable(true);
-    m_dumpAction->setToolTip("Dump elementary stream");
+    m_dumpAction->setToolTip(tr("Dump elementary stream"));
     connect(m_dumpAction, &QAction::triggered, this, [this]() {
         setMode(PropertyMode::Dump);
     });
@@ -2345,20 +2345,20 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
 
     // Basic info
     QTreeWidgetItem* typeItem = new QTreeWidgetItem(root);
-    typeItem->setText(0, "Type");
+    typeItem->setText(0, tr("Type"));
     typeItem->setText(1, QString("%1 (%2)").arg(nalInfo->typeName).arg(nalInfo->nalUnitType));
     typeItem->setForeground(1, QColor(100, 150, 255));
 
     QTreeWidgetItem* offsetItem = new QTreeWidgetItem(root);
-    offsetItem->setText(0, "File Offset");
+    offsetItem->setText(0, tr("File Offset"));
     offsetItem->setText(1, QString("0x%1 (%2 bytes)").arg(nalInfo->fileOffset, 0, 16).arg(nalInfo->fileOffset));
 
     QTreeWidgetItem* sizeItem = new QTreeWidgetItem(root);
-    sizeItem->setText(0, "Size");
+    sizeItem->setText(0, tr("Size"));
     sizeItem->setText(1, QString("%1 bytes").arg(nalInfo->size));
 
     QTreeWidgetItem* frameItem = new QTreeWidgetItem(root);
-    frameItem->setText(0, "Frame Number");
+    frameItem->setText(0, tr("Frame Number"));
     frameItem->setText(1, QString::number(nalInfo->frameNumber));
 
     // HEVC specific fields
@@ -2383,11 +2383,11 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
     // Slice specific fields
     if (nalInfo->isSlice) {
         QTreeWidgetItem* sliceItem = new QTreeWidgetItem(root);
-        sliceItem->setText(0, "Slice Info");
+        sliceItem->setText(0, tr("Slice Info"));
         sliceItem->setExpanded(true);
 
         QTreeWidgetItem* sliceTypeItem = new QTreeWidgetItem(sliceItem);
-        sliceTypeItem->setText(0, "Slice Type");
+        sliceTypeItem->setText(0, tr("Slice Type"));
         sliceTypeItem->setText(1, nalInfo->sliceType);
 
         // Color code slice type
@@ -2401,38 +2401,38 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
 
         if (nalInfo->sliceQP >= 0) {
             QTreeWidgetItem* qpItem = new QTreeWidgetItem(sliceItem);
-            qpItem->setText(0, "Quantization Parameter (QP)");
+            qpItem->setText(0, tr("Quantization Parameter (QP)"));
             qpItem->setText(1, QString::number(nalInfo->sliceQP));
         }
 
         // Additional slice header fields
         if (nalInfo->firstMbInSlice >= 0) {
             QTreeWidgetItem* mbItem = new QTreeWidgetItem(sliceItem);
-            mbItem->setText(0, "First Macroblock");
+            mbItem->setText(0, tr("First Macroblock"));
             mbItem->setText(1, QString::number(nalInfo->firstMbInSlice));
         }
 
         if (nalInfo->sliceTypeValue >= 0) {
             QTreeWidgetItem* typeValItem = new QTreeWidgetItem(sliceItem);
-            typeValItem->setText(0, "Slice Type Value");
+            typeValItem->setText(0, tr("Slice Type Value"));
             typeValItem->setText(1, QString::number(nalInfo->sliceTypeValue));
         }
 
         if (nalInfo->frameNum >= 0) {
             QTreeWidgetItem* frameNumItem = new QTreeWidgetItem(sliceItem);
-            frameNumItem->setText(0, "Frame Number");
+            frameNumItem->setText(0, tr("Frame Number"));
             frameNumItem->setText(1, QString::number(nalInfo->frameNum));
         }
 
         if (nalInfo->picOrderCntLsb >= 0) {
             QTreeWidgetItem* pocItem = new QTreeWidgetItem(sliceItem);
-            pocItem->setText(0, "POC LSB");
+            pocItem->setText(0, tr("POC LSB"));
             pocItem->setText(1, QString::number(nalInfo->picOrderCntLsb));
         }
 
         if (nalInfo->ppsId >= 0) {
             QTreeWidgetItem* ppsIdItem = new QTreeWidgetItem(sliceItem);
-            ppsIdItem->setText(0, "PPS ID");
+            ppsIdItem->setText(0, tr("PPS ID"));
             ppsIdItem->setText(1, QString::number(nalInfo->ppsId));
         }
 
@@ -2447,14 +2447,14 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
             (nalInfo->numRefIdxL0ActiveMinus1 >= 0 || nalInfo->refPicListModificationFlagL0)) {
 
             QTreeWidgetItem* refListsItem = new QTreeWidgetItem(sliceItem);
-            refListsItem->setText(0, "Reference Lists");
+            refListsItem->setText(0, tr("Reference Lists"));
             refListsItem->setExpanded(true);
             refListsItem->setForeground(0, QColor(100, 150, 255));
 
             // List 0 (for P and B slices)
             if (nalInfo->numRefIdxL0ActiveMinus1 >= 0 || nalInfo->refPicListModificationFlagL0) {
                 QTreeWidgetItem* l0Item = new QTreeWidgetItem(refListsItem);
-                l0Item->setText(0, "List 0 (L0)");
+                l0Item->setText(0, tr("List 0 (L0)"));
 
                 if (nalInfo->numRefIdxL0ActiveMinus1 >= 0) {
                     QTreeWidgetItem* l0CountItem = new QTreeWidgetItem(l0Item);
@@ -2509,26 +2509,26 @@ void PropertyPanel::displayNALUnit(int nalIndex) {
 
     // Flags
     QTreeWidgetItem* flagsItem = new QTreeWidgetItem(root);
-    flagsItem->setText(0, "Flags");
+    flagsItem->setText(0, tr("Flags"));
     flagsItem->setExpanded(true);
 
     QTreeWidgetItem* idrItem = new QTreeWidgetItem(flagsItem);
-    idrItem->setText(0, "IDR");
-    idrItem->setText(1, nalInfo->isIDR ? "Yes" : "No");
+    idrItem->setText(0, tr("IDR"));
+    idrItem->setText(1, nalInfo->isIDR ? tr("Yes") : tr("No"));
     if (nalInfo->isIDR) {
         idrItem->setForeground(1, QColor(50, 200, 50));
     }
 
     QTreeWidgetItem* keyframeItem = new QTreeWidgetItem(flagsItem);
-    keyframeItem->setText(0, "Keyframe");
-    keyframeItem->setText(1, nalInfo->isKeyFrame ? "Yes" : "No");
+    keyframeItem->setText(0, tr("Keyframe"));
+    keyframeItem->setText(1, nalInfo->isKeyFrame ? tr("Yes") : tr("No"));
     if (nalInfo->isKeyFrame) {
         keyframeItem->setForeground(1, QColor(50, 200, 50));
     }
 
     QTreeWidgetItem* sliceFlagItem = new QTreeWidgetItem(flagsItem);
-    sliceFlagItem->setText(0, "Is Slice");
-    sliceFlagItem->setText(1, nalInfo->isSlice ? "Yes" : "No");
+    sliceFlagItem->setText(0, tr("Is Slice"));
+    sliceFlagItem->setText(1, nalInfo->isSlice ? tr("Yes") : tr("No"));
 
     // H.264 SPS Info
     if (nalInfo->nalUnitType == H264_NAL_SPS && nalInfo->spsProfileIdc >= 0) {

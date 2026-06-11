@@ -34,7 +34,7 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 - **Container Structure**: Detailed MP4 atom, MKV element, AVI chunk, and TS packet inspection
 - **Hex Viewer**: Raw byte-level inspection of video files
 - **Time Dynamics**: PTS/DTS/PCR timeline analysis
-- **GOP Viewer**: Group of Pictures structure visualization
+- **GOP Viewer**: Group of Pictures structure visualization with dependency arrows
 - **Thumbnail Bar**: Quick frame navigation with visual thumbnails
 - **Messages Panel**: Codec warnings, errors, and compliance issues
 - **EPG Panel**: Electronic Program Guide data from transport streams
@@ -42,9 +42,11 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 
 #### User Interface
 - **Professional UI**: Qt-based interface with dockable panels and smooth animations
+- **Internationalization**: Full support for English and Simplified Chinese (简体中文)
+- **Dual Theme Support**: Modern dark theme and clean light theme optimized for video analysis
 - **Real-time Log Viewer**: Monitor file loading and parsing progress with live log display
 - **Context Menus**: Right-click frame analysis and export options
-- **Dark Theme**: Modern dark interface optimized for video analysis
+- **Customizable Layouts**: Multiple predefined workspace layouts for different analysis workflows
 
 ### Planned Features
 
@@ -95,6 +97,13 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 ### NAL Unit List
 
 ![NAL Unit List](docs/screenshots/nal_unit_list_ref.png)
+
+### Theme
+
+
+![light](docs/screenshots/light.png)
+
+![dark](docs/screenshots/dark.png)
 
 
 ## Requirements
@@ -381,13 +390,18 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [x] CSV metrics export
 - [x] Context menu features for quick access
 - [x] Complete UI with dockable panels
-- [ ] Motion vector overlay
-- [ ] Block/partition visualization
+- [x] Internationalization support (English, 简体中文)
+- [x] Dual theme support (Dark/Light themes)
+- [x] GOP dependency arrow visualization
+- [x] Duplicate frame detection with similarity threshold
+- [x] Motion vector overlay
+- [x] Block/partition visualization
+- [x] NAL unit list view for MP4/MKV files (H.264/H.265)
 
-### Version 2.0
+### Version 2.0 (Planned)
 - [ ] VMAF quality metric
 - [ ] Compliance verification
-- [ ] Buffer analysis
+- [ ] Advanced buffer analysis
 - [ ] Command-line tool
 - [ ] Plugin system
 
