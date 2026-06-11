@@ -263,7 +263,7 @@ void GOPViewer::drawDependencyArrows(QPainter& painter) {
                 int y1 = gopY + m_frameHeight / 2;
 
                 QColor arrowColor = (frame->frameType == AV_PICTURE_TYPE_P) ?
-                    QColor(100, 100, 255, 180) : QColor(100, 255, 100, 180);
+                    QColor(255, 255, 100, 200) : QColor(255, 150, 255, 200);
                 painter.setPen(QPen(arrowColor, 1.5));
 
                 QPainterPath path;
