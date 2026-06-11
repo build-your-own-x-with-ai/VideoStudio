@@ -1549,18 +1549,19 @@ void MainWindow::stepBackward() {
 
     int currentFrame = m_decoder->getCurrentFrameNumber();
     if (currentFrame > 0) {
-        if (m_decoder->seekToFrame(currentFrame - 1)) {
+        int targetFrame = currentFrame - 1;
+        if (m_decoder->seekToFrame(targetFrame)) {
             AVFrame* frame = m_decoder->decodeNextFrame();
             if (frame) {
                 m_videoOutput->displayFrame(frame);
                 m_blockStatsPanel->updateStatistics(frame);
-                m_barChart->setCurrentFrame(currentFrame - 1);
-                m_thumbnailBar->setCurrentFrame(currentFrame - 1);
-                m_gopViewer->setCurrentFrame(currentFrame - 1);
+                m_barChart->setCurrentFrame(targetFrame);
+                m_thumbnailBar->setCurrentFrame(targetFrame);
+                m_gopViewer->setCurrentFrame(targetFrame);
                 m_statusLabel->setText(tr("Frame %1 / %2")
-                    .arg(currentFrame)
+                    .arg(targetFrame + 1)
                     .arg(m_decoder->getFrameCount()));
-                updateFrameLabel(currentFrame - 1, m_decoder->getFrameCount());
+                updateFrameLabel(targetFrame, m_decoder->getFrameCount());
             }
         }
     }
