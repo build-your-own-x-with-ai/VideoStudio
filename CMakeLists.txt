@@ -11,7 +11,7 @@ set(CMAKE_AUTOUIC ON)
 if(APPLE)
     set(CMAKE_PREFIX_PATH "$ENV{HOME}/Qt/6.11.0/macos" ${CMAKE_PREFIX_PATH})
 endif()
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent Network Multimedia)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Concurrent Network Multimedia LinguistTools)
 
 # Find FFmpeg
 if(WIN32)
@@ -163,6 +163,9 @@ set(HEADERS
     src/dialogs/settingsdialog.h
 )
 
+# Translation files
+set(TS_FILES translations/videostudio_zh_CN.ts)
+
 # Create executable
 add_executable(VideoStudio MACOSX_BUNDLE
     ${SOURCES}
@@ -190,6 +193,9 @@ target_link_libraries(VideoStudio PRIVATE
     Qt6::Multimedia
     ${FFMPEG_LIBRARIES}
 )
+
+# Add translations
+qt_add_translations(VideoStudio TS_FILES ${TS_FILES})
 
 # Compiler flags
 target_compile_options(VideoStudio PRIVATE

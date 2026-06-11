@@ -64,6 +64,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QDir>
+#include <QTranslator>
 
 namespace VideoStudio {
 
