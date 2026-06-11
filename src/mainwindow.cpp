@@ -16,6 +16,7 @@
 #include "dialogs/yuvexportdialog.h"
 #include "dialogs/yuvviewerdialog.h"
 #include "dialogs/duplicateframedetectiondialog.h"
+#include "dialogs/settingsdialog.h"
 #include "widgets/thumbnailbar.h"
 #include "widgets/gopviewer.h"
 #include "widgets/packetview.h"
@@ -188,6 +189,11 @@ MainWindow::MainWindow(QWidget* parent)
 
     // Enable drag and drop
     setAcceptDrops(true);
+
+    // Load theme from settings
+    QSettings settings("VideoStudio", "VideoStudio");
+    QString theme = settings.value("theme", "dark").toString();
+    applyTheme(theme);
 }
 
 MainWindow::~MainWindow() {
@@ -837,6 +843,12 @@ void MainWindow::createMenus() {
     duplicateDetectionAction->setShortcut(tr("Ctrl+D"));
     duplicateDetectionAction->setStatusTip(tr("Detect duplicate and freeze frames"));
     connect(duplicateDetectionAction, &QAction::triggered, this, &MainWindow::showDuplicateFrameDetection);
+
+    toolsMenu->addSeparator();
+
+    QAction* settingsAction = toolsMenu->addAction(tr("&Settings..."));
+    settingsAction->setShortcut(tr("Ctrl+,"));
+    connect(settingsAction, &QAction::triggered, this, &MainWindow::showSettings);
 
     // Help menu
     QMenu* helpMenu = menuBar()->addMenu(tr("&Help"));
@@ -2258,6 +2270,38 @@ void MainWindow::showDuplicateFrameDetection() {
             m_gopViewer, &GOPViewer::setDuplicateFrames);
 
     dialog.exec();
+}
+
+void MainWindow::showSettings() {
+    SettingsDialog dialog(this);
+
+    connect(&dialog, &SettingsDialog::languageChanged, this, [this](const QString& language) {
+        QMessageBox::information(this, tr("Language Changed"),
+            tr("Please restart the application for language changes to take effect."));
+    });
+
+    connect(&dialog, &SettingsDialog::themeChanged, this, [this](const QString& theme) {
+        applyTheme(theme);
+    });
+
+    dialog.exec();
+}
+
+void MainWindow::applyTheme(const QString& theme) {
+    if (theme == "dark") {
+        qApp->setStyleSheet(
+            "QMainWindow { background-color: #2b2b2b; }"
+            "QWidget { background-color: #2b2b2b; color: #ffffff; }"
+            "QMenuBar { background-color: #3c3c3c; color: #ffffff; }"
+            "QMenuBar::item:selected { background-color: #4b6eaf; }"
+            "QMenu { background-color: #3c3c3c; color: #ffffff; }"
+            "QMenu::item:selected { background-color: #4b6eaf; }"
+            "QDockWidget { background-color: #2b2b2b; color: #ffffff; }"
+            "QTreeWidget { background-color: #3c3c3c; color: #ffffff; }"
+        );
+    } else {
+        qApp->setStyleSheet("");
+    }
 }
 
 void MainWindow::captureScreenshot() {

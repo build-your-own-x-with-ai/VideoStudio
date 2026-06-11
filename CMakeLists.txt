@@ -111,6 +111,7 @@ set(SOURCES
     src/dialogs/yuvexportdialog.cpp
     src/dialogs/yuvviewerdialog.cpp
     src/dialogs/duplicateframedetectiondialog.cpp
+    src/dialogs/settingsdialog.cpp
 )
 
 set(HEADERS
@@ -159,6 +160,7 @@ set(HEADERS
     src/dialogs/yuvexportdialog.h
     src/dialogs/yuvviewerdialog.h
     src/dialogs/duplicateframedetectiondialog.h
+    src/dialogs/settingsdialog.h
 )
 
 # Create executable

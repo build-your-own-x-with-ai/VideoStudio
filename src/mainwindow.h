@@ -101,6 +101,7 @@ private slots:
     void captureScreenshot();
     void showAboutDialog();
     void showDuplicateFrameDetection();
+    void showSettings();
 
 public slots:
     void appendLog(const QString& message, QtMsgType type);
@@ -126,6 +127,7 @@ private:
     void loadFile(const QString& filePath);
     void updateRecentFilesMenu();
     void addToRecentFiles(const QString& filePath);
+    void applyTheme(const QString& theme);
 
     std::unique_ptr<VideoDecoder> m_decoder;
     std::unique_ptr<TSParser> m_tsParser;
