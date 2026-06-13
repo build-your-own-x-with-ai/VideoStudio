@@ -170,6 +170,83 @@ Issues:
 - `0`: No errors found (warnings/info may be present)
 - `1`: Errors found or validation failed
 
+### HRD/VBV Buffer Analysis
+
+Analyze buffer behavior and verify compliance with HRD (Hypothetical Reference Decoder) and VBV (Video Buffering Verifier) constraints:
+
+```bash
+# Text report to stdout
+videostudio-cli buffer video.mp4
+
+# Save JSON report
+videostudio-cli buffer video.mp4 -o buffer_report.json
+
+# Save text report
+videostudio-cli buffer video.mp4 -o buffer_report.txt
+```
+
+**What is analyzed:**
+
+- **CPB (Coded Picture Buffer) Simulation**: Simulates decoder buffer filling and draining
+- **Buffer Occupancy**: Tracks buffer fullness over time
+- **Overflow Detection**: Identifies when buffer exceeds capacity
+- **Underflow Detection**: Identifies when buffer empties (stalls)
+- **Bitrate Analysis**: Peak, average, and minimum instantaneous bitrates
+- **Buffering Delays**: Maximum and average buffering latency
+
+**Example output:**
+```
+===========================================
+      HRD/VBV Buffer Analysis Report
+===========================================
+
+File: video.mp4
+
+Buffer Configuration:
+  Buffer Size: 3125000 bytes (25.00 Mbits)
+  Target Bitrate: 2.11 Mbps
+
+Buffer Occupancy Statistics:
+  Maximum: 3125000 bytes (100.0%)
+  Minimum: 0 bytes (0.2%)
+  Average: 1982680 bytes (63.4%)
+
+Bitrate Statistics:
+  Peak: 40.13 Mbps
+  Average: 1.44 Mbps
+  Minimum: 0.02 Mbps
+
+Buffer Events:
+  Overflows: 131
+  Underflows: 1
+  Near Overflows (>90%): 79
+  Near Underflows (<10%): 42
+
+Buffering Delays:
+  Maximum: 11.826 seconds
+  Average: 7.503 seconds
+
+-------------------------------------------
+Compliance Assessment:
+-------------------------------------------
+
+[ERROR] Buffer overflow detected (131 times)
+  This violates HRD/VBV constraints and may cause decoder failures.
+
+[ERROR] Buffer underflow detected (1 times)
+  This may cause decoder stalls or playback interruptions.
+```
+
+**Exit codes:**
+- `0`: No buffer violations (PASS)
+- `1`: Buffer violations detected (FAIL)
+
+**Use cases:**
+- Verify encoder buffer configuration
+- Debug playback stalls or decoder failures
+- Validate streaming delivery constraints
+- Optimize buffer size for target bitrate
+
 ## Use Cases
 
 ### Batch Processing

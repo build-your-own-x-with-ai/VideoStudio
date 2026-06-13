@@ -409,8 +409,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [x] Command-line tool for batch processing and automation
 
 ### Version 2.0 (Planned)
-- [ ] Compliance verification (H.264/H.265 bitstream syntax validation)
-- [ ] Advanced buffer analysis (HRD/VBV verification)
+- [x] Compliance verification (H.264/H.265 bitstream syntax validation)
+- [x] Advanced buffer analysis (HRD/VBV verification)
 - [ ] Plugin system for custom analyzers
 
 ## Support

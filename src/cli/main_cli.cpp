@@ -10,6 +10,7 @@
 #include "core/videodecoder.h"
 #include "core/framedata.h"
 #include "core/compliancevalidator.h"
+#include "core/bufferanalyzer.h"
 
 extern "C" {
 #include <libavutil/frame.h>
@@ -31,6 +32,7 @@ private:
                       int startFrame, int endFrame);
     int processGOP(const QString& videoFile, const QString& outputFile);
     int processCompliance(const QString& videoFile, const QString& outputFile);
+    int processBuffer(const QString& videoFile, const QString& outputFile);
 
     void printUsage();
     void printError(const QString& message);
@@ -50,7 +52,7 @@ int CLIProcessor::run(const QStringList& args) {
     parser.addVersionOption();
 
     parser.addPositionalArgument("command",
-        "Command to execute: info, frames, gop, compliance");
+        "Command to execute: info, frames, gop, compliance, buffer");
     parser.addPositionalArgument("file", "Input video file");
 
     QCommandLineOption outputOption(QStringList() << "o" << "output",
@@ -120,6 +122,16 @@ int CLIProcessor::run(const QStringList& args) {
 
         return processCompliance(videoFile, outputFile);
     }
+    else if (command == "buffer") {
+        if (positionalArgs.size() < 2) {
+            printError("Missing video file argument");
+            return 1;
+        }
+        QString videoFile = positionalArgs.at(1);
+        QString outputFile = parser.value(outputOption);
+
+        return processBuffer(videoFile, outputFile);
+    }
     else {
         printError(QString("Unknown command: %1").arg(command));
         printUsage();
@@ -137,7 +149,8 @@ void CLIProcessor::printUsage() {
     out << "  info <file>        Extract video information\n";
     out << "  frames <file>      Export frame-level metrics to CSV\n";
     out << "  gop <file>         Analyze GOP structure (JSON output)\n";
-    out << "  compliance <file>  Validate H.264/H.265 compliance\n\n";
+    out << "  compliance <file>  Validate H.264/H.265 compliance\n";
+    out << "  buffer <file>      Analyze HRD/VBV buffer behavior\n\n";
     out << "Options:\n";
     out << "  -o, --output <file>      Output file (default: stdout)\n";
     out << "  -f, --format <format>    Output format for info: json|csv|text\n";
@@ -441,6 +454,63 @@ int CLIProcessor::processCompliance(const QString& videoFile, const QString& out
     err << "  Info:     " << validator->getInfoCount() << "\n";
 
     return (errors > 0) ? 1 : 0;
+}
+
+int CLIProcessor::processBuffer(const QString& videoFile, const QString& outputFile) {
+    QFileInfo fileInfo(videoFile);
+    if (!fileInfo.exists()) {
+        printError(QString("File not found: %1").arg(videoFile));
+        return 1;
+    }
+
+    printInfo(QString("Analyzing HRD/VBV buffer: %1").arg(videoFile));
+
+    auto analyzer = std::make_unique<BufferAnalyzer>();
+
+    if (!analyzer->analyzeFile(videoFile)) {
+        printError("Buffer analysis failed");
+        return 1;
+    }
+
+    // Generate report
+    QString output;
+    if (outputFile.isEmpty() || outputFile.endsWith(".txt")) {
+        output = analyzer->toTextReport();
+    } else {
+        QJsonDocument doc(analyzer->toJson());
+        output = doc.toJson(QJsonDocument::Indented);
+    }
+
+    if (outputFile.isEmpty()) {
+        QTextStream out(stdout);
+        out << output;
+    } else {
+        QFile file(outputFile);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            printError(QString("Failed to write to: %1").arg(outputFile));
+            return 1;
+        }
+        QTextStream out(&file);
+        out << output;
+        printInfo(QString("Buffer analysis report saved to: %1").arg(outputFile));
+    }
+
+    // Check for violations
+    const auto& result = analyzer->getResult();
+    int violations = result.overflowCount + result.underflowCount;
+
+    QTextStream err(stderr);
+    err << "\n";
+    err << "Buffer Analysis Summary:\n";
+    err << "  Overflows:  " << result.overflowCount << "\n";
+    err << "  Underflows: " << result.underflowCount << "\n";
+    if (violations == 0) {
+        err << "  Status: PASS\n";
+    } else {
+        err << "  Status: FAIL (" << violations << " violations)\n";
+    }
+
+    return (violations > 0) ? 1 : 0;
 }
 
 } // namespace VideoStudio

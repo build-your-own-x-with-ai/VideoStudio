@@ -82,6 +82,7 @@ set(SOURCES
     src/core/duplicateframedetector.cpp
     src/core/nalunitparser.cpp
     src/core/compliancevalidator.cpp
+    src/core/bufferanalyzer.cpp
     src/widgets/videooutput.cpp
     src/widgets/barchart.cpp
     src/widgets/thumbnailbar.cpp
@@ -230,6 +231,7 @@ add_executable(videostudio-cli
     src/core/videodecoder.cpp
     src/core/framedata.cpp
     src/core/compliancevalidator.cpp
+    src/core/bufferanalyzer.cpp
 )
 
 target_include_directories(videostudio-cli PRIVATE
