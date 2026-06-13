@@ -9,6 +9,7 @@
 #include <QFileInfo>
 #include "core/videodecoder.h"
 #include "core/framedata.h"
+#include "core/compliancevalidator.h"
 
 extern "C" {
 #include <libavutil/frame.h>
@@ -29,6 +30,7 @@ private:
     int processFrames(const QString& videoFile, const QString& outputFile,
                       int startFrame, int endFrame);
     int processGOP(const QString& videoFile, const QString& outputFile);
+    int processCompliance(const QString& videoFile, const QString& outputFile);
 
     void printUsage();
     void printError(const QString& message);
@@ -48,7 +50,7 @@ int CLIProcessor::run(const QStringList& args) {
     parser.addVersionOption();
 
     parser.addPositionalArgument("command",
-        "Command to execute: info, frames, gop");
+        "Command to execute: info, frames, gop, compliance");
     parser.addPositionalArgument("file", "Input video file");
 
     QCommandLineOption outputOption(QStringList() << "o" << "output",
@@ -108,6 +110,16 @@ int CLIProcessor::run(const QStringList& args) {
 
         return processGOP(videoFile, outputFile);
     }
+    else if (command == "compliance") {
+        if (positionalArgs.size() < 2) {
+            printError("Missing video file argument");
+            return 1;
+        }
+        QString videoFile = positionalArgs.at(1);
+        QString outputFile = parser.value(outputOption);
+
+        return processCompliance(videoFile, outputFile);
+    }
     else {
         printError(QString("Unknown command: %1").arg(command));
         printUsage();
@@ -122,9 +134,10 @@ void CLIProcessor::printUsage() {
     out << "VideoStudio CLI - Professional video stream analysis\n\n";
     out << "Usage: videostudio-cli <command> [options]\n\n";
     out << "Commands:\n";
-    out << "  info <file>     Extract video information\n";
-    out << "  frames <file>   Export frame-level metrics to CSV\n";
-    out << "  gop <file>      Analyze GOP structure (JSON output)\n\n";
+    out << "  info <file>        Extract video information\n";
+    out << "  frames <file>      Export frame-level metrics to CSV\n";
+    out << "  gop <file>         Analyze GOP structure (JSON output)\n";
+    out << "  compliance <file>  Validate H.264/H.265 compliance\n\n";
     out << "Options:\n";
     out << "  -o, --output <file>      Output file (default: stdout)\n";
     out << "  -f, --format <format>    Output format for info: json|csv|text\n";
@@ -375,6 +388,59 @@ QString CLIProcessor::videoInfoToCSV(VideoDecoder* decoder) {
     lines << QString("bitrate,%1").arg(decoder->getBitrate());
     lines << QString("pixel_format,%1").arg(decoder->getPixelFormat());
     return lines.join("\n") + "\n";
+}
+
+int CLIProcessor::processCompliance(const QString& videoFile, const QString& outputFile) {
+    QFileInfo fileInfo(videoFile);
+    if (!fileInfo.exists()) {
+        printError(QString("File not found: %1").arg(videoFile));
+        return 1;
+    }
+
+    printInfo(QString("Validating H.264/H.265 compliance: %1").arg(videoFile));
+
+    auto validator = std::make_unique<ComplianceValidator>();
+
+    if (!validator->validateFile(videoFile)) {
+        printError("Validation failed");
+        return 1;
+    }
+
+    // Generate report
+    QString output;
+    if (outputFile.isEmpty() || outputFile.endsWith(".txt")) {
+        output = validator->toTextReport();
+    } else {
+        QJsonDocument doc(validator->toJson());
+        output = doc.toJson(QJsonDocument::Indented);
+    }
+
+    if (outputFile.isEmpty()) {
+        QTextStream out(stdout);
+        out << output;
+    } else {
+        QFile file(outputFile);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            printError(QString("Failed to write to: %1").arg(outputFile));
+            return 1;
+        }
+        QTextStream out(&file);
+        out << output;
+        printInfo(QString("Compliance report saved to: %1").arg(outputFile));
+    }
+
+    // Print summary to stderr
+    int errors = validator->getErrorCount();
+    int warnings = validator->getWarningCount();
+
+    QTextStream err(stderr);
+    err << "\n";
+    err << "Validation Summary:\n";
+    err << "  Errors:   " << errors << "\n";
+    err << "  Warnings: " << warnings << "\n";
+    err << "  Info:     " << validator->getInfoCount() << "\n";
+
+    return (errors > 0) ? 1 : 0;
 }
 
 } // namespace VideoStudio

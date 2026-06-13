@@ -7,6 +7,7 @@ Command-line interface for VideoStudio - Professional video stream analysis tool
 - **Video Information Extraction**: Get codec, resolution, frame rate, duration, and bitrate
 - **Frame-Level Metrics**: Export CSV data with frame type, size, PTS, DTS, QP values
 - **GOP Structure Analysis**: Analyze Group of Pictures structure with JSON output
+- **H.264/H.265 Compliance Validation**: Validate bitstream compliance against ISO/IEC standards
 - **Multiple Output Formats**: JSON, CSV, and text formats
 
 ## Installation
@@ -109,6 +110,66 @@ videostudio-cli gop video.mp4 -o gop_analysis.json
 }
 ```
 
+### Compliance Validation
+
+Validate H.264/H.265 bitstream compliance against ISO/IEC standards:
+
+```bash
+# Text report to stdout
+videostudio-cli compliance video.mp4
+
+# Save JSON report
+videostudio-cli compliance video.mp4 -o report.json
+
+# Save text report
+videostudio-cli compliance video.mp4 -o report.txt
+```
+
+**What is validated:**
+
+**H.264/AVC (ISO/IEC 14496-10):**
+- Profile and Level compliance
+- Resolution limits for the specified level
+- Bitrate limits
+- SPS/PPS parameter sets
+- NAL unit structure
+- Timestamp consistency (PTS/DTS)
+- Reference frame configuration
+
+**H.265/HEVC (ISO/IEC 23008-2):**
+- Profile and Level compliance
+- VPS/SPS/PPS parameter sets
+- Basic bitstream structure
+
+**Example output:**
+```
+===========================================
+  H.264/H.265 Compliance Validation Report
+===========================================
+
+File: video.mp4
+Total Issues: 9
+  Errors:   0
+  Warnings: 2
+  Info:     7
+
+-------------------------------------------
+Issues:
+-------------------------------------------
+
+[INFO] Profile/Level: H.264 Profile: High, Level: 3.1
+
+[WARNING] NAL Unit: No IDR frames found in first 100 frames
+  Suggestion: Consider adding periodic IDR frames for seeking
+
+[WARNING] Timing: Found 46 PTS discontinuities in first 100 frames
+  Suggestion: Check timestamp generation
+```
+
+**Exit codes:**
+- `0`: No errors found (warnings/info may be present)
+- `1`: Errors found or validation failed
+
 ## Use Cases
 
 ### Batch Processing
@@ -148,7 +209,47 @@ if [[ "$CODEC" != *"H.264"* ]]; then
     exit 1
 fi
 
+# Validate compliance
+videostudio-cli compliance encoded.mp4 -o compliance.json
+if [ $? -ne 0 ]; then
+    echo "Error: Compliance validation failed"
+    cat compliance.json
+    exit 1
+fi
+
 echo "Video validation passed"
+```
+
+### Compliance Validation in Production
+
+Ensure encoded videos meet broadcast standards:
+
+```bash
+#!/bin/bash
+# Validate video before delivery
+
+VIDEO=$1
+
+echo "Validating $VIDEO..."
+
+# Run compliance check
+videostudio-cli compliance "$VIDEO" -o "${VIDEO%.mp4}_compliance.json"
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+    echo "❌ COMPLIANCE FAILED"
+    echo "Critical issues found. Video does not meet delivery standards."
+    exit 1
+fi
+
+# Check for warnings
+WARNINGS=$(jq -r '.warnings' "${VIDEO%.mp4}_compliance.json")
+if [ "$WARNINGS" -gt 0 ]; then
+    echo "⚠️  WARNING: $WARNINGS issues found"
+    echo "Review the compliance report before delivery."
+fi
+
+echo "✅ PASSED: Video meets compliance standards"
 ```
 
 ### Quality Analysis Pipeline

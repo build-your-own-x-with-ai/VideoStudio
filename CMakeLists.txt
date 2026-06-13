@@ -81,6 +81,7 @@ set(SOURCES
     src/core/timinganalyzer.cpp
     src/core/duplicateframedetector.cpp
     src/core/nalunitparser.cpp
+    src/core/compliancevalidator.cpp
     src/widgets/videooutput.cpp
     src/widgets/barchart.cpp
     src/widgets/thumbnailbar.cpp
@@ -105,6 +106,7 @@ set(SOURCES
     src/panels/blockstatspanel.cpp
     src/dialogs/savestreaminfodialog.cpp
     src/dialogs/qualitymetricsdialog.cpp
+    src/dialogs/compliancedialog.cpp
     src/dialogs/aboutdialog.cpp
     src/dialogs/csvexportdialog.cpp
     src/dialogs/referencecomparisondialog.cpp
@@ -227,6 +229,7 @@ add_executable(videostudio-cli
     # Reuse core components
     src/core/videodecoder.cpp
     src/core/framedata.cpp
+    src/core/compliancevalidator.cpp
 )
 
 target_include_directories(videostudio-cli PRIVATE

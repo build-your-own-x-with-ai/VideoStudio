@@ -101,6 +101,7 @@ private slots:
     void captureScreenshot();
     void showAboutDialog();
     void showDuplicateFrameDetection();
+    void showComplianceValidation();
     void showSettings();
 
 public slots:

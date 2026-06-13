@@ -16,6 +16,7 @@
 #include "dialogs/yuvexportdialog.h"
 #include "dialogs/yuvviewerdialog.h"
 #include "dialogs/duplicateframedetectiondialog.h"
+#include "dialogs/compliancedialog.h"
 #include "dialogs/settingsdialog.h"
 #include "widgets/thumbnailbar.h"
 #include "widgets/gopviewer.h"
@@ -844,6 +845,13 @@ void MainWindow::createMenus() {
     duplicateDetectionAction->setShortcut(tr("Ctrl+D"));
     duplicateDetectionAction->setStatusTip(tr("Detect duplicate and freeze frames"));
     connect(duplicateDetectionAction, &QAction::triggered, this, &MainWindow::showDuplicateFrameDetection);
+
+    toolsMenu->addSeparator();
+
+    QAction* complianceAction = toolsMenu->addAction(tr("&Compliance Validation (H.264/H.265)..."));
+    complianceAction->setShortcut(tr("Ctrl+Shift+C"));
+    complianceAction->setStatusTip(tr("Validate H.264/H.265 bitstream compliance"));
+    connect(complianceAction, &QAction::triggered, this, &MainWindow::showComplianceValidation);
 
     toolsMenu->addSeparator();
 
@@ -2270,6 +2278,18 @@ void MainWindow::showDuplicateFrameDetection() {
     connect(&dialog, &DuplicateFrameDetectionDialog::duplicateFramesDetected,
             m_gopViewer, &GOPViewer::setDuplicateFrames);
 
+    dialog.exec();
+}
+
+void MainWindow::showComplianceValidation() {
+    if (!m_decoder || !m_decoder->isOpen()) {
+        QMessageBox::warning(this, tr("No Video Loaded"),
+            tr("Please open a video file first."));
+        return;
+    }
+
+    QString currentFile = m_decoder->getFileName();
+    ComplianceDialog dialog(currentFile, this);
     dialog.exec();
 }
 
