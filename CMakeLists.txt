@@ -217,3 +217,42 @@ set_source_files_properties(${ICON_FILE} PROPERTIES
     MACOSX_PACKAGE_LOCATION "Resources"
 )
 target_sources(VideoStudio PRIVATE ${ICON_FILE})
+
+# ========================================
+# CLI Executable (videostudio-cli)
+# ========================================
+
+add_executable(videostudio-cli
+    src/cli/main_cli.cpp
+    # Reuse core components
+    src/core/videodecoder.cpp
+    src/core/framedata.cpp
+)
+
+target_include_directories(videostudio-cli PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${FFMPEG_INCLUDE_DIRS}
+)
+
+target_link_libraries(videostudio-cli PRIVATE
+    Qt6::Core
+)
+
+# Link FFmpeg libraries
+if(WIN32)
+    target_link_libraries(videostudio-cli PRIVATE ${FFMPEG_LIBRARIES})
+else()
+    target_link_libraries(videostudio-cli PRIVATE ${FFMPEG_LDFLAGS})
+endif()
+
+target_compile_options(videostudio-cli PRIVATE
+    ${FFMPEG_CFLAGS_OTHER}
+)
+
+# Set AUTOMOC include directories
+set_property(TARGET videostudio-cli PROPERTY AUTOMOC_MOC_OPTIONS "-I${CMAKE_CURRENT_SOURCE_DIR}/src")
+
+# Install CLI to bin directory
+install(TARGETS videostudio-cli
+    RUNTIME DESTINATION bin
+)

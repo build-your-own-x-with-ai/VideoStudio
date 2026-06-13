@@ -75,7 +75,8 @@
       "Bash(grep -A5 -E \"\\(error|warning:|Linking|Built target VideoStudio$\\)\")",
       "Bash(grep -E \"\\(error|warning:|Linking|Built target VideoStudio$\\)\")",
       "Bash(./generate_qp_test_video.sh)",
-      "Bash(bash scripts/test_partition_visualization.sh)"
+      "Bash(bash scripts/test_partition_visualization.sh)",
+      "Bash(./videostudio-cli *)"
     ]
   }
 }

@@ -11,6 +11,10 @@ Professional video stream analysis tool built with C++ Qt and FFmpeg.
 
 VideoStudio is a comprehensive video codec analysis application inspired by Elecard StreamEye. It provides professional-grade tools for debugging encoding issues, validating codec compliance, analyzing quality metrics, and inspecting frame-level details.
 
+**Available in two modes:**
+- **GUI Application**: Full-featured Qt-based desktop application with interactive analysis
+- **CLI Tool**: Command-line interface for batch processing and automation (see [CLI Documentation](docs/CLI.md))
+
 ### Key Features
 
 #### Video Analysis
@@ -402,11 +406,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [x] Block/partition visualization
 - [x] NAL unit list view for MP4/MKV files (H.264/H.265)
 - [x] VMAF quality metric (Video Multimethod Assessment Fusion)
+- [x] Command-line tool for batch processing and automation
 
 ### Version 2.0 (Planned)
 - [ ] Compliance verification (H.264/H.265 bitstream syntax validation)
 - [ ] Advanced buffer analysis (HRD/VBV verification)
-- [ ] Command-line tool for batch processing
 - [ ] Plugin system for custom analyzers
 
 ## Support
