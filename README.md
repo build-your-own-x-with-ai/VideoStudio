@@ -22,7 +22,7 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 - **Frame Metadata**: Extract PTS, DTS, frame type, size, QP values, GOP structure
 
 #### Quality & Export
-- **Quality Metrics**: PSNR/SSIM comparison between reference and distorted videos
+- **Quality Metrics**: PSNR/SSIM/VMAF comparison between reference and distorted videos
 - **Duplicate Frame Detection**: Identify and analyze consecutive duplicate frames with configurable similarity thresholds
 - **YUV Export**: Export single frames or frame ranges as raw YUV files
 - **CSV Export**: Export frame metrics, statistics, GOP structure, and bitrate data
@@ -50,9 +50,8 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 
 ### Planned Features
 
-- VMAF quality metric integration
-- Motion vector visualization
-- Block/partition information display
+- Compliance verification (H.264/H.265 bitstream syntax validation)
+- Advanced buffer analysis (HRD/VBV verification)
 - Reference stream comparison with side-by-side difference modes
 - Command-line tool for batch processing
 - Plugin system for custom analyzers
@@ -195,10 +194,15 @@ Compare video quality between reference and distorted versions:
 2. Go to **Tools → Quality Metrics (PSNR/SSIM)** or press **Ctrl+Q**
 3. Select the distorted/compressed video to compare
 4. Configure frame range and metrics to calculate
-5. Click "Start Analysis" to compare frame-by-frame
-6. View results:
+5. Configure frame range and metrics to calculate:
+   - **PSNR**: Peak Signal-to-Noise Ratio (traditional quality metric)
+   - **SSIM**: Structural Similarity Index (perceptual quality)
+   - **VMAF**: Video Multimethod Assessment Fusion (Netflix's perceptual quality metric)
+6. Click "Start Analysis" to compare frame-by-frame
+7. View results:
    - **PSNR**: >40 dB (excellent), 30-40 dB (good), <30 dB (poor)
    - **SSIM**: >0.95 (excellent), 0.85-0.95 (good), <0.85 (poor)
+   - **VMAF**: >80 (excellent), 60-80 (good), <60 (poor)
 
 **Note**: Both videos must have the same resolution and should be the same content at different quality levels.
 
@@ -397,13 +401,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [x] Motion vector overlay
 - [x] Block/partition visualization
 - [x] NAL unit list view for MP4/MKV files (H.264/H.265)
+- [x] VMAF quality metric (Video Multimethod Assessment Fusion)
 
 ### Version 2.0 (Planned)
-- [ ] VMAF quality metric
-- [ ] Compliance verification
-- [ ] Advanced buffer analysis
-- [ ] Command-line tool
-- [ ] Plugin system
+- [ ] Compliance verification (H.264/H.265 bitstream syntax validation)
+- [ ] Advanced buffer analysis (HRD/VBV verification)
+- [ ] Command-line tool for batch processing
+- [ ] Plugin system for custom analyzers
 
 ## Support
 

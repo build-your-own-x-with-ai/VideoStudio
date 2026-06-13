@@ -510,6 +510,121 @@
     </message>
 </context>
 <context>
+    <name>VideoStudio::QualityMetricsDialog</name>
+    <message>
+        <source>Video Quality Metrics</source>
+        <translation>视频质量指标</translation>
+    </message>
+    <message>
+        <source>Video Files</source>
+        <translation>视频文件</translation>
+    </message>
+    <message>
+        <source>Reference:</source>
+        <translation>参考视频：</translation>
+    </message>
+    <message>
+        <source>Distorted:</source>
+        <translation>压缩视频：</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>浏览...</translation>
+    </message>
+    <message>
+        <source>Select distorted/compressed video file...</source>
+        <translation>选择压缩视频文件...</translation>
+    </message>
+    <message>
+        <source>Analysis Options</source>
+        <translation>分析选项</translation>
+    </message>
+    <message>
+        <source>Start Frame:</source>
+        <translation>起始帧：</translation>
+    </message>
+    <message>
+        <source>End Frame:</source>
+        <translation>结束帧：</translation>
+    </message>
+    <message>
+        <source>End of video</source>
+        <translation>视频结束</translation>
+    </message>
+    <message>
+        <source>Calculate PSNR (Peak Signal-to-Noise Ratio)</source>
+        <translation>计算 PSNR（峰值信噪比）</translation>
+    </message>
+    <message>
+        <source>Calculate SSIM (Structural Similarity Index)</source>
+        <translation>计算 SSIM（结构相似性指数）</translation>
+    </message>
+    <message>
+        <source>Calculate VMAF (Video Multimethod Assessment Fusion)</source>
+        <translation>计算 VMAF（视频多方法评估融合）</translation>
+    </message>
+    <message>
+        <source>Ready</source>
+        <translation>就绪</translation>
+    </message>
+    <message>
+        <source>Results</source>
+        <translation>结果</translation>
+    </message>
+    <message>
+        <source>Start Analysis</source>
+        <translation>开始分析</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Average PSNR: %1 dB</source>
+        <translation>平均 PSNR：%1 dB</translation>
+    </message>
+    <message>
+        <source>  (Higher is better, &gt;40 dB is excellent, 30-40 dB is good)</source>
+        <translation>  (越高越好，&gt;40 dB 为优秀，30-40 dB 为良好)</translation>
+    </message>
+    <message>
+        <source>
+Average SSIM: %1</source>
+        <translation>
+平均 SSIM：%1</translation>
+    </message>
+    <message>
+        <source>  (Range: 0-1, higher is better, &gt;0.95 is excellent)</source>
+        <translation>  (范围：0-1，越高越好，&gt;0.95 为优秀)</translation>
+    </message>
+    <message>
+        <source>
+Calculating VMAF (this may take several minutes)...</source>
+        <translation>
+正在计算 VMAF（可能需要几分钟）...</translation>
+    </message>
+    <message>
+        <source>Calculating VMAF...</source>
+        <translation>正在计算 VMAF...</translation>
+    </message>
+    <message>
+        <source>VMAF Score: %1</source>
+        <translation>VMAF 分数：%1</translation>
+    </message>
+    <message>
+        <source>  (Range: 0-100, higher is better, &gt;80 is excellent, 60-80 is good)</source>
+        <translation>  (范围：0-100，越高越好，&gt;80 为优秀，60-80 为良好)</translation>
+    </message>
+    <message>
+        <source>VMAF calculation failed. Check console for details.</source>
+        <translation>VMAF 计算失败。请查看控制台了解详情。</translation>
+    </message>
+    <message>
+        <source>Analysis complete</source>
+        <translation>分析完成</translation>
+    </message>
+</context>
+<context>
     <name>VideoStudio::SettingsDialog</name>
     <message>
         <source>Settings</source>
