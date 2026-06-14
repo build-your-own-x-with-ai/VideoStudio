@@ -247,6 +247,62 @@ Compliance Assessment:
 - Validate streaming delivery constraints
 - Optimize buffer size for target bitrate
 
+### Plugin System
+
+VideoStudio supports an extensible plugin system for custom analyzers:
+
+```bash
+# List available plugins
+videostudio-cli plugin list
+
+# Run a plugin
+videostudio-cli plugin run <plugin-id> <video-file>
+
+# Save plugin output to JSON
+videostudio-cli plugin run <plugin-id> <video-file> -o report.json
+```
+
+**Example output:**
+```
+Available Plugins:
+==================
+
+ID:          com.videostudio.sampleanalyzer
+Name:        Sample Analyzer
+Version:     1.0.0
+Author:      VideoStudio Team
+Category:    Demo
+Description: Sample plugin demonstrating custom analysis capabilities
+Tags:        sample, demo, example
+
+Total plugins: 1
+```
+
+**Plugin execution:**
+```bash
+$ videostudio-cli plugin run com.videostudio.sampleanalyzer video.mp4
+
+Sample Analysis Report
+======================
+
+File: video.mp4
+Format: mov,mp4,m4a,3gp,3g2,mj2
+Duration: 10.0 seconds
+Streams: 1
+Packets analyzed: 600
+Average packet size: 4404.27 bytes
+```
+
+**Creating custom plugins:**
+
+Plugins must implement the `IAnalyzerPlugin` interface. See `src/plugins/sampleanalyzerplugin.cpp` for a complete example.
+
+Key requirements:
+- Implement `getMetadata()`, `initialize()`, `cleanup()`, and `analyze()`
+- Return `AnalysisResult` with success status, data (JSON), and text report
+- Build as a shared library (.dylib on macOS, .so on Linux, .dll on Windows)
+- Place in the `plugins/` directory
+
 ## Use Cases
 
 ### Batch Processing

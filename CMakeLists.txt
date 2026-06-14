@@ -83,6 +83,7 @@ set(SOURCES
     src/core/nalunitparser.cpp
     src/core/compliancevalidator.cpp
     src/core/bufferanalyzer.cpp
+    src/plugins/pluginmanager.cpp
     src/widgets/videooutput.cpp
     src/widgets/barchart.cpp
     src/widgets/thumbnailbar.cpp
@@ -232,6 +233,7 @@ add_executable(videostudio-cli
     src/core/framedata.cpp
     src/core/compliancevalidator.cpp
     src/core/bufferanalyzer.cpp
+    src/plugins/pluginmanager.cpp
 )
 
 target_include_directories(videostudio-cli PRIVATE
@@ -261,3 +263,44 @@ set_property(TARGET videostudio-cli PROPERTY AUTOMOC_MOC_OPTIONS "-I${CMAKE_CURR
 install(TARGETS videostudio-cli
     RUNTIME DESTINATION bin
 )
+
+# ============================================================
+# Sample Plugin (demonstrating plugin system)
+# ============================================================
+
+add_library(sampleanalyzer MODULE
+    src/plugins/sampleanalyzerplugin.cpp
+)
+
+target_link_libraries(sampleanalyzer PRIVATE
+    Qt6::Core
+)
+
+# Link FFmpeg libraries
+if(WIN32)
+    target_link_libraries(sampleanalyzer PRIVATE ${FFMPEG_LIBRARIES})
+else()
+    target_link_libraries(sampleanalyzer PRIVATE ${FFMPEG_LDFLAGS})
+endif()
+
+target_compile_options(sampleanalyzer PRIVATE
+    ${FFMPEG_CFLAGS_OTHER}
+)
+
+target_include_directories(sampleanalyzer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${FFMPEG_INCLUDE_DIRS}
+)
+
+set_target_properties(sampleanalyzer PROPERTIES
+    AUTOMOC ON
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins"
+    PREFIX ""
+    SUFFIX ".dylib"
+)
+
+# Install plugin to plugins directory
+install(TARGETS sampleanalyzer
+    LIBRARY DESTINATION plugins
+)
+

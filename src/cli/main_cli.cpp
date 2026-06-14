@@ -11,6 +11,7 @@
 #include "core/framedata.h"
 #include "core/compliancevalidator.h"
 #include "core/bufferanalyzer.h"
+#include "plugins/pluginmanager.h"
 
 extern "C" {
 #include <libavutil/frame.h>
@@ -33,6 +34,8 @@ private:
     int processGOP(const QString& videoFile, const QString& outputFile);
     int processCompliance(const QString& videoFile, const QString& outputFile);
     int processBuffer(const QString& videoFile, const QString& outputFile);
+    int processPluginList();
+    int processPluginRun(const QString& pluginId, const QString& videoFile, const QString& outputFile);
 
     void printUsage();
     void printError(const QString& message);
@@ -52,7 +55,7 @@ int CLIProcessor::run(const QStringList& args) {
     parser.addVersionOption();
 
     parser.addPositionalArgument("command",
-        "Command to execute: info, frames, gop, compliance, buffer");
+        "Command to execute: info, frames, gop, compliance, buffer, plugin");
     parser.addPositionalArgument("file", "Input video file");
 
     QCommandLineOption outputOption(QStringList() << "o" << "output",
@@ -132,6 +135,30 @@ int CLIProcessor::run(const QStringList& args) {
 
         return processBuffer(videoFile, outputFile);
     }
+    else if (command == "plugin") {
+        // plugin list OR plugin run <id> <file>
+        if (positionalArgs.size() < 2) {
+            printError("Missing plugin subcommand (list or run)");
+            return 1;
+        }
+
+        QString subcommand = positionalArgs.at(1);
+        if (subcommand == "list") {
+            return processPluginList();
+        } else if (subcommand == "run") {
+            if (positionalArgs.size() < 4) {
+                printError("Usage: plugin run <plugin-id> <video-file>");
+                return 1;
+            }
+            QString pluginId = positionalArgs.at(2);
+            QString videoFile = positionalArgs.at(3);
+            QString outputFile = parser.value(outputOption);
+            return processPluginRun(pluginId, videoFile, outputFile);
+        } else {
+            printError(QString("Unknown plugin subcommand: %1").arg(subcommand));
+            return 1;
+        }
+    }
     else {
         printError(QString("Unknown command: %1").arg(command));
         printUsage();
@@ -150,7 +177,9 @@ void CLIProcessor::printUsage() {
     out << "  frames <file>      Export frame-level metrics to CSV\n";
     out << "  gop <file>         Analyze GOP structure (JSON output)\n";
     out << "  compliance <file>  Validate H.264/H.265 compliance\n";
-    out << "  buffer <file>      Analyze HRD/VBV buffer behavior\n\n";
+    out << "  buffer <file>      Analyze HRD/VBV buffer behavior\n";
+    out << "  plugin list        List available plugins\n";
+    out << "  plugin run <id> <file>  Run a plugin on video file\n\n";
     out << "Options:\n";
     out << "  -o, --output <file>      Output file (default: stdout)\n";
     out << "  -f, --format <format>    Output format for info: json|csv|text\n";
@@ -511,6 +540,101 @@ int CLIProcessor::processBuffer(const QString& videoFile, const QString& outputF
     }
 
     return (violations > 0) ? 1 : 0;
+}
+
+int CLIProcessor::processPluginList() {
+    PluginManager& manager = PluginManager::instance();
+
+    // Scan for plugins
+    QString pluginsDir = manager.getPluginsDirectory();
+    printInfo(QString("Scanning for plugins in: %1").arg(pluginsDir));
+    manager.scanPlugins(pluginsDir);
+
+    QVector<PluginMetadata> plugins = manager.getPluginMetadataList();
+
+    if (plugins.isEmpty()) {
+        printInfo("No plugins found.");
+        return 0;
+    }
+
+    QTextStream out(stdout);
+    out << "\nAvailable Plugins:\n";
+    out << "==================\n\n";
+
+    for (const PluginMetadata& metadata : plugins) {
+        out << "ID:          " << metadata.id << "\n";
+        out << "Name:        " << metadata.name << "\n";
+        out << "Version:     " << metadata.version << "\n";
+        out << "Author:      " << metadata.author << "\n";
+        out << "Category:    " << metadata.category << "\n";
+        out << "Description: " << metadata.description << "\n";
+        if (!metadata.tags.isEmpty()) {
+            out << "Tags:        " << metadata.tags.join(", ") << "\n";
+        }
+        out << "\n";
+    }
+
+    out << "Total plugins: " << plugins.size() << "\n";
+
+    return 0;
+}
+
+int CLIProcessor::processPluginRun(const QString& pluginId, const QString& videoFile, const QString& outputFile) {
+    QFileInfo fileInfo(videoFile);
+    if (!fileInfo.exists()) {
+        printError(QString("File not found: %1").arg(videoFile));
+        return 1;
+    }
+
+    PluginManager& manager = PluginManager::instance();
+
+    // Scan for plugins if not already done
+    if (manager.getPluginCount() == 0) {
+        QString pluginsDir = manager.getPluginsDirectory();
+        manager.scanPlugins(pluginsDir);
+    }
+
+    if (!manager.hasPlugin(pluginId)) {
+        printError(QString("Plugin not found: %1").arg(pluginId));
+        printInfo("Use 'plugin list' to see available plugins");
+        return 1;
+    }
+
+    printInfo(QString("Running plugin: %1").arg(pluginId));
+    printInfo(QString("Analyzing: %1").arg(videoFile));
+
+    // Run plugin
+    AnalysisResult result = manager.runPlugin(pluginId, videoFile);
+
+    if (!result.success) {
+        printError(QString("Plugin execution failed: %1").arg(result.error));
+        return 1;
+    }
+
+    // Output results
+    QString output;
+    if (outputFile.isEmpty() || outputFile.endsWith(".txt")) {
+        output = result.textReport;
+    } else {
+        QJsonDocument doc(result.data);
+        output = doc.toJson(QJsonDocument::Indented);
+    }
+
+    if (outputFile.isEmpty()) {
+        QTextStream out(stdout);
+        out << output;
+    } else {
+        QFile file(outputFile);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            printError(QString("Failed to write to: %1").arg(outputFile));
+            return 1;
+        }
+        QTextStream out(&file);
+        out << output;
+        printInfo(QString("Plugin report saved to: %1").arg(outputFile));
+    }
+
+    return 0;
 }
 
 } // namespace VideoStudio

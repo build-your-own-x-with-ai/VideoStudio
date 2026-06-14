@@ -411,7 +411,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ### Version 2.0 (Planned)
 - [x] Compliance verification (H.264/H.265 bitstream syntax validation)
 - [x] Advanced buffer analysis (HRD/VBV verification)
-- [ ] Plugin system for custom analyzers
+- [x] Plugin system for custom analyzers
 
 ## Support
 
