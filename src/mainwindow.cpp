@@ -17,6 +17,7 @@
 #include "dialogs/yuvviewerdialog.h"
 #include "dialogs/duplicateframedetectiondialog.h"
 #include "dialogs/compliancedialog.h"
+#include "dialogs/plugindialog.h"
 #include "dialogs/settingsdialog.h"
 #include "widgets/thumbnailbar.h"
 #include "widgets/gopviewer.h"
@@ -852,6 +853,11 @@ void MainWindow::createMenus() {
     complianceAction->setShortcut(tr("Ctrl+Shift+C"));
     complianceAction->setStatusTip(tr("Validate H.264/H.265 bitstream compliance"));
     connect(complianceAction, &QAction::triggered, this, &MainWindow::showComplianceValidation);
+
+    QAction* pluginAction = toolsMenu->addAction(tr("&Plugin Manager..."));
+    pluginAction->setShortcut(tr("Ctrl+Shift+P"));
+    pluginAction->setStatusTip(tr("Run custom analyzer plugins"));
+    connect(pluginAction, &QAction::triggered, this, &MainWindow::showPluginManager);
 
     toolsMenu->addSeparator();
 
@@ -2290,6 +2296,18 @@ void MainWindow::showComplianceValidation() {
 
     QString currentFile = m_decoder->getFileName();
     ComplianceDialog dialog(currentFile, this);
+    dialog.exec();
+}
+
+void MainWindow::showPluginManager() {
+    if (!m_decoder || !m_decoder->isOpen()) {
+        QMessageBox::warning(this, tr("No Video Loaded"),
+            tr("Please open a video file first."));
+        return;
+    }
+
+    QString currentFile = m_decoder->getFileName();
+    PluginDialog dialog(currentFile, this);
     dialog.exec();
 }
 

@@ -293,6 +293,22 @@ Packets analyzed: 600
 Average packet size: 4404.27 bytes
 ```
 
+**GUI Plugin Usage:**
+
+Plugins can also be used in the graphical interface:
+
+1. Open a video file in VideoStudio
+2. Go to **Tools → Plugin Manager...** (or press `Ctrl+Shift+P`)
+3. Select a plugin from the list
+4. Click **"Run Plugin"** to execute the analysis
+5. View results in the right panel
+6. Export results to JSON or text file
+
+The Plugin Manager dialog shows:
+- **Left Panel**: Available plugins with refresh button
+- **Middle Panel**: Plugin details (ID, version, author, description, options)
+- **Right Panel**: Analysis results with export button
+
 **Creating custom plugins:**
 
 Plugins must implement the `IAnalyzerPlugin` interface. See `src/plugins/sampleanalyzerplugin.cpp` for a complete example.

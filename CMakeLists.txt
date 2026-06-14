@@ -109,6 +109,7 @@ set(SOURCES
     src/dialogs/savestreaminfodialog.cpp
     src/dialogs/qualitymetricsdialog.cpp
     src/dialogs/compliancedialog.cpp
+    src/dialogs/plugindialog.cpp
     src/dialogs/aboutdialog.cpp
     src/dialogs/csvexportdialog.cpp
     src/dialogs/referencecomparisondialog.cpp

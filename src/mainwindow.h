@@ -102,6 +102,7 @@ private slots:
     void showAboutDialog();
     void showDuplicateFrameDetection();
     void showComplianceValidation();
+    void showPluginManager();
     void showSettings();
 
 public slots:
