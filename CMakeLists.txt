@@ -305,3 +305,15 @@ install(TARGETS sampleanalyzer
     LIBRARY DESTINATION plugins
 )
 
+# Post-build: Copy plugin to app bundle (macOS only)
+if(APPLE)
+    add_custom_command(TARGET sampleanalyzer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:VideoStudio>/../MacOS/plugins"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "$<TARGET_FILE:sampleanalyzer>"
+            "$<TARGET_FILE_DIR:VideoStudio>/../MacOS/plugins/"
+        COMMENT "Copying plugin to app bundle"
+    )
+endif()
+
