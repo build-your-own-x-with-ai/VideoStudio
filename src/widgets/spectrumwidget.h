@@ -48,6 +48,9 @@ public:
     // Clear display
     void clear();
 
+    // Update spectrum from external source (e.g., AudioMonitor)
+    void updateSpectrumData(const QVector<float>& magnitudeSpectrum);
+
     QSize sizeHint() const override { return QSize(600, 300); }
     QSize minimumSizeHint() const override { return QSize(300, 150); }
 

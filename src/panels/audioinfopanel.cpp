@@ -19,6 +19,10 @@ AudioInfoPanel::AudioInfoPanel(QWidget* parent)
     m_monitor->setLevelMeterRight(m_levelMeterRight);
     m_monitor->setSpectrumWidget(m_spectrumWidget);
     m_monitor->setWaveformWidget(m_waveformWidget);
+
+    // Connect monitor signals to spectrum widget
+    connect(m_monitor.get(), &AudioMonitor::spectrumUpdated,
+            m_spectrumWidget, &SpectrumWidget::updateSpectrumData);
 }
 
 AudioInfoPanel::~AudioInfoPanel() = default;

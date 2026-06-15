@@ -134,6 +134,72 @@ void SpectrumWidget::clear() {
     update();
 }
 
+void SpectrumWidget::updateSpectrumData(const QVector<float>& magnitudeSpectrum) {
+    if (magnitudeSpectrum.isEmpty()) {
+        return;
+    }
+
+    // Update magnitude spectrum from external source
+    m_magnitudeSpectrum = magnitudeSpectrum;
+
+    // Ensure correct size
+    if (m_magnitudeSpectrum.size() < m_fftSize / 2) {
+        m_magnitudeSpectrum.resize(m_fftSize / 2);
+    }
+
+    // Detect peaks if enabled
+    if (m_showPeaks) {
+        m_peakIndices.clear();
+
+        for (int i = 2; i < m_magnitudeSpectrum.size() - 2; ++i) {
+            if (m_magnitudeSpectrum[i] > m_magnitudeSpectrum[i-1] &&
+                m_magnitudeSpectrum[i] > m_magnitudeSpectrum[i+1] &&
+                m_magnitudeSpectrum[i] > m_magnitudeSpectrum[i-2] &&
+                m_magnitudeSpectrum[i] > m_magnitudeSpectrum[i+2] &&
+                m_magnitudeSpectrum[i] > -40.0f) {
+                m_peakIndices.append(i);
+            }
+        }
+
+        // Emit strongest peak
+        if (!m_peakIndices.isEmpty()) {
+            int strongestPeak = m_peakIndices[0];
+            float maxMag = m_magnitudeSpectrum[strongestPeak];
+
+            for (int idx : m_peakIndices) {
+                if (m_magnitudeSpectrum[idx] > maxMag) {
+                    maxMag = m_magnitudeSpectrum[idx];
+                    strongestPeak = idx;
+                }
+            }
+
+            float freq = (strongestPeak * m_sampleRate) / m_fftSize;
+            emit peakFrequencyDetected(freq, maxMag);
+        }
+    }
+
+    // Update waterfall data if in waterfall mode
+    if (m_displayMode == Waterfall) {
+        // Shift waterfall data down
+        if (m_waterfallData.size() >= 100) {
+            m_waterfallData.pop_back();
+        }
+
+        // Add new spectrum at top
+        QVector<float> newRow(m_numBands);
+        for (int i = 0; i < m_numBands; ++i) {
+            int spectrumIndex = (i * m_magnitudeSpectrum.size()) / m_numBands;
+            if (spectrumIndex < m_magnitudeSpectrum.size()) {
+                newRow[i] = m_magnitudeSpectrum[spectrumIndex];
+            }
+        }
+        m_waterfallData.prepend(newRow);
+    }
+
+    // Trigger repaint
+    update();
+}
+
 void SpectrumWidget::updateSpectrum() {
     if (!m_isAnalyzing || !m_analyzer->isOpen()) {
         return;
