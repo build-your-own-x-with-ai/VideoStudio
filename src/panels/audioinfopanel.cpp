@@ -118,20 +118,8 @@ void AudioInfoPanel::setupUI() {
     // Spectrum controls
     QHBoxLayout* spectrumControls = new QHBoxLayout();
 
-    QPushButton* startButton = new QPushButton(tr("Start Analysis"), this);
-    connect(startButton, &QPushButton::clicked, this, [this]() {
-        m_spectrumWidget->startAnalysis();
-        m_monitor->start();
-    });
-    spectrumControls->addWidget(startButton);
-
-    QPushButton* stopButton = new QPushButton(tr("Stop"), this);
-    connect(stopButton, &QPushButton::clicked, this, [this]() {
-        m_spectrumWidget->stopAnalysis();
-        m_monitor->stop();
-    });
-    spectrumControls->addWidget(stopButton);
-
+    // Display mode selector
+    QLabel* modeLabel = new QLabel(tr("Display Mode:"), this);
     QComboBox* modeCombo = new QComboBox(this);
     modeCombo->addItem(tr("Bars"), SpectrumWidget::Bars);
     modeCombo->addItem(tr("Line"), SpectrumWidget::Line);
@@ -140,7 +128,7 @@ void AudioInfoPanel::setupUI() {
     connect(modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, modeCombo](int index) {
         m_spectrumWidget->setDisplayMode(static_cast<SpectrumWidget::DisplayMode>(modeCombo->itemData(index).toInt()));
     });
-    spectrumControls->addWidget(new QLabel(tr("Display Mode:"), this));
+    spectrumControls->addWidget(modeLabel);
     spectrumControls->addWidget(modeCombo);
 
     spectrumControls->addStretch();

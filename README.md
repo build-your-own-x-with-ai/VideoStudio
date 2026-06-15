@@ -101,8 +101,11 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 
 ![NAL Unit List](docs/screenshots/nal_unit_list_ref.png)
 
-### Theme
+### Audio
 
+![Audio](docs/screenshots/audio.gif)
+
+### Theme
 
 ![light](docs/screenshots/light.png)
 

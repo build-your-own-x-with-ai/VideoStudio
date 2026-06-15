@@ -663,4 +663,126 @@ Calculating VMAF (this may take several minutes)...</source>
         <translation>请重启应用程序以使语言更改生效。</translation>
     </message>
 </context>
+<context>
+    <name>VideoStudio::AudioInfoPanel</name>
+    <message>
+        <source>Audio Streams</source>
+        <translation>音频流</translation>
+    </message>
+    <message>
+        <source>Stream Information</source>
+        <translation>流信息</translation>
+    </message>
+    <message>
+        <source>Property</source>
+        <translation>属性</translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation>值</translation>
+    </message>
+    <message>
+        <source>Waveform</source>
+        <translation>波形</translation>
+    </message>
+    <message>
+        <source>Audio Levels</source>
+        <translation>音频电平</translation>
+    </message>
+    <message>
+        <source>L / Mono</source>
+        <translation>左 / 单声道</translation>
+    </message>
+    <message>
+        <source>R</source>
+        <translation>右</translation>
+    </message>
+    <message>
+        <source>Show Waveform</source>
+        <translation>显示波形</translation>
+    </message>
+    <message>
+        <source>Spectrum Analyzer</source>
+        <translation>频谱分析器</translation>
+    </message>
+    <message>
+        <source>Display Mode:</source>
+        <translation>显示模式：</translation>
+    </message>
+    <message>
+        <source>Bars</source>
+        <translation>条形图</translation>
+    </message>
+    <message>
+        <source>Line</source>
+        <translation>线形图</translation>
+    </message>
+    <message>
+        <source>Filled</source>
+        <translation>填充图</translation>
+    </message>
+    <message>
+        <source>Waterfall</source>
+        <translation>瀑布图</translation>
+    </message>
+    <message>
+        <source>Show Spectrum</source>
+        <translation>显示频谱</translation>
+    </message>
+    <message>
+        <source>Stream Index</source>
+        <translation>流索引</translation>
+    </message>
+    <message>
+        <source>Codec</source>
+        <translation>编解码器</translation>
+    </message>
+    <message>
+        <source>Profile</source>
+        <translation>配置</translation>
+    </message>
+    <message>
+        <source>Sample Rate</source>
+        <translation>采样率</translation>
+    </message>
+    <message>
+        <source>Channels</source>
+        <translation>声道数</translation>
+    </message>
+    <message>
+        <source>Channel Layout</source>
+        <translation>声道布局</translation>
+    </message>
+    <message>
+        <source>Sample Format</source>
+        <translation>采样格式</translation>
+    </message>
+    <message>
+        <source>Bits per Sample</source>
+        <translation>每采样位数</translation>
+    </message>
+    <message>
+        <source>Bitrate</source>
+        <translation>比特率</translation>
+    </message>
+    <message>
+        <source>Duration</source>
+        <translation>时长</translation>
+    </message>
+    <message>
+        <source>Audio file loaded successfully</source>
+        <translation>音频文件加载成功</translation>
+    </message>
+    <message>
+        <source>Failed to load audio file</source>
+        <translation>加载音频文件失败</translation>
+    </message>
+</context>
+<context>
+    <name>VideoStudio::SpectrumWidget</name>
+    <message>
+        <source>No spectrum data</source>
+        <translation>无频谱数据</translation>
+    </message>
+</context>
 </TS>
