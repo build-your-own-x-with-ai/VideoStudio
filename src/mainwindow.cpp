@@ -29,6 +29,7 @@
 #include "panels/explorerpanel.h"
 #include "panels/propertypanel.h"
 #include "panels/hexviewerpanel.h"
+#include "panels/audioinfopanel.h"
 #include "panels/messagespanel.h"
 #include "panels/tr101290panel.h"
 #include "panels/timedynamicspanel.h"
@@ -273,6 +274,8 @@ void MainWindow::createWidgets() {
 
     m_hexViewerPanel = new HexViewerPanel(this);
 
+    m_audioInfoPanel = new AudioInfoPanel(this);
+
     m_messagesPanel = new MessagesPanel(this);
 
     m_tr101290Panel = new TR101290Panel(this);
@@ -361,6 +364,13 @@ void MainWindow::createDockWidgets() {
     m_hexViewerPanelDock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
     addDockWidget(Qt::BottomDockWidgetArea, m_hexViewerPanelDock);
     m_hexViewerPanelDock->hide(); // Hidden by default
+
+    // Audio Info panel dock (right)
+    m_audioInfoPanelDock = new QDockWidget(tr("Audio Info"), this);
+    m_audioInfoPanelDock->setWidget(m_audioInfoPanel);
+    m_audioInfoPanelDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    addDockWidget(Qt::RightDockWidgetArea, m_audioInfoPanelDock);
+    m_audioInfoPanelDock->hide(); // Hidden by default
 
     // Messages panel dock (bottom, tabbed with hex viewer)
     m_messagesPanelDock = new QDockWidget(tr("Messages"), this);
@@ -551,6 +561,11 @@ void MainWindow::createMenus() {
     m_toggleHexViewerAction->setCheckable(true);
     m_toggleHexViewerAction->setChecked(false);
     connect(m_toggleHexViewerAction, &QAction::triggered, this, &MainWindow::toggleHexViewer);
+
+    m_toggleAudioInfoAction = viewMenu->addAction(tr("&Audio Info"));
+    m_toggleAudioInfoAction->setCheckable(true);
+    m_toggleAudioInfoAction->setChecked(false);
+    connect(m_toggleAudioInfoAction, &QAction::triggered, this, &MainWindow::toggleAudioInfo);
 
     m_toggleMessagesAction = viewMenu->addAction(tr("&Messages"));
     m_toggleMessagesAction->setCheckable(true);
@@ -1074,6 +1089,9 @@ void MainWindow::loadFile(const QString& fileName) {
             m_gopViewer->setVideoDecoder(m_decoder.get());
             m_bufferPanel->setDecoder(m_decoder.get());
             m_blockStatsPanel->setVideoDecoder(m_decoder.get());
+
+            // Update audio info panel
+            m_audioInfoPanel->setAudioFile(fileName);
 
             // Generate thumbnails in background (already async)
             m_thumbnailBar->generateThumbnails();
@@ -1680,6 +1698,12 @@ void MainWindow::toggleHexViewer() {
     bool visible = !m_hexViewerPanelDock->isVisible();
     m_hexViewerPanelDock->setVisible(visible);
     m_toggleHexViewerAction->setChecked(visible);
+}
+
+void MainWindow::toggleAudioInfo() {
+    bool visible = !m_audioInfoPanelDock->isVisible();
+    m_audioInfoPanelDock->setVisible(visible);
+    m_toggleAudioInfoAction->setChecked(visible);
 }
 
 void MainWindow::toggleMessages() {

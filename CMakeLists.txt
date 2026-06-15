@@ -63,6 +63,7 @@ else()
         libavformat
         libavutil
         libswscale
+        libswresample
     )
 endif()
 
@@ -83,6 +84,7 @@ set(SOURCES
     src/core/nalunitparser.cpp
     src/core/compliancevalidator.cpp
     src/core/bufferanalyzer.cpp
+    src/core/audioanalyzer.cpp
     src/plugins/pluginmanager.cpp
     src/widgets/videooutput.cpp
     src/widgets/barchart.cpp
@@ -97,6 +99,7 @@ set(SOURCES
     src/panels/explorerpanel.cpp
     src/panels/propertypanel.cpp
     src/panels/hexviewerpanel.cpp
+    src/panels/audioinfopanel.cpp
     src/panels/messagespanel.cpp
     src/panels/tr101290panel.cpp
     src/panels/timedynamicspanel.cpp

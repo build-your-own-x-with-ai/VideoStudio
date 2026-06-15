@@ -28,6 +28,7 @@ class GOPViewer;
 class ExplorerPanel;
 class PropertyPanel;
 class HexViewerPanel;
+class AudioInfoPanel;
 class PacketView;
 class NALUnitView;
 class MessagesPanel;
@@ -73,6 +74,7 @@ private slots:
     void toggleGOPViewer();
     void togglePropertyPanel();
     void toggleHexViewer();
+    void toggleAudioInfo();
     void toggleMessages();
     void toggleTR101290();
     void toggleTimeDynamics();
@@ -151,6 +153,7 @@ private:
     ExplorerPanel* m_explorerPanel;
     PropertyPanel* m_propertyPanel;
     HexViewerPanel* m_hexViewerPanel;
+    AudioInfoPanel* m_audioInfoPanel;
     PacketView* m_packetView;
     NALUnitView* m_nalUnitView;
     MessagesPanel* m_messagesPanel;
@@ -173,6 +176,7 @@ private:
     QDockWidget* m_explorerPanelDock;
     QDockWidget* m_propertyPanelDock;
     QDockWidget* m_hexViewerPanelDock;
+    QDockWidget* m_audioInfoPanelDock;
     QDockWidget* m_messagesPanelDock;
     QDockWidget* m_tr101290PanelDock;
     QDockWidget* m_timeDynamicsPanelDock;
@@ -211,6 +215,7 @@ private:
     QAction* m_toggleGOPViewerAction;
     QAction* m_togglePropertyPanelAction;
     QAction* m_toggleHexViewerAction;
+    QAction* m_toggleAudioInfoAction;
     QAction* m_toggleMessagesAction;
     QAction* m_toggleTR101290Action;
     QAction* m_toggleTimeDynamicsAction;
