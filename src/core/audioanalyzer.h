@@ -113,6 +113,9 @@ private:
     bool initResampler();
     void freeResources();
 
+    // FFT helper
+    void performFFT(QVector<float>& real, QVector<float>& imag, int n);
+
     // Convert planar audio to interleaved float
     QVector<float> convertToFloat(AVFrame* frame);
 };

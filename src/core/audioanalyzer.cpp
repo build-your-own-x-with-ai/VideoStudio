@@ -1,6 +1,7 @@
 #include "audioanalyzer.h"
 #include <QDebug>
 #include <cmath>
+#include <algorithm>
 
 namespace VideoStudio {
 
@@ -420,15 +421,96 @@ AudioLevelInfo AudioAnalyzer::calculateLevel(const QVector<float>& samples) {
 }
 
 QVector<float> AudioAnalyzer::calculateSpectrum(const QVector<float>& samples, int fftSize) {
-    // Placeholder for FFT-based spectrum analysis
-    // Would need to implement FFT or use a library like FFTW
-    // For now, return empty vector
-    Q_UNUSED(samples);
-    Q_UNUSED(fftSize);
-
     QVector<float> spectrum;
-    // TODO: Implement FFT-based spectrum analysis
+
+    if (samples.isEmpty() || fftSize < 2) {
+        return spectrum;
+    }
+
+    // Ensure fftSize is power of 2
+    int actualFFTSize = 1;
+    while (actualFFTSize < fftSize) {
+        actualFFTSize *= 2;
+    }
+    fftSize = actualFFTSize;
+
+    // Need at least fftSize samples
+    if (samples.size() < fftSize) {
+        return spectrum;
+    }
+
+    // Prepare FFT input (with Hanning window)
+    QVector<float> real(fftSize);
+    QVector<float> imag(fftSize);
+
+    for (int i = 0; i < fftSize; ++i) {
+        // Hanning window
+        float window = 0.5f * (1.0f - std::cos(2.0f * M_PI * i / (fftSize - 1)));
+        real[i] = samples[i] * window;
+        imag[i] = 0.0f;
+    }
+
+    // Perform FFT (Cooley-Tukey algorithm)
+    performFFT(real, imag, fftSize);
+
+    // Calculate magnitude spectrum in dB
+    spectrum.resize(fftSize / 2);
+    for (int i = 0; i < fftSize / 2; ++i) {
+        float magnitude = std::sqrt(real[i] * real[i] + imag[i] * imag[i]);
+        // Convert to dB (with floor at -80 dB)
+        float db = 20.0f * std::log10(magnitude + 1e-10f);
+        spectrum[i] = qMax(-80.0f, db);
+    }
+
     return spectrum;
+}
+
+void AudioAnalyzer::performFFT(QVector<float>& real, QVector<float>& imag, int n) {
+    // Bit-reversal permutation
+    int j = 0;
+    for (int i = 0; i < n - 1; ++i) {
+        if (i < j) {
+            std::swap(real[i], real[j]);
+            std::swap(imag[i], imag[j]);
+        }
+        int k = n / 2;
+        while (k <= j) {
+            j -= k;
+            k /= 2;
+        }
+        j += k;
+    }
+
+    // Cooley-Tukey FFT
+    for (int len = 2; len <= n; len *= 2) {
+        float angle = -2.0f * M_PI / len;
+        float wlenReal = std::cos(angle);
+        float wlenImag = std::sin(angle);
+
+        for (int i = 0; i < n; i += len) {
+            float wReal = 1.0f;
+            float wImag = 0.0f;
+
+            for (int j = 0; j < len / 2; ++j) {
+                float uReal = real[i + j];
+                float uImag = imag[i + j];
+                float vReal = real[i + j + len / 2];
+                float vImag = imag[i + j + len / 2];
+
+                float tReal = wReal * vReal - wImag * vImag;
+                float tImag = wReal * vImag + wImag * vReal;
+
+                real[i + j] = uReal + tReal;
+                imag[i + j] = uImag + tImag;
+                real[i + j + len / 2] = uReal - tReal;
+                imag[i + j + len / 2] = uImag - tImag;
+
+                float tempReal = wReal * wlenReal - wImag * wlenImag;
+                wImag = wReal * wlenImag + wImag * wlenReal;
+                wReal = tempReal;
+            }
+        }
+    }
 }
 
 QVector<float> AudioAnalyzer::getWaveformData(double startTime, double endTime, int numSamples) {
