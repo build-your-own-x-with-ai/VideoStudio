@@ -95,6 +95,49 @@ void AudioInfoPanel::setupUI() {
     connect(m_showWaveformButton, &QPushButton::toggled, waveformGroup, &QWidget::setVisible);
     mainLayout->addWidget(m_showWaveformButton);
 
+    // Spectrum analyzer
+    QGroupBox* spectrumGroup = new QGroupBox(tr("Spectrum Analyzer"), this);
+    QVBoxLayout* spectrumLayout = new QVBoxLayout(spectrumGroup);
+
+    m_spectrumWidget = new SpectrumWidget(this);
+    m_spectrumWidget->setMinimumHeight(200);
+    m_spectrumWidget->setDisplayMode(SpectrumWidget::Bars);
+    spectrumLayout->addWidget(m_spectrumWidget);
+
+    // Spectrum controls
+    QHBoxLayout* spectrumControls = new QHBoxLayout();
+
+    QPushButton* startButton = new QPushButton(tr("Start Analysis"), this);
+    connect(startButton, &QPushButton::clicked, m_spectrumWidget, &SpectrumWidget::startAnalysis);
+    spectrumControls->addWidget(startButton);
+
+    QPushButton* stopButton = new QPushButton(tr("Stop"), this);
+    connect(stopButton, &QPushButton::clicked, m_spectrumWidget, &SpectrumWidget::stopAnalysis);
+    spectrumControls->addWidget(stopButton);
+
+    QComboBox* modeCombo = new QComboBox(this);
+    modeCombo->addItem(tr("Bars"), SpectrumWidget::Bars);
+    modeCombo->addItem(tr("Line"), SpectrumWidget::Line);
+    modeCombo->addItem(tr("Filled"), SpectrumWidget::Filled);
+    modeCombo->addItem(tr("Waterfall"), SpectrumWidget::Waterfall);
+    connect(modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, modeCombo](int index) {
+        m_spectrumWidget->setDisplayMode(static_cast<SpectrumWidget::DisplayMode>(modeCombo->itemData(index).toInt()));
+    });
+    spectrumControls->addWidget(new QLabel(tr("Display Mode:"), this));
+    spectrumControls->addWidget(modeCombo);
+
+    spectrumControls->addStretch();
+    spectrumLayout->addLayout(spectrumControls);
+
+    mainLayout->addWidget(spectrumGroup);
+    spectrumGroup->hide(); // Hidden by default
+
+    // Show spectrum button
+    m_showSpectrumButton = new QPushButton(tr("Show Spectrum"), this);
+    m_showSpectrumButton->setCheckable(true);
+    connect(m_showSpectrumButton, &QPushButton::toggled, spectrumGroup, &QWidget::setVisible);
+    mainLayout->addWidget(m_showSpectrumButton);
+
     // Status label
     m_statusLabel = new QLabel(this);
     m_statusLabel->setStyleSheet("QLabel { padding: 5px; }");
@@ -118,6 +161,9 @@ void AudioInfoPanel::setAudioFile(const QString& filename) {
         // Load waveform
         m_waveformWidget->setAudioFile(filename);
 
+        // Load spectrum analyzer
+        m_spectrumWidget->setAudioFile(filename);
+
         m_statusLabel->setText(tr("Audio file loaded successfully"));
     } else {
         m_statusLabel->setText(tr("Failed to load audio file"));
@@ -132,6 +178,7 @@ void AudioInfoPanel::clear() {
 
     // Clear visualization widgets
     m_waveformWidget->clear();
+    m_spectrumWidget->clear();
     m_levelMeterLeft->setPeakLevel(0.0f);
     m_levelMeterLeft->setRMSLevel(0.0f);
     m_levelMeterRight->setPeakLevel(0.0f);

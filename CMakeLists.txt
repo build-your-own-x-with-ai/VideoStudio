@@ -93,6 +93,7 @@ set(SOURCES
     src/widgets/gopviewer.cpp
     src/widgets/waveformwidget.cpp
     src/widgets/audiolevelwidget.cpp
+    src/widgets/spectrumwidget.cpp
     src/widgets/packetview.cpp
     src/widgets/nalunitview.cpp
     src/widgets/logviewer.cpp

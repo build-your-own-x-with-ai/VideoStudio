@@ -9,6 +9,7 @@
 #include "core/audioanalyzer.h"
 #include "widgets/waveformwidget.h"
 #include "widgets/audiolevelwidget.h"
+#include "widgets/spectrumwidget.h"
 
 namespace VideoStudio {
 
@@ -42,7 +43,9 @@ private:
     WaveformWidget* m_waveformWidget;
     AudioLevelWidget* m_levelMeterLeft;
     AudioLevelWidget* m_levelMeterRight;
+    SpectrumWidget* m_spectrumWidget;
     QPushButton* m_showWaveformButton;
+    QPushButton* m_showSpectrumButton;
 };
 
 } // namespace VideoStudio
