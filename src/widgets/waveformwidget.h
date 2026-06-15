@@ -25,6 +25,9 @@ public:
     // Set zoom level (samples per pixel)
     void setZoomLevel(double zoom);
 
+    // Set playback cursor position (for sync with player)
+    void setPlaybackCursor(double timeInSeconds);
+
     // Clear waveform
     void clear();
 
@@ -69,6 +72,10 @@ private:
     bool m_isDragging;
     int m_dragStartX;
     double m_dragStartTime;
+
+    // Playback cursor
+    double m_playbackCursorTime;  // Time in seconds for playback cursor
+    bool m_showPlaybackCursor;
 
     // Colors
     QColor m_backgroundColor;

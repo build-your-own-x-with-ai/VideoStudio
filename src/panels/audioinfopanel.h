@@ -24,6 +24,9 @@ public:
     void setAudioFile(const QString& filename);
     void clear();
 
+    // Access to monitor for main window integration
+    AudioMonitor* getAudioMonitor() { return m_monitor.get(); }
+
 private slots:
     void onStreamSelected(int index);
 

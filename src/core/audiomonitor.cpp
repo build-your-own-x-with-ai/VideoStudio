@@ -253,8 +253,7 @@ void AudioMonitor::updateSpectrum(const AudioFrameData& frameData) {
 
 void AudioMonitor::updateWaveformCursor() {
     if (m_waveformWidget) {
-        // Signal waveform to update cursor position
-        // This could be a new method: m_waveformWidget->setCursorPosition(m_currentPosition);
+        m_waveformWidget->setPlaybackCursor(m_currentPosition);
     }
 }
 

@@ -161,6 +161,26 @@ MainWindow::MainWindow(QWidget* parent)
 
     connect(m_playbackTimer, &QTimer::timeout, this, &MainWindow::onPlaybackTimer);
 
+    // Connect media player signals for audio monitoring sync
+    connect(m_mediaPlayer, &QMediaPlayer::positionChanged, this, [this](qint64 position) {
+        // Update audio monitor with current playback position
+        if (m_audioInfoPanel && m_audioInfoPanel->getAudioMonitor()) {
+            double timeInSeconds = position / 1000.0;
+            m_audioInfoPanel->getAudioMonitor()->setPlaybackPosition(timeInSeconds);
+        }
+    });
+
+    connect(m_mediaPlayer, &QMediaPlayer::playbackStateChanged, this, [this](QMediaPlayer::PlaybackState state) {
+        // Start/stop audio monitoring based on playback state
+        if (m_audioInfoPanel && m_audioInfoPanel->getAudioMonitor()) {
+            if (state == QMediaPlayer::PlayingState) {
+                m_audioInfoPanel->getAudioMonitor()->resume();
+            } else if (state == QMediaPlayer::PausedState || state == QMediaPlayer::StoppedState) {
+                m_audioInfoPanel->getAudioMonitor()->pause();
+            }
+        }
+    });
+
     // Install message handler to capture qDebug/qWarning output
     qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &msg) {
         // Use static instance instead of activeWindow

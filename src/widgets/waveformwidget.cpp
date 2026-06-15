@@ -18,6 +18,8 @@ WaveformWidget::WaveformWidget(QWidget* parent)
     , m_isDragging(false)
     , m_dragStartX(0)
     , m_dragStartTime(0.0)
+    , m_playbackCursorTime(-1.0)
+    , m_showPlaybackCursor(false)
     , m_backgroundColor(QColor(30, 30, 30))
     , m_waveformColor(QColor(100, 200, 255))
     , m_centerLineColor(QColor(80, 80, 80))
@@ -74,6 +76,12 @@ void WaveformWidget::setZoomLevel(double zoom) {
     update();
 }
 
+void WaveformWidget::setPlaybackCursor(double timeInSeconds) {
+    m_playbackCursorTime = timeInSeconds;
+    m_showPlaybackCursor = (timeInSeconds >= 0.0);
+    update();
+}
+
 void WaveformWidget::clear() {
     m_filename.clear();
     m_waveformData.clear();
@@ -81,6 +89,8 @@ void WaveformWidget::clear() {
     m_startTime = 0.0;
     m_endTime = 10.0;
     m_cursorPosition = -1;
+    m_playbackCursorTime = -1.0;
+    m_showPlaybackCursor = false;
     update();
 }
 
@@ -120,6 +130,19 @@ void WaveformWidget::paintEvent(QPaintEvent* event) {
 
     // Draw time axis
     drawTimeAxis(painter);
+
+    // Draw playback cursor (if active)
+    if (m_showPlaybackCursor && m_playbackCursorTime >= m_startTime && m_playbackCursorTime <= m_endTime) {
+        int playbackX = timeToPixel(m_playbackCursorTime);
+        painter.setPen(QPen(QColor(255, 0, 0), 3));  // Red, thicker line
+        painter.drawLine(playbackX, 0, playbackX, height() - 20);
+
+        // Draw time label
+        QString timeStr = QString::number(m_playbackCursorTime, 'f', 2) + "s";
+        painter.fillRect(playbackX - 35, 5, 70, 20, QColor(255, 0, 0, 200));
+        painter.setPen(Qt::white);
+        painter.drawText(QRect(playbackX - 35, 5, 70, 20), Qt::AlignCenter, timeStr);
+    }
 
     // Draw cursor
     if (m_cursorPosition >= 0) {
