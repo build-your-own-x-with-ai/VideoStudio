@@ -30,9 +30,9 @@ SpectrumWidget::SpectrumWidget(QWidget* parent)
 
     setMinimumHeight(100);
 
-    // Initialize magnitude spectrum
+    // Initialize magnitude spectrum to minimum (-80 dB) instead of 0
     m_magnitudeSpectrum.resize(m_fftSize / 2);
-    m_magnitudeSpectrum.fill(0.0f);
+    m_magnitudeSpectrum.fill(-80.0f);
 }
 
 SpectrumWidget::~SpectrumWidget() {
@@ -76,7 +76,7 @@ void SpectrumWidget::setFFTSize(int size) {
 
     m_fftSize = validSize;
     m_magnitudeSpectrum.resize(m_fftSize / 2);
-    m_magnitudeSpectrum.fill(0.0f);
+    m_magnitudeSpectrum.fill(-80.0f);
 
     update();
 }
@@ -128,7 +128,7 @@ void SpectrumWidget::stopAnalysis() {
 
 void SpectrumWidget::clear() {
     m_filename.clear();
-    m_magnitudeSpectrum.fill(0.0f);
+    m_magnitudeSpectrum.fill(-80.0f);
     m_waterfallData.clear();
     m_peakIndices.clear();
     update();
