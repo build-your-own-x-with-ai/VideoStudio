@@ -174,9 +174,12 @@ MainWindow::MainWindow(QWidget* parent)
         // Start/stop audio monitoring based on playback state
         if (m_audioInfoPanel && m_audioInfoPanel->getAudioMonitor()) {
             if (state == QMediaPlayer::PlayingState) {
-                m_audioInfoPanel->getAudioMonitor()->resume();
-            } else if (state == QMediaPlayer::PausedState || state == QMediaPlayer::StoppedState) {
+                // Start monitoring when playback starts
+                m_audioInfoPanel->getAudioMonitor()->start();
+            } else if (state == QMediaPlayer::PausedState) {
                 m_audioInfoPanel->getAudioMonitor()->pause();
+            } else if (state == QMediaPlayer::StoppedState) {
+                m_audioInfoPanel->getAudioMonitor()->stop();
             }
         }
     });
