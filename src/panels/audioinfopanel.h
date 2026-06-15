@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include "core/audioanalyzer.h"
+#include "core/audiomonitor.h"
 #include "widgets/waveformwidget.h"
 #include "widgets/audiolevelwidget.h"
 #include "widgets/spectrumwidget.h"
@@ -33,6 +34,7 @@ private:
 
     QString m_currentFile;
     std::unique_ptr<AudioAnalyzer> m_analyzer;
+    std::unique_ptr<AudioMonitor> m_monitor;
 
     // UI components
     QComboBox* m_streamCombo;

@@ -85,6 +85,7 @@ set(SOURCES
     src/core/compliancevalidator.cpp
     src/core/bufferanalyzer.cpp
     src/core/audioanalyzer.cpp
+    src/core/audiomonitor.cpp
     src/plugins/pluginmanager.cpp
     src/widgets/videooutput.cpp
     src/widgets/barchart.cpp

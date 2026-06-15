@@ -10,8 +10,15 @@ namespace VideoStudio {
 AudioInfoPanel::AudioInfoPanel(QWidget* parent)
     : QWidget(parent)
     , m_analyzer(std::make_unique<AudioAnalyzer>())
+    , m_monitor(std::make_unique<AudioMonitor>())
 {
     setupUI();
+
+    // Connect monitor to widgets
+    m_monitor->setLevelMeterLeft(m_levelMeterLeft);
+    m_monitor->setLevelMeterRight(m_levelMeterRight);
+    m_monitor->setSpectrumWidget(m_spectrumWidget);
+    m_monitor->setWaveformWidget(m_waveformWidget);
 }
 
 AudioInfoPanel::~AudioInfoPanel() = default;
@@ -108,11 +115,17 @@ void AudioInfoPanel::setupUI() {
     QHBoxLayout* spectrumControls = new QHBoxLayout();
 
     QPushButton* startButton = new QPushButton(tr("Start Analysis"), this);
-    connect(startButton, &QPushButton::clicked, m_spectrumWidget, &SpectrumWidget::startAnalysis);
+    connect(startButton, &QPushButton::clicked, this, [this]() {
+        m_spectrumWidget->startAnalysis();
+        m_monitor->start();
+    });
     spectrumControls->addWidget(startButton);
 
     QPushButton* stopButton = new QPushButton(tr("Stop"), this);
-    connect(stopButton, &QPushButton::clicked, m_spectrumWidget, &SpectrumWidget::stopAnalysis);
+    connect(stopButton, &QPushButton::clicked, this, [this]() {
+        m_spectrumWidget->stopAnalysis();
+        m_monitor->stop();
+    });
     spectrumControls->addWidget(stopButton);
 
     QComboBox* modeCombo = new QComboBox(this);
@@ -164,6 +177,9 @@ void AudioInfoPanel::setAudioFile(const QString& filename) {
         // Load spectrum analyzer
         m_spectrumWidget->setAudioFile(filename);
 
+        // Setup audio monitor for real-time updates
+        m_monitor->setAudioFile(filename);
+
         m_statusLabel->setText(tr("Audio file loaded successfully"));
     } else {
         m_statusLabel->setText(tr("Failed to load audio file"));
@@ -175,6 +191,9 @@ void AudioInfoPanel::clear() {
     m_infoTable->setRowCount(0);
     m_statusLabel->clear();
     m_currentFile.clear();
+
+    // Stop monitoring
+    m_monitor->stop();
 
     // Clear visualization widgets
     m_waveformWidget->clear();
