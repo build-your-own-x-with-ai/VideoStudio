@@ -103,6 +103,8 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 
 ### Audio
 
+![Audio](docs/screenshots/audio.png)
+
 ![Audio](docs/screenshots/audio.gif)
 
 ### Theme

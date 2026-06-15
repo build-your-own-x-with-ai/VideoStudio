@@ -54,9 +54,10 @@ void AudioInfoPanel::setupUI() {
     m_infoTable->setAlternatingRowColors(true);
     m_infoTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_infoTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_infoTable->setMinimumHeight(200);  // Set minimum height to show more rows
 
     infoLayout->addWidget(m_infoTable);
-    mainLayout->addWidget(infoGroup);
+    mainLayout->addWidget(infoGroup, 2);  // Give it stretch factor of 2
 
     // Waveform visualization
     QGroupBox* waveformGroup = new QGroupBox(tr("Waveform"), this);
@@ -98,7 +99,7 @@ void AudioInfoPanel::setupUI() {
     levelLayout->addLayout(rightLayout);
     levelLayout->addStretch();
 
-    mainLayout->addWidget(levelGroup);
+    mainLayout->addWidget(levelGroup, 1);  // Less stretch than info table
 
     // Show waveform button
     m_showWaveformButton = new QPushButton(tr("Show Waveform"), this);
@@ -147,8 +148,6 @@ void AudioInfoPanel::setupUI() {
     m_statusLabel = new QLabel(this);
     m_statusLabel->setStyleSheet("QLabel { padding: 5px; }");
     mainLayout->addWidget(m_statusLabel);
-
-    mainLayout->addStretch();
 }
 
 void AudioInfoPanel::setAudioFile(const QString& filename) {
