@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QHeaderView>
+#include <QPushButton>
 
 namespace VideoStudio {
 
@@ -46,6 +47,54 @@ void AudioInfoPanel::setupUI() {
     infoLayout->addWidget(m_infoTable);
     mainLayout->addWidget(infoGroup);
 
+    // Waveform visualization
+    QGroupBox* waveformGroup = new QGroupBox(tr("Waveform"), this);
+    QVBoxLayout* waveformLayout = new QVBoxLayout(waveformGroup);
+
+    m_waveformWidget = new WaveformWidget(this);
+    m_waveformWidget->setMinimumHeight(100);
+    waveformLayout->addWidget(m_waveformWidget);
+
+    mainLayout->addWidget(waveformGroup);
+    waveformGroup->hide(); // Hidden by default
+
+    // Audio level meters
+    QGroupBox* levelGroup = new QGroupBox(tr("Audio Levels"), this);
+    QHBoxLayout* levelLayout = new QHBoxLayout(levelGroup);
+
+    // Left channel meter (or mono)
+    QVBoxLayout* leftLayout = new QVBoxLayout();
+    QLabel* leftLabel = new QLabel(tr("L / Mono"), this);
+    leftLabel->setAlignment(Qt::AlignCenter);
+    m_levelMeterLeft = new AudioLevelWidget(this);
+    m_levelMeterLeft->setOrientation(Qt::Vertical);
+    m_levelMeterLeft->setFixedWidth(60);
+    leftLayout->addWidget(leftLabel);
+    leftLayout->addWidget(m_levelMeterLeft, 1);
+
+    // Right channel meter
+    QVBoxLayout* rightLayout = new QVBoxLayout();
+    QLabel* rightLabel = new QLabel(tr("R"), this);
+    rightLabel->setAlignment(Qt::AlignCenter);
+    m_levelMeterRight = new AudioLevelWidget(this);
+    m_levelMeterRight->setOrientation(Qt::Vertical);
+    m_levelMeterRight->setFixedWidth(60);
+    rightLayout->addWidget(rightLabel);
+    rightLayout->addWidget(m_levelMeterRight, 1);
+    m_levelMeterRight->hide(); // Hide for mono audio
+
+    levelLayout->addLayout(leftLayout);
+    levelLayout->addLayout(rightLayout);
+    levelLayout->addStretch();
+
+    mainLayout->addWidget(levelGroup);
+
+    // Show waveform button
+    m_showWaveformButton = new QPushButton(tr("Show Waveform"), this);
+    m_showWaveformButton->setCheckable(true);
+    connect(m_showWaveformButton, &QPushButton::toggled, waveformGroup, &QWidget::setVisible);
+    mainLayout->addWidget(m_showWaveformButton);
+
     // Status label
     m_statusLabel = new QLabel(this);
     m_statusLabel->setStyleSheet("QLabel { padding: 5px; }");
@@ -65,6 +114,10 @@ void AudioInfoPanel::setAudioFile(const QString& filename) {
     // Open file and populate stream list
     if (m_analyzer->openFile(filename)) {
         populateStreamList();
+
+        // Load waveform
+        m_waveformWidget->setAudioFile(filename);
+
         m_statusLabel->setText(tr("Audio file loaded successfully"));
     } else {
         m_statusLabel->setText(tr("Failed to load audio file"));
@@ -76,6 +129,13 @@ void AudioInfoPanel::clear() {
     m_infoTable->setRowCount(0);
     m_statusLabel->clear();
     m_currentFile.clear();
+
+    // Clear visualization widgets
+    m_waveformWidget->clear();
+    m_levelMeterLeft->setPeakLevel(0.0f);
+    m_levelMeterLeft->setRMSLevel(0.0f);
+    m_levelMeterRight->setPeakLevel(0.0f);
+    m_levelMeterRight->setRMSLevel(0.0f);
 }
 
 void AudioInfoPanel::populateStreamList() {

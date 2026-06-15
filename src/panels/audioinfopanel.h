@@ -5,7 +5,10 @@
 #include <QTableWidget>
 #include <QComboBox>
 #include <QLabel>
+#include <QPushButton>
 #include "core/audioanalyzer.h"
+#include "widgets/waveformwidget.h"
+#include "widgets/audiolevelwidget.h"
 
 namespace VideoStudio {
 
@@ -34,6 +37,12 @@ private:
     QComboBox* m_streamCombo;
     QTableWidget* m_infoTable;
     QLabel* m_statusLabel;
+
+    // Visualization widgets
+    WaveformWidget* m_waveformWidget;
+    AudioLevelWidget* m_levelMeterLeft;
+    AudioLevelWidget* m_levelMeterRight;
+    QPushButton* m_showWaveformButton;
 };
 
 } // namespace VideoStudio

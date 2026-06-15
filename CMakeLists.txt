@@ -91,6 +91,8 @@ set(SOURCES
     src/widgets/thumbnailbar.cpp
     src/widgets/areachart.cpp
     src/widgets/gopviewer.cpp
+    src/widgets/waveformwidget.cpp
+    src/widgets/audiolevelwidget.cpp
     src/widgets/packetview.cpp
     src/widgets/nalunitview.cpp
     src/widgets/logviewer.cpp
