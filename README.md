@@ -1,5 +1,7 @@
 # VideoStudio
 
+[English](README.md) | [简体中文](README_zh_CN.md)
+
 Professional video stream analysis tool built with C++ Qt and FFmpeg.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)

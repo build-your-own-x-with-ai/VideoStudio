@@ -1,5 +1,7 @@
 # VideoStudio
 
+[English](README.md) | [简体中文](README_zh_CN.md)
+
 使用 C++ Qt 和 FFmpeg 构建的专业视频流分析工具。
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
