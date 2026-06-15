@@ -20,7 +20,7 @@ AudioMonitor::AudioMonitor(QObject* parent)
     , m_currentPosition(0.0)
     , m_playbackRate(1.0)
     , m_updateInterval(50)
-    , m_fftSize(2048)
+    , m_fftSize(1024)  // Changed from 2048 to match typical frame size
 {
     m_updateTimer = new QTimer(this);
     connect(m_updateTimer, &QTimer::timeout, this, &AudioMonitor::processAudioFrame);

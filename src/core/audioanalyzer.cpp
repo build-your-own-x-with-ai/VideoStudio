@@ -423,7 +423,10 @@ AudioLevelInfo AudioAnalyzer::calculateLevel(const QVector<float>& samples) {
 QVector<float> AudioAnalyzer::calculateSpectrum(const QVector<float>& samples, int fftSize) {
     QVector<float> spectrum;
 
+    qDebug() << "calculateSpectrum: samples.size()=" << samples.size() << "fftSize=" << fftSize;
+
     if (samples.isEmpty() || fftSize < 2) {
+        qDebug() << "calculateSpectrum: early return - samples empty or fftSize < 2";
         return spectrum;
     }
 
@@ -434,10 +437,15 @@ QVector<float> AudioAnalyzer::calculateSpectrum(const QVector<float>& samples, i
     }
     fftSize = actualFFTSize;
 
+    qDebug() << "calculateSpectrum: adjusted fftSize=" << fftSize;
+
     // Need at least fftSize samples
     if (samples.size() < fftSize) {
+        qDebug() << "calculateSpectrum: not enough samples - need" << fftSize << "have" << samples.size();
         return spectrum;
     }
+
+    qDebug() << "calculateSpectrum: performing FFT...";
 
     // Prepare FFT input (with Hanning window)
     QVector<float> real(fftSize);
