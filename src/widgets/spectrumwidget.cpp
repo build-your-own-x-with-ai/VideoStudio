@@ -139,6 +139,8 @@ void SpectrumWidget::updateSpectrumData(const QVector<float>& magnitudeSpectrum)
         return;
     }
 
+    qDebug() << "SpectrumWidget: Received spectrum with" << magnitudeSpectrum.size() << "bins";
+
     // Update magnitude spectrum from external source
     m_magnitudeSpectrum = magnitudeSpectrum;
 

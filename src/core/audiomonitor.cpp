@@ -230,7 +230,7 @@ void AudioMonitor::updateLevelMeters(const AudioFrameData& frameData) {
 }
 
 void AudioMonitor::updateSpectrum(const AudioFrameData& frameData) {
-    if (!m_spectrumWidget || frameData.samples.isEmpty()) {
+    if (frameData.samples.isEmpty()) {
         return;
     }
 
@@ -248,7 +248,10 @@ void AudioMonitor::updateSpectrum(const AudioFrameData& frameData) {
     // Calculate spectrum
     QVector<float> spectrum = m_analyzer->calculateSpectrum(samples, m_fftSize);
 
+    // Emit signal for connected widgets
     emit spectrumUpdated(spectrum);
+
+    qDebug() << "AudioMonitor: Emitted spectrum with" << spectrum.size() << "bins";
 }
 
 void AudioMonitor::updateWaveformCursor() {
