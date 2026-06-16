@@ -730,6 +730,14 @@ Calculating VMAF (this may take several minutes)...</source>
         <translation>显示频谱</translation>
     </message>
     <message>
+        <source>LUFS Loudness Meter</source>
+        <translation>LUFS 响度表</translation>
+    </message>
+    <message>
+        <source>Show LUFS Meter</source>
+        <translation>显示 LUFS 响度表</translation>
+    </message>
+    <message>
         <source>Stream Index</source>
         <translation>流索引</translation>
     </message>
@@ -776,6 +784,29 @@ Calculating VMAF (this may take several minutes)...</source>
     <message>
         <source>Failed to load audio file</source>
         <translation>加载音频文件失败</translation>
+    </message>
+</context>
+<context>
+    <name>VideoStudio::LUFSWidget</name>
+    <message>
+        <source>Integrated:</source>
+        <translation>综合响度：</translation>
+    </message>
+    <message>
+        <source>Short-term (3s):</source>
+        <translation>短期响度 (3秒)：</translation>
+    </message>
+    <message>
+        <source>Momentary (400ms):</source>
+        <translation>瞬时响度 (400毫秒)：</translation>
+    </message>
+    <message>
+        <source>Loudness Range:</source>
+        <translation>响度范围：</translation>
+    </message>
+    <message>
+        <source>True Peak:</source>
+        <translation>真实峰值：</translation>
     </message>
 </context>
 <context>

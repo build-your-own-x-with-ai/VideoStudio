@@ -56,6 +56,7 @@ signals:
     void levelUpdated(float peakLeft, float peakRight, float rmsLeft, float rmsRight);
     void spectrumUpdated(const QVector<float>& spectrum);
     void positionUpdated(double timeInSeconds);
+    void audioSamplesReady(const QVector<float>& leftChannel, const QVector<float>& rightChannel, int sampleRate);
     void error(const QString& message);
 
 private slots:

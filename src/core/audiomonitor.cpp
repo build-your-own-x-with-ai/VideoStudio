@@ -160,6 +160,28 @@ void AudioMonitor::processAudioFrame() {
     updateSpectrum(frameData);
     updateWaveformCursor();
 
+    // Emit audio samples for LUFS measurement
+    AudioStreamInfo info = m_analyzer->getStreamInfo();
+    if (info.channels == 2 && !frameData.samples.isEmpty()) {
+        // Split interleaved stereo samples into left/right channels
+        QVector<float> leftChannel;
+        QVector<float> rightChannel;
+        leftChannel.reserve(frameData.samples.size() / 2);
+        rightChannel.reserve(frameData.samples.size() / 2);
+
+        for (int i = 0; i < frameData.samples.size(); i += 2) {
+            leftChannel.append(frameData.samples[i]);
+            if (i + 1 < frameData.samples.size()) {
+                rightChannel.append(frameData.samples[i + 1]);
+            }
+        }
+
+        emit audioSamplesReady(leftChannel, rightChannel, info.sampleRate);
+    } else if (info.channels == 1 && !frameData.samples.isEmpty()) {
+        // Mono - duplicate to both channels
+        emit audioSamplesReady(frameData.samples, frameData.samples, info.sampleRate);
+    }
+
     emit positionUpdated(m_currentPosition);
 }
 

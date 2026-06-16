@@ -95,6 +95,7 @@ set(SOURCES
     src/widgets/waveformwidget.cpp
     src/widgets/audiolevelwidget.cpp
     src/widgets/spectrumwidget.cpp
+    src/widgets/lufswidget.cpp
     src/widgets/packetview.cpp
     src/widgets/nalunitview.cpp
     src/widgets/logviewer.cpp

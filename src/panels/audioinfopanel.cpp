@@ -23,6 +23,14 @@ AudioInfoPanel::AudioInfoPanel(QWidget* parent)
     // Connect monitor signals to spectrum widget
     connect(m_monitor.get(), &AudioMonitor::spectrumUpdated,
             m_spectrumWidget, &SpectrumWidget::updateSpectrumData);
+
+    // Connect monitor signals to LUFS widget
+    connect(m_monitor.get(), &AudioMonitor::audioSamplesReady,
+            this, [this](const QVector<float>& left, const QVector<float>& right, int sampleRate) {
+                std::vector<float> leftVec(left.begin(), left.end());
+                std::vector<float> rightVec(right.begin(), right.end());
+                m_lufsWidget->updateLoudness(leftVec, rightVec, sampleRate);
+            });
 }
 
 AudioInfoPanel::~AudioInfoPanel() = default;
@@ -143,6 +151,22 @@ void AudioInfoPanel::setupUI() {
     m_showSpectrumButton->setCheckable(true);
     connect(m_showSpectrumButton, &QPushButton::toggled, spectrumGroup, &QWidget::setVisible);
     mainLayout->addWidget(m_showSpectrumButton);
+
+    // LUFS Loudness Meter
+    QGroupBox* lufsGroup = new QGroupBox(tr("LUFS Loudness Meter"), this);
+    QVBoxLayout* lufsLayout = new QVBoxLayout(lufsGroup);
+
+    m_lufsWidget = new LUFSWidget(this);
+    lufsLayout->addWidget(m_lufsWidget);
+
+    mainLayout->addWidget(lufsGroup);
+    lufsGroup->hide(); // Hidden by default
+
+    // Show LUFS button
+    m_showLUFSButton = new QPushButton(tr("Show LUFS Meter"), this);
+    m_showLUFSButton->setCheckable(true);
+    connect(m_showLUFSButton, &QPushButton::toggled, lufsGroup, &QWidget::setVisible);
+    mainLayout->addWidget(m_showLUFSButton);
 
     // Status label
     m_statusLabel = new QLabel(this);
