@@ -79,6 +79,41 @@ void WaveformWidget::setZoomLevel(double zoom) {
 void WaveformWidget::setPlaybackCursor(double timeInSeconds) {
     m_playbackCursorTime = timeInSeconds;
     m_showPlaybackCursor = (timeInSeconds >= 0.0);
+
+    // Auto-scroll to follow playback cursor
+    if (m_showPlaybackCursor) {
+        double viewDuration = m_endTime - m_startTime;
+
+        // If cursor is outside visible range, scroll to center it
+        if (timeInSeconds < m_startTime || timeInSeconds > m_endTime) {
+            m_startTime = timeInSeconds - viewDuration / 2.0;
+            m_endTime = timeInSeconds + viewDuration / 2.0;
+
+            // Clamp to valid range
+            if (m_startTime < 0.0) {
+                m_startTime = 0.0;
+                m_endTime = viewDuration;
+            }
+            if (m_endTime > m_duration) {
+                m_endTime = m_duration;
+                m_startTime = m_duration - viewDuration;
+                if (m_startTime < 0.0) m_startTime = 0.0;
+            }
+        }
+        // If cursor is near the end of visible range, scroll forward
+        else if (timeInSeconds > m_startTime + viewDuration * 0.8) {
+            double shift = viewDuration * 0.2;
+            m_startTime += shift;
+            m_endTime += shift;
+
+            if (m_endTime > m_duration) {
+                m_endTime = m_duration;
+                m_startTime = m_duration - viewDuration;
+                if (m_startTime < 0.0) m_startTime = 0.0;
+            }
+        }
+    }
+
     update();
 }
 

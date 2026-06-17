@@ -55,7 +55,7 @@ void PhaseMeterWidget::updatePhase(const std::vector<float>& leftChannel,
     }
 
     // Add new points to buffer (M/S encoding)
-    for (size_t i = 0; i < numSamples; i += 16) {  // Downsample for performance
+    for (size_t i = 0; i < numSamples; i += 4) {  // Changed from 16 to 4 for more points
         float left = leftChannel[i];
         float right = rightChannel[i];
 
@@ -170,11 +170,12 @@ void PhaseMeterWidget::paintEvent(QPaintEvent* event) {
 
             // Fade older points
             float alpha = static_cast<float>(i) / numPoints;
+            alpha = 0.3f + alpha * 0.7f;  // Min alpha 0.3 instead of 0.0
             QColor color = m_pointColor;
             color.setAlphaF(alpha * m_pointAlpha);
 
             painter.setBrush(color);
-            painter.drawEllipse(QPointF(x, y), 2, 2);
+            painter.drawEllipse(QPointF(x, y), 3, 3);  // Increased from 2 to 3
         }
     }
 
