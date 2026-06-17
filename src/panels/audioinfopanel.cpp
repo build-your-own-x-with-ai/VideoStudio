@@ -4,6 +4,7 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QPushButton>
+#include <QScrollArea>
 
 namespace VideoStudio {
 
@@ -37,17 +38,25 @@ AudioInfoPanel::AudioInfoPanel(QWidget* parent)
 AudioInfoPanel::~AudioInfoPanel() = default;
 
 void AudioInfoPanel::setupUI() {
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    // Create scroll area for all content
+    QScrollArea* scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    // Create container widget for all groups
+    QWidget* container = new QWidget();
+    QVBoxLayout* mainLayout = new QVBoxLayout(container);
     mainLayout->setContentsMargins(5, 5, 5, 5);
     mainLayout->setSpacing(3);  // Reduce spacing between widgets
 
     // Stream selection (collapsible)
-    QGroupBox* streamGroup = new QGroupBox(tr("Audio Streams"), this);
+    QGroupBox* streamGroup = new QGroupBox(tr("Audio Streams"), container);
     streamGroup->setCheckable(true);
     streamGroup->setChecked(true);
     QVBoxLayout* streamLayout = new QVBoxLayout(streamGroup);
 
-    m_streamCombo = new QComboBox(this);
+    m_streamCombo = new QComboBox(container);
     connect(m_streamCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &AudioInfoPanel::onStreamSelected);
     streamLayout->addWidget(m_streamCombo);
@@ -174,9 +183,17 @@ void AudioInfoPanel::setupUI() {
     mainLayout->addWidget(phaseGroup);
 
     // Status label
-    m_statusLabel = new QLabel(this);
+    m_statusLabel = new QLabel(container);
     m_statusLabel->setStyleSheet("QLabel { padding: 5px; }");
     mainLayout->addWidget(m_statusLabel);
+
+    // Set the container as scroll area's widget
+    scrollArea->setWidget(container);
+
+    // Set scroll area as this panel's main widget
+    QVBoxLayout* panelLayout = new QVBoxLayout(this);
+    panelLayout->setContentsMargins(0, 0, 0, 0);
+    panelLayout->addWidget(scrollArea);
 }
 
 void AudioInfoPanel::setAudioFile(const QString& filename) {
