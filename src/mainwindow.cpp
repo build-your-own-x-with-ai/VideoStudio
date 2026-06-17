@@ -1084,6 +1084,12 @@ void MainWindow::loadFile(const QString& fileName) {
         qDebug() << message;
     }, Qt::QueuedConnection);
 
+    // Connect cancel button to interrupt loading
+    connect(progressDialog, &QProgressDialog::canceled, this, [this, progressDialog]() {
+        qDebug() << "User cancelled file loading";
+        progressDialog->setLabelText(tr("Cancelling..."));
+    });
+
     // Try to open with video decoder in background
     QFuture<bool> decoderFuture = QtConcurrent::run([this, fileName]() {
         return m_decoder->openFile(fileName);
@@ -1097,6 +1103,15 @@ void MainWindow::loadFile(const QString& fileName) {
         // Disconnect decoder signals
         disconnect(m_decoder.get(), &VideoDecoder::indexingProgress, nullptr, nullptr);
         disconnect(m_decoder.get(), &VideoDecoder::logMessage, nullptr, nullptr);
+
+        // Check if user cancelled
+        if (progressDialog->wasCanceled()) {
+            qDebug() << "File loading was cancelled by user";
+            progressDialog->close();
+            progressDialog->deleteLater();
+            m_statusLabel->setText(tr("Loading cancelled"));
+            return;
+        }
 
         if (decoderSuccess) {
             qDebug() << "Video decoder opened successfully, loading preview...";
