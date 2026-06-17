@@ -89,9 +89,47 @@ void AudioInfoPanel::setupUI() {
     waveformGroup->setChecked(false);  // Hidden by default
     QVBoxLayout* waveformLayout = new QVBoxLayout(waveformGroup);
 
-    m_waveformWidget = new WaveformWidget(this);
+    m_waveformWidget = new WaveformWidget(container);
     m_waveformWidget->setMinimumHeight(80);  // Reduced from 100
     waveformLayout->addWidget(m_waveformWidget);
+
+    // Waveform controls
+    QHBoxLayout* waveformControls = new QHBoxLayout();
+    QPushButton* zoomInBtn = new QPushButton(tr("Zoom In"), container);
+    QPushButton* zoomOutBtn = new QPushButton(tr("Zoom Out"), container);
+    QPushButton* zoomFitBtn = new QPushButton(tr("Fit All"), container);
+
+    zoomInBtn->setMaximumWidth(80);
+    zoomOutBtn->setMaximumWidth(80);
+    zoomFitBtn->setMaximumWidth(80);
+
+    connect(zoomInBtn, &QPushButton::clicked, [this]() {
+        double timeRange = m_waveformWidget->getEndTime() - m_waveformWidget->getStartTime();
+        double newRange = timeRange * 0.7;  // Zoom in 30%
+        double center = (m_waveformWidget->getStartTime() + m_waveformWidget->getEndTime()) / 2.0;
+        m_waveformWidget->setTimeRange(center - newRange/2, center + newRange/2);
+    });
+
+    connect(zoomOutBtn, &QPushButton::clicked, [this]() {
+        double timeRange = m_waveformWidget->getEndTime() - m_waveformWidget->getStartTime();
+        double newRange = timeRange * 1.5;  // Zoom out 50%
+        double center = (m_waveformWidget->getStartTime() + m_waveformWidget->getEndTime()) / 2.0;
+        m_waveformWidget->setTimeRange(center - newRange/2, center + newRange/2);
+    });
+
+    connect(zoomFitBtn, &QPushButton::clicked, [this]() {
+        m_waveformWidget->setTimeRange(0.0, m_waveformWidget->getDuration());
+    });
+
+    waveformControls->addWidget(zoomInBtn);
+    waveformControls->addWidget(zoomOutBtn);
+    waveformControls->addWidget(zoomFitBtn);
+    waveformControls->addStretch();
+    QLabel* zoomHint = new QLabel(tr("Tip: Ctrl+Wheel to zoom"), container);
+    zoomHint->setStyleSheet("QLabel { color: gray; font-size: 10px; }");
+    waveformControls->addWidget(zoomHint);
+
+    waveformLayout->addLayout(waveformControls);
 
     mainLayout->addWidget(waveformGroup);
 

@@ -746,6 +746,22 @@ Calculating VMAF (this may take several minutes)...</source>
         <translation>显示相位表</translation>
     </message>
     <message>
+        <source>Zoom In</source>
+        <translation>放大</translation>
+    </message>
+    <message>
+        <source>Zoom Out</source>
+        <translation>缩小</translation>
+    </message>
+    <message>
+        <source>Fit All</source>
+        <translation>适应全部</translation>
+    </message>
+    <message>
+        <source>Tip: Ctrl+Wheel to zoom</source>
+        <translation>提示：Ctrl+滚轮缩放</translation>
+    </message>
+    <message>
         <source>Stream Index</source>
         <translation>流索引</translation>
     </message>

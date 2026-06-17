@@ -150,6 +150,9 @@ void WaveformWidget::generateWaveformData() {
 
     // Get downsampled waveform data
     m_waveformData = m_analyzer->getWaveformData(m_startTime, m_endTime, numSamples);
+
+    qDebug() << "Generated waveform:" << m_waveformData.size() << "samples for range"
+             << m_startTime << "-" << m_endTime << "(requested" << numSamples << ")";
 }
 
 void WaveformWidget::paintEvent(QPaintEvent* event) {
@@ -312,38 +315,45 @@ void WaveformWidget::mouseMoveEvent(QMouseEvent* event) {
 }
 
 void WaveformWidget::wheelEvent(QWheelEvent* event) {
-    // Zoom in/out
-    double zoomFactor = event->angleDelta().y() > 0 ? 0.9 : 1.1;
+    // Check if we should handle zoom or pass to parent scroll area
+    // If Ctrl/Cmd is pressed, zoom. Otherwise let parent scroll
+    if (event->modifiers() & Qt::ControlModifier) {
+        // Zoom in/out with Ctrl+Wheel
+        double zoomFactor = event->angleDelta().y() > 0 ? 0.9 : 1.1;
 
-    double timeRange = m_endTime - m_startTime;
-    double newTimeRange = timeRange * zoomFactor;
+        double timeRange = m_endTime - m_startTime;
+        double newTimeRange = timeRange * zoomFactor;
 
-    // Clamp time range
-    if (newTimeRange < 0.1) newTimeRange = 0.1;
-    if (newTimeRange > m_duration) newTimeRange = m_duration;
+        // Clamp time range
+        if (newTimeRange < 0.1) newTimeRange = 0.1;
+        if (newTimeRange > m_duration) newTimeRange = m_duration;
 
-    // Zoom around cursor position
-    QPointF pos = event->position();
-    double cursorTime = pixelToTime(pos.x());
-    double ratio = (cursorTime - m_startTime) / timeRange;
+        // Zoom around cursor position
+        QPointF pos = event->position();
+        double cursorTime = pixelToTime(pos.x());
+        double ratio = (cursorTime - m_startTime) / timeRange;
 
-    double newStartTime = cursorTime - newTimeRange * ratio;
-    double newEndTime = newStartTime + newTimeRange;
+        double newStartTime = cursorTime - newTimeRange * ratio;
+        double newEndTime = newStartTime + newTimeRange;
 
-    // Clamp to valid range
-    if (newStartTime < 0.0) {
-        newStartTime = 0.0;
-        newEndTime = newTimeRange;
+        // Clamp to valid range
+        if (newStartTime < 0.0) {
+            newStartTime = 0.0;
+            newEndTime = newTimeRange;
+        }
+        if (newEndTime > m_duration) {
+            newEndTime = m_duration;
+            newStartTime = m_duration - newTimeRange;
+        }
+
+        setTimeRange(newStartTime, newEndTime);
+        emit timeRangeChanged(m_startTime, m_endTime);
+
+        event->accept();
+    } else {
+        // Pass to parent for scrolling
+        event->ignore();
     }
-    if (newEndTime > m_duration) {
-        newEndTime = m_duration;
-        newStartTime = m_duration - newTimeRange;
-    }
-
-    setTimeRange(newStartTime, newEndTime);
-    emit timeRangeChanged(m_startTime, m_endTime);
-
-    event->accept();
 }
 
 double WaveformWidget::pixelToTime(int x) const {

@@ -28,6 +28,11 @@ public:
     // Set playback cursor position (for sync with player)
     void setPlaybackCursor(double timeInSeconds);
 
+    // Getters for current state
+    double getStartTime() const { return m_startTime; }
+    double getEndTime() const { return m_endTime; }
+    double getDuration() const { return m_duration; }
+
     // Clear waveform
     void clear();
 
