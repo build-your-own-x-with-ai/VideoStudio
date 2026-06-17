@@ -83,6 +83,7 @@ void WaveformWidget::setPlaybackCursor(double timeInSeconds) {
     // Auto-scroll to follow playback cursor
     if (m_showPlaybackCursor) {
         double viewDuration = m_endTime - m_startTime;
+        bool needsRegenerate = false;
 
         // If cursor is outside visible range, scroll to center it
         if (timeInSeconds < m_startTime || timeInSeconds > m_endTime) {
@@ -99,6 +100,7 @@ void WaveformWidget::setPlaybackCursor(double timeInSeconds) {
                 m_startTime = m_duration - viewDuration;
                 if (m_startTime < 0.0) m_startTime = 0.0;
             }
+            needsRegenerate = true;
         }
         // If cursor is near the end of visible range, scroll forward
         else if (timeInSeconds > m_startTime + viewDuration * 0.6) {
@@ -111,6 +113,12 @@ void WaveformWidget::setPlaybackCursor(double timeInSeconds) {
                 m_startTime = m_duration - viewDuration;
                 if (m_startTime < 0.0) m_startTime = 0.0;
             }
+            needsRegenerate = true;
+        }
+
+        // Regenerate waveform data when view changes
+        if (needsRegenerate) {
+            generateWaveformData();
         }
     }
 
