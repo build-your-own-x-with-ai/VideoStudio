@@ -101,8 +101,8 @@ void WaveformWidget::setPlaybackCursor(double timeInSeconds) {
             }
         }
         // If cursor is near the end of visible range, scroll forward
-        else if (timeInSeconds > m_startTime + viewDuration * 0.8) {
-            double shift = viewDuration * 0.2;
+        else if (timeInSeconds > m_startTime + viewDuration * 0.6) {
+            double shift = viewDuration * 0.3;
             m_startTime += shift;
             m_endTime += shift;
 
