@@ -26,7 +26,9 @@ PhaseMeterWidget::PhaseMeterWidget(QWidget* parent)
     m_correlationLabel->setStyleSheet("QLabel { font-size: 12px; padding: 5px; }");
     layout->addWidget(m_correlationLabel);
 
-    setMinimumSize(300, 300);
+    // Set size policy to maintain aspect ratio
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    setMinimumSize(300, 300);  // Minimum square size
 }
 
 void PhaseMeterWidget::updatePhase(const std::vector<float>& leftChannel,
@@ -128,7 +130,7 @@ void PhaseMeterWidget::paintEvent(QPaintEvent* event) {
 
     int centerX = drawRect.center().x();
     int centerY = drawRect.center().y();
-    int radius = std::min(drawRect.width(), drawRect.height()) / 2 - 20;
+    int radius = std::min(drawRect.width(), drawRect.height()) / 2 - 40;  // Increased margin from 20 to 40
 
     // Draw circular grid
     painter.setPen(QPen(m_gridColor, 1));
@@ -175,14 +177,14 @@ void PhaseMeterWidget::paintEvent(QPaintEvent* event) {
             color.setAlphaF(alpha * m_pointAlpha);
 
             painter.setBrush(color);
-            painter.drawEllipse(QPointF(x, y), 3, 3);  // Increased from 2 to 3
+            painter.drawEllipse(QPointF(x, y), 5, 5);  // Increased from 3 to 5
         }
     }
 
     // Draw center dot
     painter.setPen(Qt::NoPen);
     painter.setBrush(m_centerColor);
-    painter.drawEllipse(QPointF(centerX, centerY), 3, 3);
+    painter.drawEllipse(QPointF(centerX, centerY), 5, 5);  // Increased from 3 to 5
 }
 
 } // namespace VideoStudio

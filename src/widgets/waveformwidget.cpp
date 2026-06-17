@@ -52,9 +52,9 @@ void WaveformWidget::setAudioFile(const QString& filename, int streamIndex) {
     AudioStreamInfo info = m_analyzer->getStreamInfo();
     m_duration = info.duration / 1000000.0; // Convert to seconds
 
-    // Set initial time range to show first 10 seconds or entire file
+    // Set initial time range to show entire file
     m_startTime = 0.0;
-    m_endTime = qMin(10.0, m_duration);
+    m_endTime = m_duration;
 
     // Generate waveform data
     generateWaveformData();
@@ -169,6 +169,16 @@ void WaveformWidget::paintEvent(QPaintEvent* event) {
         painter.setPen(Qt::gray);
         painter.drawText(rect(), Qt::AlignCenter, tr("No audio data"));
         return;
+    }
+
+    // Debug: print current time range
+    static double lastStartTime = -1.0;
+    static double lastEndTime = -1.0;
+    if (m_startTime != lastStartTime || m_endTime != lastEndTime) {
+        qDebug() << "paintEvent: drawing range" << m_startTime << "-" << m_endTime
+                 << "samples:" << m_waveformData.size();
+        lastStartTime = m_startTime;
+        lastEndTime = m_endTime;
     }
 
     // Draw waveform

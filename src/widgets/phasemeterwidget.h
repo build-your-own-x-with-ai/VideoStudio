@@ -25,6 +25,10 @@ public:
     // Get current correlation
     double getCorrelation() const { return m_correlation; }
 
+    // Maintain square aspect ratio
+    bool hasHeightForWidth() const override { return true; }
+    int heightForWidth(int width) const override { return width; }
+
 protected:
     void paintEvent(QPaintEvent* event) override;
 

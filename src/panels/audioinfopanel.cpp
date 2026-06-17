@@ -61,6 +61,15 @@ void AudioInfoPanel::setupUI() {
             this, &AudioInfoPanel::onStreamSelected);
     streamLayout->addWidget(m_streamCombo);
 
+    // Connect toggle to hide/show content
+    connect(streamGroup, &QGroupBox::toggled, [streamLayout](bool checked) {
+        for (int i = 0; i < streamLayout->count(); ++i) {
+            if (QWidget* widget = streamLayout->itemAt(i)->widget()) {
+                widget->setVisible(checked);
+            }
+        }
+    });
+
     mainLayout->addWidget(streamGroup);
 
     // Audio stream information table (collapsible)
@@ -81,12 +90,22 @@ void AudioInfoPanel::setupUI() {
     m_infoTable->setMaximumHeight(200);  // Add maximum height
 
     infoLayout->addWidget(m_infoTable);
+
+    // Connect toggle to hide/show content
+    connect(infoGroup, &QGroupBox::toggled, [infoLayout](bool checked) {
+        for (int i = 0; i < infoLayout->count(); ++i) {
+            if (QWidget* widget = infoLayout->itemAt(i)->widget()) {
+                widget->setVisible(checked);
+            }
+        }
+    });
+
     mainLayout->addWidget(infoGroup, 1);  // Reduced stretch factor
 
     // Waveform visualization (collapsible)
     QGroupBox* waveformGroup = new QGroupBox(tr("Waveform"), this);
     waveformGroup->setCheckable(true);
-    waveformGroup->setChecked(false);  // Hidden by default
+    waveformGroup->setChecked(true);  // Enabled by default
     QVBoxLayout* waveformLayout = new QVBoxLayout(waveformGroup);
 
     m_waveformWidget = new WaveformWidget(container);
@@ -95,18 +114,35 @@ void AudioInfoPanel::setupUI() {
 
     // Waveform controls
     QHBoxLayout* waveformControls = new QHBoxLayout();
-    QPushButton* zoomInBtn = new QPushButton(tr("Zoom In"), container);
-    QPushButton* zoomOutBtn = new QPushButton(tr("Zoom Out"), container);
-    QPushButton* zoomFitBtn = new QPushButton(tr("Fit All"), container);
+    QPushButton* zoomInBtn = new QPushButton(tr("Zoom In"), waveformGroup);
+    QPushButton* zoomOutBtn = new QPushButton(tr("Zoom Out"), waveformGroup);
+    QPushButton* zoomFitBtn = new QPushButton(tr("Fit All"), waveformGroup);
 
     zoomInBtn->setMaximumWidth(80);
     zoomOutBtn->setMaximumWidth(80);
     zoomFitBtn->setMaximumWidth(80);
 
-    connect(zoomInBtn, &QPushButton::clicked, [this]() {
+    // Connect GroupBox toggle to hide/show content
+    connect(waveformGroup, &QGroupBox::toggled, [waveformLayout](bool checked) {
+        // Hide/show all widgets in the layout
+        for (int i = 0; i < waveformLayout->count(); ++i) {
+            QWidget* widget = waveformLayout->itemAt(i)->widget();
+            if (widget) {
+                widget->setVisible(checked);
+            }
+        }
+    });
+
+    connect(zoomInBtn, &QPushButton::clicked, this, [this]() {
+        qDebug() << "Zoom In button clicked!";
+        if (!m_waveformWidget) {
+            qWarning() << "m_waveformWidget is null!";
+            return;
+        }
         double start = m_waveformWidget->getStartTime();
         double end = m_waveformWidget->getEndTime();
         double duration = m_waveformWidget->getDuration();
+        qDebug() << "Current range:" << start << "-" << end << "duration:" << duration;
         double timeRange = end - start;
         double newRange = qMax(0.1, timeRange * 0.7);  // Zoom in 30%
         double center = (start + end) / 2.0;
@@ -129,7 +165,12 @@ void AudioInfoPanel::setupUI() {
         m_waveformWidget->setTimeRange(newStart, newEnd);
     });
 
-    connect(zoomOutBtn, &QPushButton::clicked, [this]() {
+    connect(zoomOutBtn, &QPushButton::clicked, this, [this]() {
+        qDebug() << "Zoom Out button clicked!";
+        if (!m_waveformWidget) {
+            qWarning() << "m_waveformWidget is null!";
+            return;
+        }
         double start = m_waveformWidget->getStartTime();
         double end = m_waveformWidget->getEndTime();
         double duration = m_waveformWidget->getDuration();
@@ -155,7 +196,12 @@ void AudioInfoPanel::setupUI() {
         m_waveformWidget->setTimeRange(newStart, newEnd);
     });
 
-    connect(zoomFitBtn, &QPushButton::clicked, [this]() {
+    connect(zoomFitBtn, &QPushButton::clicked, this, [this]() {
+        qDebug() << "Fit All button clicked!";
+        if (!m_waveformWidget) {
+            qWarning() << "m_waveformWidget is null!";
+            return;
+        }
         double duration = m_waveformWidget->getDuration();
         qDebug() << "Fit All: 0.0 -" << duration;
         m_waveformWidget->setTimeRange(0.0, duration);
@@ -165,11 +211,28 @@ void AudioInfoPanel::setupUI() {
     waveformControls->addWidget(zoomOutBtn);
     waveformControls->addWidget(zoomFitBtn);
     waveformControls->addStretch();
-    QLabel* zoomHint = new QLabel(tr("Tip: Ctrl+Wheel to zoom"), container);
+    QLabel* zoomHint = new QLabel(tr("Tip: Ctrl+Wheel to zoom"), waveformGroup);
     zoomHint->setStyleSheet("QLabel { color: gray; font-size: 10px; }");
     waveformControls->addWidget(zoomHint);
 
     waveformLayout->addLayout(waveformControls);
+
+    // Connect toggle to hide/show content (must be after all widgets added)
+    connect(waveformGroup, &QGroupBox::toggled, [waveformLayout](bool checked) {
+        for (int i = 0; i < waveformLayout->count(); ++i) {
+            QLayoutItem* item = waveformLayout->itemAt(i);
+            if (QWidget* widget = item->widget()) {
+                widget->setVisible(checked);
+            } else if (QLayout* layout = item->layout()) {
+                // Handle nested layouts
+                for (int j = 0; j < layout->count(); ++j) {
+                    if (QWidget* subWidget = layout->itemAt(j)->widget()) {
+                        subWidget->setVisible(checked);
+                    }
+                }
+            }
+        }
+    });
 
     mainLayout->addWidget(waveformGroup);
 
@@ -204,6 +267,22 @@ void AudioInfoPanel::setupUI() {
     levelLayout->addLayout(rightLayout);
     levelLayout->addStretch();
 
+    // Connect toggle to hide/show content
+    connect(levelGroup, &QGroupBox::toggled, [levelLayout](bool checked) {
+        for (int i = 0; i < levelLayout->count(); ++i) {
+            QLayoutItem* item = levelLayout->itemAt(i);
+            if (QWidget* widget = item->widget()) {
+                widget->setVisible(checked);
+            } else if (QLayout* layout = item->layout()) {
+                for (int j = 0; j < layout->count(); ++j) {
+                    if (QWidget* subWidget = layout->itemAt(j)->widget()) {
+                        subWidget->setVisible(checked);
+                    }
+                }
+            }
+        }
+    });
+
     mainLayout->addWidget(levelGroup);
 
     // Spectrum analyzer (collapsible)
@@ -213,7 +292,7 @@ void AudioInfoPanel::setupUI() {
     QVBoxLayout* spectrumLayout = new QVBoxLayout(spectrumGroup);
 
     m_spectrumWidget = new SpectrumWidget(this);
-    m_spectrumWidget->setMinimumHeight(150);  // Reduced from 200
+    m_spectrumWidget->setMinimumHeight(200);  // Increased from 150
     m_spectrumWidget->setDisplayMode(SpectrumWidget::Bars);
     spectrumLayout->addWidget(m_spectrumWidget);
 
@@ -236,6 +315,22 @@ void AudioInfoPanel::setupUI() {
     spectrumControls->addStretch();
     spectrumLayout->addLayout(spectrumControls);
 
+    // Connect toggle to hide/show content
+    connect(spectrumGroup, &QGroupBox::toggled, [spectrumLayout](bool checked) {
+        for (int i = 0; i < spectrumLayout->count(); ++i) {
+            QLayoutItem* item = spectrumLayout->itemAt(i);
+            if (QWidget* widget = item->widget()) {
+                widget->setVisible(checked);
+            } else if (QLayout* layout = item->layout()) {
+                for (int j = 0; j < layout->count(); ++j) {
+                    if (QWidget* subWidget = layout->itemAt(j)->widget()) {
+                        subWidget->setVisible(checked);
+                    }
+                }
+            }
+        }
+    });
+
     mainLayout->addWidget(spectrumGroup);
 
     // LUFS Loudness Meter (collapsible)
@@ -247,6 +342,15 @@ void AudioInfoPanel::setupUI() {
     m_lufsWidget = new LUFSWidget(this);
     lufsLayout->addWidget(m_lufsWidget);
 
+    // Connect toggle to hide/show content
+    connect(lufsGroup, &QGroupBox::toggled, [lufsLayout](bool checked) {
+        for (int i = 0; i < lufsLayout->count(); ++i) {
+            if (QWidget* widget = lufsLayout->itemAt(i)->widget()) {
+                widget->setVisible(checked);
+            }
+        }
+    });
+
     mainLayout->addWidget(lufsGroup);
 
     // Stereo Phase Meter (collapsible)
@@ -256,7 +360,17 @@ void AudioInfoPanel::setupUI() {
     QVBoxLayout* phaseLayout = new QVBoxLayout(phaseGroup);
 
     m_phaseMeterWidget = new PhaseMeterWidget(this);
+    // Height will auto-adjust based on width (square aspect ratio)
     phaseLayout->addWidget(m_phaseMeterWidget);
+
+    // Connect toggle to hide/show content
+    connect(phaseGroup, &QGroupBox::toggled, [phaseLayout](bool checked) {
+        for (int i = 0; i < phaseLayout->count(); ++i) {
+            if (QWidget* widget = phaseLayout->itemAt(i)->widget()) {
+                widget->setVisible(checked);
+            }
+        }
+    });
 
     mainLayout->addWidget(phaseGroup);
 
@@ -286,8 +400,8 @@ void AudioInfoPanel::setAudioFile(const QString& filename) {
     if (m_analyzer->openFile(filename)) {
         populateStreamList();
 
-        // Load waveform
-        m_waveformWidget->setAudioFile(filename);
+        // Load waveform with first stream (default -1 = first audio stream)
+        m_waveformWidget->setAudioFile(filename, -1);
 
         // Load spectrum analyzer
         m_spectrumWidget->setAudioFile(filename);
