@@ -53,10 +53,6 @@ private:
     SpectrumWidget* m_spectrumWidget;
     LUFSWidget* m_lufsWidget;
     PhaseMeterWidget* m_phaseMeterWidget;
-    QPushButton* m_showWaveformButton;
-    QPushButton* m_showSpectrumButton;
-    QPushButton* m_showLUFSButton;
-    QPushButton* m_showPhaseMeterButton;
 };
 
 } // namespace VideoStudio

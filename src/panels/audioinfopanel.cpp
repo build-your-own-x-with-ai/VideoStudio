@@ -39,9 +39,12 @@ AudioInfoPanel::~AudioInfoPanel() = default;
 void AudioInfoPanel::setupUI() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(5, 5, 5, 5);
+    mainLayout->setSpacing(3);  // Reduce spacing between widgets
 
-    // Stream selection
+    // Stream selection (collapsible)
     QGroupBox* streamGroup = new QGroupBox(tr("Audio Streams"), this);
+    streamGroup->setCheckable(true);
+    streamGroup->setChecked(true);
     QVBoxLayout* streamLayout = new QVBoxLayout(streamGroup);
 
     m_streamCombo = new QComboBox(this);
@@ -51,8 +54,10 @@ void AudioInfoPanel::setupUI() {
 
     mainLayout->addWidget(streamGroup);
 
-    // Audio stream information table
+    // Audio stream information table (collapsible)
     QGroupBox* infoGroup = new QGroupBox(tr("Stream Information"), this);
+    infoGroup->setCheckable(true);
+    infoGroup->setChecked(true);
     QVBoxLayout* infoLayout = new QVBoxLayout(infoGroup);
 
     m_infoTable = new QTableWidget(this);
@@ -63,24 +68,28 @@ void AudioInfoPanel::setupUI() {
     m_infoTable->setAlternatingRowColors(true);
     m_infoTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_infoTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_infoTable->setMinimumHeight(200);  // Set minimum height to show more rows
+    m_infoTable->setMinimumHeight(150);  // Reduced from 200
+    m_infoTable->setMaximumHeight(200);  // Add maximum height
 
     infoLayout->addWidget(m_infoTable);
-    mainLayout->addWidget(infoGroup, 2);  // Give it stretch factor of 2
+    mainLayout->addWidget(infoGroup, 1);  // Reduced stretch factor
 
-    // Waveform visualization
+    // Waveform visualization (collapsible)
     QGroupBox* waveformGroup = new QGroupBox(tr("Waveform"), this);
+    waveformGroup->setCheckable(true);
+    waveformGroup->setChecked(false);  // Hidden by default
     QVBoxLayout* waveformLayout = new QVBoxLayout(waveformGroup);
 
     m_waveformWidget = new WaveformWidget(this);
-    m_waveformWidget->setMinimumHeight(100);
+    m_waveformWidget->setMinimumHeight(80);  // Reduced from 100
     waveformLayout->addWidget(m_waveformWidget);
 
     mainLayout->addWidget(waveformGroup);
-    waveformGroup->hide(); // Hidden by default
 
-    // Audio level meters
+    // Audio level meters (collapsible)
     QGroupBox* levelGroup = new QGroupBox(tr("Audio Levels"), this);
+    levelGroup->setCheckable(true);
+    levelGroup->setChecked(true);
     QHBoxLayout* levelLayout = new QHBoxLayout(levelGroup);
 
     // Left channel meter (or mono)
@@ -108,20 +117,16 @@ void AudioInfoPanel::setupUI() {
     levelLayout->addLayout(rightLayout);
     levelLayout->addStretch();
 
-    mainLayout->addWidget(levelGroup, 1);  // Less stretch than info table
+    mainLayout->addWidget(levelGroup);
 
-    // Show waveform button
-    m_showWaveformButton = new QPushButton(tr("Show Waveform"), this);
-    m_showWaveformButton->setCheckable(true);
-    connect(m_showWaveformButton, &QPushButton::toggled, waveformGroup, &QWidget::setVisible);
-    mainLayout->addWidget(m_showWaveformButton);
-
-    // Spectrum analyzer
+    // Spectrum analyzer (collapsible)
     QGroupBox* spectrumGroup = new QGroupBox(tr("Spectrum Analyzer"), this);
+    spectrumGroup->setCheckable(true);
+    spectrumGroup->setChecked(false);  // Hidden by default
     QVBoxLayout* spectrumLayout = new QVBoxLayout(spectrumGroup);
 
     m_spectrumWidget = new SpectrumWidget(this);
-    m_spectrumWidget->setMinimumHeight(200);
+    m_spectrumWidget->setMinimumHeight(150);  // Reduced from 200
     m_spectrumWidget->setDisplayMode(SpectrumWidget::Bars);
     spectrumLayout->addWidget(m_spectrumWidget);
 
@@ -145,45 +150,28 @@ void AudioInfoPanel::setupUI() {
     spectrumLayout->addLayout(spectrumControls);
 
     mainLayout->addWidget(spectrumGroup);
-    spectrumGroup->hide(); // Hidden by default
 
-    // Show spectrum button
-    m_showSpectrumButton = new QPushButton(tr("Show Spectrum"), this);
-    m_showSpectrumButton->setCheckable(true);
-    connect(m_showSpectrumButton, &QPushButton::toggled, spectrumGroup, &QWidget::setVisible);
-    mainLayout->addWidget(m_showSpectrumButton);
-
-    // LUFS Loudness Meter
+    // LUFS Loudness Meter (collapsible)
     QGroupBox* lufsGroup = new QGroupBox(tr("LUFS Loudness Meter"), this);
+    lufsGroup->setCheckable(true);
+    lufsGroup->setChecked(false);  // Hidden by default
     QVBoxLayout* lufsLayout = new QVBoxLayout(lufsGroup);
 
     m_lufsWidget = new LUFSWidget(this);
     lufsLayout->addWidget(m_lufsWidget);
 
     mainLayout->addWidget(lufsGroup);
-    lufsGroup->hide(); // Hidden by default
 
-    // Show LUFS button
-    m_showLUFSButton = new QPushButton(tr("Show LUFS Meter"), this);
-    m_showLUFSButton->setCheckable(true);
-    connect(m_showLUFSButton, &QPushButton::toggled, lufsGroup, &QWidget::setVisible);
-    mainLayout->addWidget(m_showLUFSButton);
-
-    // Stereo Phase Meter (Goniometer)
+    // Stereo Phase Meter (collapsible)
     QGroupBox* phaseGroup = new QGroupBox(tr("Stereo Phase Meter"), this);
+    phaseGroup->setCheckable(true);
+    phaseGroup->setChecked(false);  // Hidden by default
     QVBoxLayout* phaseLayout = new QVBoxLayout(phaseGroup);
 
     m_phaseMeterWidget = new PhaseMeterWidget(this);
     phaseLayout->addWidget(m_phaseMeterWidget);
 
     mainLayout->addWidget(phaseGroup);
-    phaseGroup->hide(); // Hidden by default
-
-    // Show phase meter button
-    m_showPhaseMeterButton = new QPushButton(tr("Show Phase Meter"), this);
-    m_showPhaseMeterButton->setCheckable(true);
-    connect(m_showPhaseMeterButton, &QPushButton::toggled, phaseGroup, &QWidget::setVisible);
-    mainLayout->addWidget(m_showPhaseMeterButton);
 
     // Status label
     m_statusLabel = new QLabel(this);
