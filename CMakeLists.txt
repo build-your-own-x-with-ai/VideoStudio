@@ -96,6 +96,7 @@ set(SOURCES
     src/widgets/audiolevelwidget.cpp
     src/widgets/spectrumwidget.cpp
     src/widgets/lufswidget.cpp
+    src/widgets/phasemeterwidget.cpp
     src/widgets/packetview.cpp
     src/widgets/nalunitview.cpp
     src/widgets/logviewer.cpp

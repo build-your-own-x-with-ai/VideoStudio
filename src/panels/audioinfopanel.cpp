@@ -30,6 +30,7 @@ AudioInfoPanel::AudioInfoPanel(QWidget* parent)
                 std::vector<float> leftVec(left.begin(), left.end());
                 std::vector<float> rightVec(right.begin(), right.end());
                 m_lufsWidget->updateLoudness(leftVec, rightVec, sampleRate);
+                m_phaseMeterWidget->updatePhase(leftVec, rightVec);
             });
 }
 
@@ -167,6 +168,22 @@ void AudioInfoPanel::setupUI() {
     m_showLUFSButton->setCheckable(true);
     connect(m_showLUFSButton, &QPushButton::toggled, lufsGroup, &QWidget::setVisible);
     mainLayout->addWidget(m_showLUFSButton);
+
+    // Stereo Phase Meter (Goniometer)
+    QGroupBox* phaseGroup = new QGroupBox(tr("Stereo Phase Meter"), this);
+    QVBoxLayout* phaseLayout = new QVBoxLayout(phaseGroup);
+
+    m_phaseMeterWidget = new PhaseMeterWidget(this);
+    phaseLayout->addWidget(m_phaseMeterWidget);
+
+    mainLayout->addWidget(phaseGroup);
+    phaseGroup->hide(); // Hidden by default
+
+    // Show phase meter button
+    m_showPhaseMeterButton = new QPushButton(tr("Show Phase Meter"), this);
+    m_showPhaseMeterButton->setCheckable(true);
+    connect(m_showPhaseMeterButton, &QPushButton::toggled, phaseGroup, &QWidget::setVisible);
+    mainLayout->addWidget(m_showPhaseMeterButton);
 
     // Status label
     m_statusLabel = new QLabel(this);

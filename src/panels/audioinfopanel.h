@@ -12,6 +12,7 @@
 #include "widgets/audiolevelwidget.h"
 #include "widgets/spectrumwidget.h"
 #include "widgets/lufswidget.h"
+#include "widgets/phasemeterwidget.h"
 
 namespace VideoStudio {
 
@@ -51,9 +52,11 @@ private:
     AudioLevelWidget* m_levelMeterRight;
     SpectrumWidget* m_spectrumWidget;
     LUFSWidget* m_lufsWidget;
+    PhaseMeterWidget* m_phaseMeterWidget;
     QPushButton* m_showWaveformButton;
     QPushButton* m_showSpectrumButton;
     QPushButton* m_showLUFSButton;
+    QPushButton* m_showPhaseMeterButton;
 };
 
 } // namespace VideoStudio

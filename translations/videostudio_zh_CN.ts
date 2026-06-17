@@ -738,6 +738,14 @@ Calculating VMAF (this may take several minutes)...</source>
         <translation>显示 LUFS 响度表</translation>
     </message>
     <message>
+        <source>Stereo Phase Meter</source>
+        <translation>立体声相位表</translation>
+    </message>
+    <message>
+        <source>Show Phase Meter</source>
+        <translation>显示相位表</translation>
+    </message>
+    <message>
         <source>Stream Index</source>
         <translation>流索引</translation>
     </message>
@@ -807,6 +815,13 @@ Calculating VMAF (this may take several minutes)...</source>
     <message>
         <source>True Peak:</source>
         <translation>真实峰值：</translation>
+    </message>
+</context>
+<context>
+    <name>VideoStudio::PhaseMeterWidget</name>
+    <message>
+        <source>Correlation: 0.00</source>
+        <translation>相关性：0.00</translation>
     </message>
 </context>
 <context>
