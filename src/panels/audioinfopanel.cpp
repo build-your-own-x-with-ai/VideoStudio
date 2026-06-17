@@ -104,21 +104,61 @@ void AudioInfoPanel::setupUI() {
     zoomFitBtn->setMaximumWidth(80);
 
     connect(zoomInBtn, &QPushButton::clicked, [this]() {
-        double timeRange = m_waveformWidget->getEndTime() - m_waveformWidget->getStartTime();
-        double newRange = timeRange * 0.7;  // Zoom in 30%
-        double center = (m_waveformWidget->getStartTime() + m_waveformWidget->getEndTime()) / 2.0;
-        m_waveformWidget->setTimeRange(center - newRange/2, center + newRange/2);
+        double start = m_waveformWidget->getStartTime();
+        double end = m_waveformWidget->getEndTime();
+        double duration = m_waveformWidget->getDuration();
+        double timeRange = end - start;
+        double newRange = qMax(0.1, timeRange * 0.7);  // Zoom in 30%
+        double center = (start + end) / 2.0;
+
+        double newStart = center - newRange / 2.0;
+        double newEnd = center + newRange / 2.0;
+
+        // Clamp to valid range
+        if (newStart < 0.0) {
+            newStart = 0.0;
+            newEnd = newRange;
+        }
+        if (newEnd > duration) {
+            newEnd = duration;
+            newStart = duration - newRange;
+            if (newStart < 0.0) newStart = 0.0;
+        }
+
+        qDebug() << "Zoom In:" << start << "-" << end << "=>" << newStart << "-" << newEnd;
+        m_waveformWidget->setTimeRange(newStart, newEnd);
     });
 
     connect(zoomOutBtn, &QPushButton::clicked, [this]() {
-        double timeRange = m_waveformWidget->getEndTime() - m_waveformWidget->getStartTime();
-        double newRange = timeRange * 1.5;  // Zoom out 50%
-        double center = (m_waveformWidget->getStartTime() + m_waveformWidget->getEndTime()) / 2.0;
-        m_waveformWidget->setTimeRange(center - newRange/2, center + newRange/2);
+        double start = m_waveformWidget->getStartTime();
+        double end = m_waveformWidget->getEndTime();
+        double duration = m_waveformWidget->getDuration();
+        double timeRange = end - start;
+        double newRange = qMin(duration, timeRange * 1.5);  // Zoom out 50%
+        double center = (start + end) / 2.0;
+
+        double newStart = center - newRange / 2.0;
+        double newEnd = center + newRange / 2.0;
+
+        // Clamp to valid range
+        if (newStart < 0.0) {
+            newStart = 0.0;
+            newEnd = newRange;
+        }
+        if (newEnd > duration) {
+            newEnd = duration;
+            newStart = duration - newRange;
+            if (newStart < 0.0) newStart = 0.0;
+        }
+
+        qDebug() << "Zoom Out:" << start << "-" << end << "=>" << newStart << "-" << newEnd;
+        m_waveformWidget->setTimeRange(newStart, newEnd);
     });
 
     connect(zoomFitBtn, &QPushButton::clicked, [this]() {
-        m_waveformWidget->setTimeRange(0.0, m_waveformWidget->getDuration());
+        double duration = m_waveformWidget->getDuration();
+        qDebug() << "Fit All: 0.0 -" << duration;
+        m_waveformWidget->setTimeRange(0.0, duration);
     });
 
     waveformControls->addWidget(zoomInBtn);
