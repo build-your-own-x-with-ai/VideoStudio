@@ -26,6 +26,10 @@ public:
     void close();
     bool isOpen() const { return m_formatContext != nullptr; }
 
+    // Cancel mechanism
+    void cancelOperation() { m_cancelRequested = true; }
+    bool isCancelRequested() const { return m_cancelRequested; }
+
     AVFrame* decodeNextFrame();
     AVFrame* getCurrentFrame() const { return m_frame; }
     bool seekToFrame(int frameNumber);
@@ -73,6 +77,7 @@ private:
     FrameIndex m_frameIndex;
     int m_currentFrameNumber;
     bool m_indexBuilt;
+    bool m_cancelRequested;
 };
 
 } // namespace VideoStudio

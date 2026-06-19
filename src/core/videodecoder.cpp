@@ -14,6 +14,7 @@ VideoDecoder::VideoDecoder(QObject* parent)
     , m_videoStreamIndex(-1)
     , m_currentFrameNumber(0)
     , m_indexBuilt(false)
+    , m_cancelRequested(false)
 {
     m_frame = av_frame_alloc();
     m_packet = av_packet_alloc();
@@ -32,6 +33,10 @@ VideoDecoder::~VideoDecoder() {
 bool VideoDecoder::openFile(const QString& filePath) {
     emit logMessage(QString("VideoDecoder::openFile called with: %1").arg(filePath));
     close();
+
+    // Reset cancel flag at the start of a new operation
+    m_cancelRequested = false;
+
     m_fileName = filePath;
 
     // Set format options for better TS file support
@@ -361,6 +366,13 @@ bool VideoDecoder::buildFrameIndex() {
     int64_t lastDts = 0;
 
     while (av_read_frame(m_formatContext, packet) >= 0) {
+        // Check for cancellation
+        if (m_cancelRequested) {
+            emit logMessage("Frame indexing cancelled by user");
+            av_packet_unref(packet);
+            break;
+        }
+
         if (packet->stream_index == m_videoStreamIndex) {
             FrameInfo frameInfo;
             frameInfo.frameNumber = frameNumber;
@@ -416,6 +428,12 @@ bool VideoDecoder::buildFrameIndex() {
 
     av_frame_free(&frame);
     av_packet_free(&packet);
+
+    // If operation was cancelled, return false
+    if (m_cancelRequested) {
+        emit logMessage("buildFrameIndex: Operation cancelled");
+        return false;
+    }
 
     // Seek back to beginning using seekToFrame to properly decode first frame
     m_currentFrameNumber = -1;  // Will be set by seekToFrame

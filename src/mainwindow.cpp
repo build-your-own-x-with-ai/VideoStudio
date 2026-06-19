@@ -1088,6 +1088,7 @@ void MainWindow::loadFile(const QString& fileName) {
     connect(progressDialog, &QProgressDialog::canceled, this, [this, progressDialog]() {
         qDebug() << "User cancelled file loading";
         progressDialog->setLabelText(tr("Cancelling..."));
+        m_decoder->cancelOperation();  // Request cancellation
     });
 
     // Try to open with video decoder in background
