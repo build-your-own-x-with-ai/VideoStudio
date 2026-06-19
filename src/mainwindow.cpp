@@ -1111,6 +1111,12 @@ void MainWindow::loadFile(const QString& fileName) {
             progressDialog->close();
             progressDialog->deleteLater();
             m_statusLabel->setText(tr("Loading cancelled"));
+
+            // Hide Log Viewer if visible
+            if (m_logViewerDock->isVisible()) {
+                animateLogViewerToDock();
+            }
+
             return;
         }
 
@@ -1200,6 +1206,14 @@ void MainWindow::loadFile(const QString& fileName) {
 
         // If it's a TS file, also parse it for stream analysis
         if (isTSFile) {
+            // Check if cancelled before starting TS parsing
+            if (progressDialog->wasCanceled()) {
+                progressDialog->close();
+                progressDialog->deleteLater();
+                animateLogViewerToDock();
+                return;
+            }
+
             // Create TS parser if not exists
             if (!m_tsParser) {
                 m_tsParser = std::make_unique<TSParser>();
@@ -1239,6 +1253,14 @@ void MainWindow::loadFile(const QString& fileName) {
 
         // If it's an MP4 file, parse container structure
         if (isMP4File) {
+            // Check if cancelled before starting MP4 parsing
+            if (progressDialog->wasCanceled()) {
+                progressDialog->close();
+                progressDialog->deleteLater();
+                animateLogViewerToDock();
+                return;
+            }
+
             // Remove Packet List tab if present (MP4 doesn't have packets)
             for (int i = 0; i < m_centralTabs->count(); ++i) {
                 if (m_centralTabs->widget(i) == m_packetView) {
@@ -1350,6 +1372,14 @@ void MainWindow::loadFile(const QString& fileName) {
 
         // If it's an MKV file, parse container structure
         if (isMKVFile) {
+            // Check if cancelled before starting MKV parsing
+            if (progressDialog->wasCanceled()) {
+                progressDialog->close();
+                progressDialog->deleteLater();
+                animateLogViewerToDock();
+                return;
+            }
+
             // Remove Packet List tab if present (MKV doesn't have packets)
             for (int i = 0; i < m_centralTabs->count(); ++i) {
                 if (m_centralTabs->widget(i) == m_packetView) {
@@ -1453,6 +1483,14 @@ void MainWindow::loadFile(const QString& fileName) {
 
         // If it's an AVI file, parse container structure
         if (isAVIFile) {
+            // Check if cancelled before starting AVI parsing
+            if (progressDialog->wasCanceled()) {
+                progressDialog->close();
+                progressDialog->deleteLater();
+                animateLogViewerToDock();
+                return;
+            }
+
             // Remove Packet List tab if present (AVI doesn't have packets)
             for (int i = 0; i < m_centralTabs->count(); ++i) {
                 if (m_centralTabs->widget(i) == m_packetView) {
@@ -1502,6 +1540,14 @@ void MainWindow::loadFile(const QString& fileName) {
 
         // If it's an FLV file, parse container structure
         if (isFLVFile) {
+            // Check if cancelled before starting FLV parsing
+            if (progressDialog->wasCanceled()) {
+                progressDialog->close();
+                progressDialog->deleteLater();
+                animateLogViewerToDock();
+                return;
+            }
+
             // Remove Packet List tab if present (FLV doesn't have packets)
             for (int i = 0; i < m_centralTabs->count(); ++i) {
                 if (m_centralTabs->widget(i) == m_packetView) {
