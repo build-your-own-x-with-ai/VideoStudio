@@ -1275,7 +1275,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="1053"/>
         <source>Opening video file...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在打开视频文件...</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1053"/>
@@ -1313,93 +1313,93 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="1207"/>
         <source>Parsing TS structure...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在解析 TS 结构...</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1223"/>
         <source>TS file loaded successfully</source>
-        <translation type="unfinished"></translation>
+        <translation>TS 文件加载成功</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1225"/>
         <source>Failed to parse TS structure</source>
-        <translation type="unfinished"></translation>
+        <translation>解析 TS 结构失败</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1254"/>
         <source>Parsing MP4 structure...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在解析 MP4 结构...</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1282"/>
         <location filename="../src/mainwindow.cpp" line="1385"/>
         <source>Parsing NAL units...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在解析 NAL 单元...</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1314"/>
         <source>MP4 file loaded successfully</source>
-        <translation type="unfinished"></translation>
+        <translation>MP4 文件加载成功</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1316"/>
         <source>MP4 loaded (NAL parsing failed)</source>
-        <translation type="unfinished"></translation>
+        <translation>MP4 已加载（NAL 解析失败）</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1332"/>
         <source>Failed to parse MP4 structure</source>
-        <translation type="unfinished"></translation>
+        <translation>解析 MP4 结构失败</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1365"/>
         <source>Parsing MKV structure...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在解析 MKV 结构...</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1417"/>
         <source>MKV file loaded successfully</source>
-        <translation type="unfinished"></translation>
+        <translation>MKV 文件加载成功</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1419"/>
         <source>MKV loaded (NAL parsing failed)</source>
-        <translation type="unfinished"></translation>
+        <translation>MKV 已加载（NAL 解析失败）</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1435"/>
         <source>Failed to parse MKV structure</source>
-        <translation type="unfinished"></translation>
+        <translation>解析 MKV 结构失败</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1468"/>
         <source>Parsing AVI structure...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在解析 AVI 结构...</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1482"/>
         <source>AVI file loaded successfully</source>
-        <translation type="unfinished"></translation>
+        <translation>AVI 文件加载成功</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1484"/>
         <source>Failed to parse AVI structure</source>
-        <translation type="unfinished"></translation>
+        <translation>解析 AVI 结构失败</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1517"/>
         <source>Parsing FLV structure...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在解析 FLV 结构...</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1531"/>
         <source>FLV file loaded successfully</source>
-        <translation type="unfinished"></translation>
+        <translation>FLV 文件加载成功</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1533"/>
         <source>Failed to parse FLV structure</source>
-        <translation type="unfinished"></translation>
+        <translation>解析 FLV 结构失败</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="1596"/>
@@ -1770,7 +1770,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="878"/>
         <source>Open and analyze raw YUV files</source>
-        <translation type="unfinished"></translation>
+        <translation>打开并分析原始 YUV 文件</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="884"/>
@@ -1790,7 +1790,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="892"/>
         <source>Validate H.264/H.265 bitstream compliance</source>
-        <translation type="unfinished"></translation>
+        <translation>验证 H.264/H.265 比特流合规性</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="895"/>
@@ -1805,7 +1805,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="897"/>
         <source>Run custom analyzer plugins</source>
-        <translation type="unfinished"></translation>
+        <translation>运行自定义分析插件</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="903"/>
@@ -1840,17 +1840,17 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="948"/>
         <source>Next frame (Alt+Right)</source>
-        <translation type="unfinished"></translation>
+        <translation>下一帧（Alt+Right）</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="954"/>
         <source>Frame: 0 / 0</source>
-        <translation type="unfinished"></translation>
+        <translation>帧：0 / 0</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="963"/>
         <source>No file loaded</source>
-        <translation type="unfinished"></translation>
+        <translation>未加载文件</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="972"/>
@@ -1885,33 +1885,33 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="2057"/>
         <source>MP4 Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>MP4 浏览器</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2121"/>
         <source>MKV Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>MKV 浏览器</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2171"/>
         <source>AVI Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>AVI 浏览器</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2212"/>
         <source>FLV Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>FLV 浏览器</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2223"/>
         <source>No TS file loaded. Please open a TS file first.</source>
-        <translation type="unfinished"></translation>
+        <translation>未加载 TS 文件。请先打开 TS 文件。</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2233"/>
         <location filename="../src/mainwindow.cpp" line="2243"/>
         <source>No video file loaded. Please open a video file first.</source>
-        <translation type="unfinished"></translation>
+        <translation>未加载视频文件。请先打开视频文件。</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2301"/>
@@ -1922,12 +1922,12 @@ Occupancy: %2 Mbits (%3%)</source>
         <location filename="../src/mainwindow.cpp" line="2491"/>
         <location filename="../src/mainwindow.cpp" line="2537"/>
         <source>No Video Loaded</source>
-        <translation type="unfinished"></translation>
+        <translation>未加载视频</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2302"/>
         <source>Please open a video file first. This will be used as the reference video.</source>
-        <translation type="unfinished"></translation>
+        <translation>请先打开视频文件。它将用作参考视频。</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2314"/>
@@ -1937,7 +1937,7 @@ Occupancy: %2 Mbits (%3%)</source>
         <location filename="../src/mainwindow.cpp" line="2492"/>
         <location filename="../src/mainwindow.cpp" line="2538"/>
         <source>Please open a video file first.</source>
-        <translation type="unfinished"></translation>
+        <translation>请先打开视频文件。</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2380"/>
@@ -1957,22 +1957,22 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="2501"/>
         <source>Failed to capture screenshot. No frame available.</source>
-        <translation type="unfinished"></translation>
+        <translation>截图失败。无可用帧。</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2509"/>
         <source>Save Screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>保存截图</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2511"/>
         <source>PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;All Files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>PNG 图像 (*.png);;JPEG 图像 (*.jpg *.jpeg);;所有文件 (*)</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2527"/>
         <source>Screenshot Saved</source>
-        <translation type="unfinished"></translation>
+        <translation>截图已保存</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2528"/>
@@ -1983,7 +1983,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="2530"/>
         <source>Save Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>保存失败</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2531"/>
@@ -1995,7 +1995,7 @@ Occupancy: %2 Mbits (%3%)</source>
         <location filename="../src/mainwindow.cpp" line="2553"/>
         <location filename="../src/mainwindow.cpp" line="2655"/>
         <source>File Not Found</source>
-        <translation type="unfinished"></translation>
+        <translation>未找到文件</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2554"/>
@@ -2006,7 +2006,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="2651"/>
         <source>Unsupported File</source>
-        <translation type="unfinished"></translation>
+        <translation>不支持的文件</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2652"/>
@@ -2168,42 +2168,42 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="31"/>
         <source>Video: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>视频：%1</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="43"/>
         <source>Available Plugins:</source>
-        <translation type="unfinished"></translation>
+        <translation>可用插件：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="49"/>
         <source>Refresh Plugins</source>
-        <translation type="unfinished"></translation>
+        <translation>刷新插件</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="59"/>
         <source>Plugin Details:</source>
-        <translation type="unfinished"></translation>
+        <translation>插件详情：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="66"/>
         <source>Run Plugin</source>
-        <translation type="unfinished"></translation>
+        <translation>运行插件</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="77"/>
         <source>Analysis Results:</source>
-        <translation type="unfinished"></translation>
+        <translation>分析结果：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="82"/>
         <source>Results will appear here after running a plugin...</source>
-        <translation type="unfinished"></translation>
+        <translation>运行插件后结果将显示在此处...</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="85"/>
         <source>Export Results</source>
-        <translation type="unfinished"></translation>
+        <translation>导出结果</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="107"/>
@@ -2218,37 +2218,37 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="141"/>
         <source>No plugins found. Place plugin files in: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>未找到插件。请将插件文件放在：%1</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="160"/>
         <source>Found %1 plugin(s)</source>
-        <translation type="unfinished"></translation>
+        <translation>找到 %1 个插件</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="184"/>
         <source>Plugin not found.</source>
-        <translation type="unfinished"></translation>
+        <translation>未找到插件。</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="233"/>
         <source>Running plugin...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在运行插件...</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="254"/>
         <source>Plugin failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>插件失败：%1</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="255"/>
         <source>Error: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>错误：%1</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="257"/>
         <source>Plugin Error</source>
-        <translation type="unfinished"></translation>
+        <translation>插件错误</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="258"/>
@@ -2259,12 +2259,12 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="265"/>
         <source>Plugin completed successfully</source>
-        <translation type="unfinished"></translation>
+        <translation>插件执行成功</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="277"/>
         <source>Export Plugin Results</source>
-        <translation type="unfinished"></translation>
+        <translation>导出插件结果</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="279"/>
@@ -2285,12 +2285,12 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="303"/>
         <source>Results exported to: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>结果已导出到：%1</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="304"/>
         <source>Export Successful</source>
-        <translation type="unfinished"></translation>
+        <translation>导出成功</translation>
     </message>
     <message>
         <location filename="../src/dialogs/plugindialog.cpp" line="305"/>
@@ -2494,7 +2494,7 @@ Supported TS parameters:
     <message>
         <location filename="../src/panels/propertypanel.cpp" line="729"/>
         <source>Dumped %1 packets to %2</source>
-        <translation type="unfinished"></translation>
+        <translation>已转储 %1 个数据包到 %2</translation>
     </message>
     <message>
         <location filename="../src/panels/propertypanel.cpp" line="738"/>
@@ -2643,7 +2643,7 @@ Supported TS parameters:
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="127"/>
         <source>Video Files (*.ts *.mp4 *.mkv *.avi *.flv *.mov *.m2ts *.mts);;All Files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>视频文件 (*.ts *.mp4 *.mkv *.avi *.flv *.mov *.m2ts *.mts);;所有文件 (*)</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="139"/>
@@ -2664,7 +2664,7 @@ Supported TS parameters:
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="144"/>
         <source>Please select at least one metric to calculate.</source>
-        <translation type="unfinished"></translation>
+        <translation>请至少选择一个要计算的指标。</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="153"/>
@@ -2679,17 +2679,17 @@ Supported TS parameters:
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="172"/>
         <source>Error: Failed to open reference video</source>
-        <translation type="unfinished"></translation>
+        <translation>错误：无法打开参考视频</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="179"/>
         <source>Failed to open distorted video file.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法打开失真视频文件。</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="180"/>
         <source>Error: Failed to open distorted video</source>
-        <translation type="unfinished"></translation>
+        <translation>错误：无法打开失真视频</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="188"/>
@@ -2701,17 +2701,17 @@ Distorted: %3x%4</source>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="193"/>
         <source>Error: Resolution mismatch</source>
-        <translation type="unfinished"></translation>
+        <translation>错误：分辨率不匹配</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="211"/>
         <source>Invalid frame range.</source>
-        <translation type="unfinished"></translation>
+        <translation>无效的帧范围。</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="212"/>
         <source>Error: Invalid frame range</source>
-        <translation type="unfinished"></translation>
+        <translation>错误：无效的帧范围</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="223"/>
@@ -2722,17 +2722,17 @@ Distorted: %3x%4</source>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="224"/>
         <source>Reference: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>参考：%1</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="225"/>
         <source>Distorted: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>失真：%1</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="226"/>
         <source>Resolution: %1x%2</source>
-        <translation type="unfinished"></translation>
+        <translation>分辨率：%1x%2</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="227"/>
@@ -2743,12 +2743,12 @@ Distorted: %3x%4</source>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="232"/>
         <source>Failed to seek to start frame.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法跳转到起始帧。</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="233"/>
         <source>Error: Failed to seek</source>
-        <translation type="unfinished"></translation>
+        <translation>错误：跳转失败</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="243"/>
@@ -2759,7 +2759,7 @@ Warning: Reached end of video at frame %1</source>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="264"/>
         <source>Processing frame %1 of %2...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在处理帧 %1 / %2...</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="269"/>
@@ -2771,7 +2771,7 @@ Analysis cancelled by user.</source>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="270"/>
         <source>Cancelled</source>
-        <translation type="unfinished"></translation>
+        <translation>已取消</translation>
     </message>
     <message>
         <location filename="../src/dialogs/qualitymetricsdialog.cpp" line="275"/>
@@ -2851,27 +2851,27 @@ Calculating VMAF (this may take several minutes)...</source>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="34"/>
         <source>Select Reference Video...</source>
-        <translation type="unfinished"></translation>
+        <translation>选择参考视频...</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="38"/>
         <source>Mode:</source>
-        <translation type="unfinished"></translation>
+        <translation>模式：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="40"/>
         <source>Compare (Side-by-Side)</source>
-        <translation type="unfinished"></translation>
+        <translation>比较（并排）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="41"/>
         <source>PSNR (Block Visualization)</source>
-        <translation type="unfinished"></translation>
+        <translation>PSNR（块可视化）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="42"/>
         <source>Subtraction</source>
-        <translation type="unfinished"></translation>
+        <translation>差值</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="43"/>
@@ -2881,17 +2881,17 @@ Calculating VMAF (this may take several minutes)...</source>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="53"/>
         <source>Frame:</source>
-        <translation type="unfinished"></translation>
+        <translation>帧：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="63"/>
         <source>0 / 0</source>
-        <translation type="unfinished"></translation>
+        <translation>0 / 0</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="70"/>
         <source>No reference video loaded</source>
-        <translation type="unfinished"></translation>
+        <translation>未加载参考视频</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="88"/>
@@ -2906,7 +2906,7 @@ Calculating VMAF (this may take several minutes)...</source>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="99"/>
         <source>Video Files (*.mp4 *.mkv *.avi *.mov *.ts *.h264 *.h265 *.hevc);;All Files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>视频文件 (*.mp4 *.mkv *.avi *.mov *.ts *.h264 *.h265 *.hevc);;所有文件 (*)</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="111"/>
@@ -2921,7 +2921,7 @@ Calculating VMAF (this may take several minutes)...</source>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="123"/>
         <source>Warning</source>
-        <translation type="unfinished"></translation>
+        <translation>警告</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="124"/>
@@ -2936,7 +2936,7 @@ Comparison will use minimum frame count.</source>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="131"/>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="149"/>
         <source>%1 / %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 / %2</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="133"/>
@@ -2947,17 +2947,17 @@ Frames: %2</source>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="166"/>
         <source>Failed to decode frames</source>
-        <translation type="unfinished"></translation>
+        <translation>解码帧失败</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="232"/>
         <source>Source</source>
-        <translation type="unfinished"></translation>
+        <translation>源</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="252"/>
         <source>Reference</source>
-        <translation type="unfinished"></translation>
+        <translation>参考</translation>
     </message>
     <message>
         <location filename="../src/dialogs/referencecomparisondialog.cpp" line="328"/>
@@ -2987,12 +2987,12 @@ Black=no diff, Blue=slight, Green=medium, Red=large</source>
     <message>
         <location filename="../src/dialogs/savestreaminfodialog.cpp" line="240"/>
         <source>Save Stream Information</source>
-        <translation type="unfinished"></translation>
+        <translation>保存流信息</translation>
     </message>
     <message>
         <location filename="../src/dialogs/savestreaminfodialog.cpp" line="241"/>
         <source>Text Files (*.txt);;CSV Files (*.csv);;All Files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>文本文件 (*.txt);;CSV 文件 (*.csv);;所有文件 (*)</translation>
     </message>
     <message>
         <location filename="../src/dialogs/savestreaminfodialog.cpp" line="250"/>
@@ -3089,72 +3089,72 @@ Black=no diff, Blue=slight, Green=medium, Red=large</source>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="25"/>
         <source>Export YUV Frames</source>
-        <translation type="unfinished"></translation>
+        <translation>导出 YUV 帧</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="35"/>
         <source>Output Format</source>
-        <translation type="unfinished"></translation>
+        <translation>输出格式</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="39"/>
         <source>I420 (Planar 4:2:0)</source>
-        <translation type="unfinished"></translation>
+        <translation>I420（平面 4:2:0）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="40"/>
         <source>I422 (Planar 4:2:2)</source>
-        <translation type="unfinished"></translation>
+        <translation>I422（平面 4:2:2）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="41"/>
         <source>I444 (Planar 4:4:4)</source>
-        <translation type="unfinished"></translation>
+        <translation>I444（平面 4:4:4）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="42"/>
         <source>NV12 (Semi-planar 4:2:0)</source>
-        <translation type="unfinished"></translation>
+        <translation>NV12（半平面 4:2:0）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="43"/>
         <source>NV21 (Semi-planar 4:2:0 VU)</source>
-        <translation type="unfinished"></translation>
+        <translation>NV21（半平面 4:2:0 VU）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="44"/>
         <source>YUY2 (Packed 4:2:2)</source>
-        <translation type="unfinished"></translation>
+        <translation>YUY2（打包 4:2:2）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="45"/>
         <source>UYVY (Packed 4:2:2)</source>
-        <translation type="unfinished"></translation>
+        <translation>UYVY（打包 4:2:2）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="46"/>
         <source>RGB24 (24-bit RGB)</source>
-        <translation type="unfinished"></translation>
+        <translation>RGB24（24 位 RGB）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="47"/>
         <source>RGB32 (32-bit RGBA)</source>
-        <translation type="unfinished"></translation>
+        <translation>RGB32（32 位 RGBA）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="48"/>
         <source>GRAY (Grayscale Y only)</source>
-        <translation type="unfinished"></translation>
+        <translation>GRAY（仅灰度 Y）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="49"/>
         <source>Format:</source>
-        <translation type="unfinished"></translation>
+        <translation>格式：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="54"/>
         <source>Frame Range</source>
-        <translation type="unfinished"></translation>
+        <translation>帧范围</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="60"/>
@@ -3174,12 +3174,12 @@ Black=no diff, Blue=slight, Green=medium, Red=large</source>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="73"/>
         <source>Export as single file (concatenated frames)</source>
-        <translation type="unfinished"></translation>
+        <translation>导出为单个文件（连续帧）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="78"/>
         <source>Output Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>输出路径：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="81"/>
@@ -3205,12 +3205,12 @@ Black=no diff, Blue=slight, Green=medium, Red=large</source>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="108"/>
         <source>%1 Files (*.%2);;All Files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 文件 (*.%2);;所有文件 (*)</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="111"/>
         <source>Select Output Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>选择输出目录</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="121"/>
@@ -3229,7 +3229,7 @@ Black=no diff, Blue=slight, Green=medium, Red=large</source>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="127"/>
         <source>Please select an output path</source>
-        <translation type="unfinished"></translation>
+        <translation>请选择输出路径</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="135"/>
@@ -3239,27 +3239,27 @@ Black=no diff, Blue=slight, Green=medium, Red=large</source>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="162"/>
         <source>Exporting frames...</source>
-        <translation type="unfinished"></translation>
+        <translation>正在导出帧...</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="170"/>
         <source>Failed to create output file</source>
-        <translation type="unfinished"></translation>
+        <translation>无法创建输出文件</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="267"/>
         <source>Success</source>
-        <translation type="unfinished"></translation>
+        <translation>成功</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="268"/>
         <source>Exported %1 frames successfully</source>
-        <translation type="unfinished"></translation>
+        <translation>成功导出 %1 帧</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="271"/>
         <source>Export failed</source>
-        <translation type="unfinished"></translation>
+        <translation>导出失败</translation>
     </message>
 </context>
 <context>
@@ -3267,27 +3267,27 @@ Black=no diff, Blue=slight, Green=medium, Red=large</source>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="31"/>
         <source>Width and height must be positive values.</source>
-        <translation type="unfinished"></translation>
+        <translation>宽度和高度必须为正值。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="37"/>
         <source>Cannot open file: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>无法打开文件：%1</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="58"/>
         <source>Failed to allocate frame buffer.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法分配帧缓冲区。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="68"/>
         <source>Failed to allocate frame buffer for %1x%2 resolution.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法为 %1x%2 分辨率分配帧缓冲区。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="98"/>
         <source>Invalid bytes per frame calculation.</source>
-        <translation type="unfinished"></translation>
+        <translation>无效的每帧字节数计算。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="104"/>
@@ -3396,7 +3396,7 @@ Please verify width, height, and format parameters.</source>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="78"/>
         <source>Format:</source>
-        <translation type="unfinished"></translation>
+        <translation>格式：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="80"/>
@@ -3438,7 +3438,7 @@ Please verify width, height, and format parameters.</source>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="117"/>
         <source>Frame:</source>
-        <translation type="unfinished"></translation>
+        <translation>帧：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="126"/>
@@ -3529,7 +3529,7 @@ Frames: %5</source>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="344"/>
         <source>PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;All Files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>PNG 图像 (*.png);;JPEG 图像 (*.jpg *.jpeg);;所有文件 (*)</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="353"/>
@@ -3545,7 +3545,7 @@ Frames: %5</source>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="363"/>
         <source>Export Successful</source>
-        <translation type="unfinished"></translation>
+        <translation>导出成功</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="363"/>
