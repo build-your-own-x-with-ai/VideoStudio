@@ -306,8 +306,8 @@ void ExplorerPanel::addMKVElementNodes(QTreeWidgetItem* parent, const QVector<EB
         elementItem->setText(2, QString::number(element.percentage, 'f', 2));
         elementItem->setCheckState(0, Qt::Checked);
 
-        // Store element offset as user data
-        elementItem->setData(0, Qt::UserRole, element.offset);
+        // Store element offset as user data (cast to qlonglong for Qt 6.5.3)
+        elementItem->setData(0, Qt::UserRole, static_cast<qlonglong>(element.offset));
 
         // Recursively add children
         if (!element.children.isEmpty()) {
@@ -354,8 +354,8 @@ void ExplorerPanel::addAVIChunkNodes(QTreeWidgetItem* parent, const QVector<AVIC
         chunkItem->setText(2, QString::number(chunk.percentage, 'f', 2));
         chunkItem->setCheckState(0, Qt::Checked);
 
-        // Store chunk offset as user data
-        chunkItem->setData(0, Qt::UserRole, chunk.offset);
+        // Store chunk offset as user data (cast to qlonglong for Qt 6.5.3)
+        chunkItem->setData(0, Qt::UserRole, static_cast<qlonglong>(chunk.offset));
 
         // Recursively add children
         if (!chunk.children.isEmpty()) {

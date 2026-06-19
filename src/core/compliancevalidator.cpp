@@ -6,6 +6,36 @@ extern "C" {
 #include <libavutil/opt.h>
 }
 
+// Fallback definitions for older FFmpeg versions that don't define these constants
+#ifndef FF_PROFILE_H264_BASELINE
+#define FF_PROFILE_H264_BASELINE 66
+#endif
+#ifndef FF_PROFILE_H264_MAIN
+#define FF_PROFILE_H264_MAIN 77
+#endif
+#ifndef FF_PROFILE_H264_HIGH
+#define FF_PROFILE_H264_HIGH 100
+#endif
+#ifndef FF_PROFILE_H264_HIGH_10
+#define FF_PROFILE_H264_HIGH_10 110
+#endif
+#ifndef FF_PROFILE_H264_HIGH_422
+#define FF_PROFILE_H264_HIGH_422 122
+#endif
+#ifndef FF_PROFILE_H264_HIGH_444
+#define FF_PROFILE_H264_HIGH_444 244
+#endif
+
+#ifndef FF_PROFILE_HEVC_MAIN
+#define FF_PROFILE_HEVC_MAIN 1
+#endif
+#ifndef FF_PROFILE_HEVC_MAIN_10
+#define FF_PROFILE_HEVC_MAIN_10 2
+#endif
+#ifndef FF_PROFILE_HEVC_MAIN_STILL_PICTURE
+#define FF_PROFILE_HEVC_MAIN_STILL_PICTURE 3
+#endif
+
 namespace VideoStudio {
 
 ComplianceValidator::ComplianceValidator(QObject* parent)
