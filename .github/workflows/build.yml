@@ -1,0 +1,252 @@
+name: Build All Platforms
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          ninja-build \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          libxkbcommon-x11-0 \
+          libxcb-cursor0 \
+          libxcb-icccm4 \
+          libxcb-image0 \
+          libxcb-keysyms1 \
+          libxcb-randr0 \
+          libxcb-render-util0 \
+          libxcb-shape0 \
+          libxcb-xfixes0 \
+          libxcb-xinerama0
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.2'
+        host: 'linux'
+        target: 'desktop'
+        arch: 'gcc_64'
+        modules: 'qtmultimedia'
+        cache: true
+
+    - name: Install FFmpeg
+      run: |
+        sudo apt-get install -y \
+          libavcodec-dev \
+          libavformat-dev \
+          libavutil-dev \
+          libswscale-dev \
+          ffmpeg
+
+    - name: Configure CMake
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_PREFIX_PATH="${Qt6_DIR}"
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Package
+      run: |
+        mkdir -p VideoStudio-Linux-x64
+        cp build/VideoStudio VideoStudio-Linux-x64/
+        cp build/videostudio-cli VideoStudio-Linux-x64/
+
+        # Create launch script
+        cat > VideoStudio-Linux-x64/videostudio.sh << 'EOF'
+        #!/bin/bash
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        export LD_LIBRARY_PATH="${SCRIPT_DIR}:${LD_LIBRARY_PATH}"
+        "${SCRIPT_DIR}/VideoStudio" "$@"
+        EOF
+        chmod +x VideoStudio-Linux-x64/videostudio.sh
+
+        # Create README
+        cat > VideoStudio-Linux-x64/README.txt << EOF
+        VideoStudio - Linux x64 Build
+
+        Usage:
+        1. Extract all files
+        2. Run: ./videostudio.sh
+
+        Requirements:
+        - Ubuntu 22.04 or compatible Linux distribution
+        - FFmpeg libraries (libavcodec, libavformat, libavutil, libswscale)
+        - Qt 6.7+ runtime libraries
+
+        Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        EOF
+
+        tar czf VideoStudio-Linux-x64.tar.gz VideoStudio-Linux-x64/
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: VideoStudio-Linux-x64
+        path: VideoStudio-Linux-x64.tar.gz
+        retention-days: 30
+
+  build-macos:
+    runs-on: macos-13
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.2'
+        host: 'mac'
+        target: 'desktop'
+        arch: 'clang_64'
+        modules: 'qtmultimedia'
+        cache: true
+
+    - name: Install FFmpeg
+      run: |
+        brew install ffmpeg
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_PREFIX_PATH="${Qt6_DIR}"
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Package
+      run: |
+        mkdir -p VideoStudio-macOS-x64
+        cp -r build/VideoStudio.app VideoStudio-macOS-x64/
+        cp build/videostudio-cli VideoStudio-macOS-x64/
+
+        # Run macdeployqt to bundle Qt libraries
+        macdeployqt VideoStudio-macOS-x64/VideoStudio.app
+
+        # Create README
+        cat > VideoStudio-macOS-x64/README.txt << EOF
+        VideoStudio - macOS x64 Build
+
+        Usage:
+        1. Extract all files
+        2. Double-click VideoStudio.app or run from terminal
+
+        Requirements:
+        - macOS 11.0 (Big Sur) or later
+        - FFmpeg (installed via Homebrew: brew install ffmpeg)
+
+        Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        EOF
+
+        # Create DMG or ZIP
+        tar czf VideoStudio-macOS-x64.tar.gz VideoStudio-macOS-x64/
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: VideoStudio-macOS-x64
+        path: VideoStudio-macOS-x64.tar.gz
+        retention-days: 30
+
+  build-windows:
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.2'
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc2019_64'
+        modules: 'qtmultimedia'
+        cache: true
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Install FFmpeg
+      run: |
+        # Download FFmpeg shared build
+        $ffmpegUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip"
+        Invoke-WebRequest -Uri $ffmpegUrl -OutFile ffmpeg.zip
+        Expand-Archive -Path ffmpeg.zip -DestinationPath .
+
+        # Find extracted directory
+        $ffmpegDir = Get-ChildItem -Directory -Filter "ffmpeg-*" | Select-Object -First 1
+        $ffmpegPath = $ffmpegDir.FullName
+
+        # Set environment variable
+        echo "FFMPEG_DIR=$ffmpegPath" >> $env:GITHUB_ENV
+        echo "$ffmpegPath\bin" >> $env:GITHUB_PATH
+
+    - name: Configure CMake
+      run: |
+        cmake -B build -G "Visual Studio 17 2022" -A x64 `
+          -DCMAKE_PREFIX_PATH="$env:Qt6_DIR" `
+          -DFFMPEG_DIR="$env:FFMPEG_DIR"
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Package
+      run: |
+        mkdir VideoStudio-Windows-x64
+        cp build/Release/VideoStudio.exe VideoStudio-Windows-x64/
+        cp build/Release/videostudio-cli.exe VideoStudio-Windows-x64/ -ErrorAction SilentlyContinue
+
+        # Copy Qt DLLs
+        windeployqt.exe --release --no-translations VideoStudio-Windows-x64/VideoStudio.exe
+
+        # Copy FFmpeg DLLs
+        cp "$env:FFMPEG_DIR/bin/*.dll" VideoStudio-Windows-x64/
+
+        # Create README
+        @"
+        VideoStudio - Windows x64 Build
+
+        Usage:
+        1. Extract all files to a folder
+        2. Run VideoStudio.exe
+
+        Requirements:
+        - Windows 10/11 (64-bit)
+        - Visual C++ Redistributable 2019 or later
+
+        Build Date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
+        "@ | Out-File -FilePath VideoStudio-Windows-x64/README.txt -Encoding UTF8
+
+    - name: Create ZIP archive
+      run: |
+        Compress-Archive -Path VideoStudio-Windows-x64 -DestinationPath VideoStudio-Windows-x64.zip
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: VideoStudio-Windows-x64
+        path: VideoStudio-Windows-x64.zip
+        retention-days: 30
