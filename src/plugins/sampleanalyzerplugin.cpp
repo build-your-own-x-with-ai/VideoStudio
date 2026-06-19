@@ -106,7 +106,11 @@ AnalysisResult SampleAnalyzerPlugin::analyze(const QString& videoFile, const QVa
             streamObj["fps"] = av_q2d(stream->avg_frame_rate);
         } else if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             streamObj["sample_rate"] = codecpar->sample_rate;
+#if LIBAVCODEC_VERSION_MAJOR >= 59
             streamObj["channels"] = codecpar->ch_layout.nb_channels;
+#else
+            streamObj["channels"] = codecpar->channels;
+#endif
         }
 
         streams.append(streamObj);

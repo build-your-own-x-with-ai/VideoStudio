@@ -396,7 +396,7 @@ QJsonObject CLIProcessor::videoInfoToJson(VideoDecoder* decoder) {
     root["frame_rate"] = decoder->getFrameRate();
     root["duration"] = decoder->getDuration();
     root["total_frames"] = decoder->getFrameCount();
-    root["bitrate"] = decoder->getBitrate();
+    root["bitrate"] = static_cast<qint64>(decoder->getBitrate());
     root["pixel_format"] = decoder->getPixelFormat();
     return root;
 }
