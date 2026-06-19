@@ -50,7 +50,7 @@ signals:
 
 private slots:
     void onLevelFilterChanged(int index);
-    void onTypeFilterChanged(Qt::CheckState state);
+    void onTypeFilterChanged(int state);
     void onMessageDoubleClicked(QTreeWidgetItem* item, int column);
 
 private:

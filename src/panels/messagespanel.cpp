@@ -307,7 +307,7 @@ void MessagesPanel::onLevelFilterChanged(int index) {
     updateMessageList();
 }
 
-void MessagesPanel::onTypeFilterChanged(Qt::CheckState state) {
+void MessagesPanel::onTypeFilterChanged(int state) {
     QCheckBox* checkbox = qobject_cast<QCheckBox*>(sender());
     if (!checkbox) {
         return;
