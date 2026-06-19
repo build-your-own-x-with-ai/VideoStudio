@@ -253,8 +253,8 @@ void ExplorerPanel::addMP4AtomNodes(QTreeWidgetItem* parent, const QVector<MP4At
         atomItem->setText(2, QString::number(atom.percentage, 'f', 2));
         atomItem->setCheckState(0, Qt::Checked);
 
-        // Store atom offset as user data
-        atomItem->setData(0, Qt::UserRole, atom.offset);
+        // Store atom offset as user data (cast to qlonglong for Qt 6.5.3)
+        atomItem->setData(0, Qt::UserRole, static_cast<qlonglong>(atom.offset));
 
         // Recursively add children
         if (!atom.children.isEmpty()) {

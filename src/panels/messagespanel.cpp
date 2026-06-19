@@ -81,7 +81,8 @@ void MessagesPanel::createUI() {
         checkbox->setChecked(true);
         m_typeFilters[pair.second] = checkbox;
         m_enabledTypes.insert(pair.second);
-        connect(checkbox, &QCheckBox::checkStateChanged,
+        // Use stateChanged for Qt 6.5.3 compatibility (checkStateChanged is Qt 6.7+)
+        connect(checkbox, &QCheckBox::stateChanged,
                 this, &MessagesPanel::onTypeFilterChanged);
         scrollLayout->addWidget(checkbox);
     }

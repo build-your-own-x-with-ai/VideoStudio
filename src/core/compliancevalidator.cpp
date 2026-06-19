@@ -146,36 +146,35 @@ void ComplianceValidator::validateH264_ProfileLevel(AVCodecContext* codecCtx) {
     bool validProfile = false;
     QString profileName;
 
-    switch (profile) {
-        case FF_PROFILE_H264_BASELINE:
-            validProfile = true;
-            profileName = "Baseline";
-            break;
-        case FF_PROFILE_H264_MAIN:
-            validProfile = true;
-            profileName = "Main";
-            break;
-        case FF_PROFILE_H264_HIGH:
-            validProfile = true;
-            profileName = "High";
-            break;
-        case FF_PROFILE_H264_HIGH_10:
-            validProfile = true;
-            profileName = "High 10";
-            break;
-        case FF_PROFILE_H264_HIGH_422:
-            validProfile = true;
-            profileName = "High 4:2:2";
-            break;
-        case FF_PROFILE_H264_HIGH_444:
-            validProfile = true;
-            profileName = "High 4:4:4";
-            break;
-        default:
-            addIssue(IssueSeverity::Warning, IssueCategory::Profile,
-                     QString("Unknown H.264 profile: %1").arg(profile),
-                     "ISO/IEC 14496-10 Annex A");
-            return;
+    // Use if-else instead of switch for older FFmpeg versions
+    if (profile == FF_PROFILE_H264_BASELINE) {
+        validProfile = true;
+        profileName = "Baseline";
+    } else if (profile == FF_PROFILE_H264_MAIN) {
+        validProfile = true;
+        profileName = "Main";
+    } else if (profile == FF_PROFILE_H264_HIGH) {
+        validProfile = true;
+        profileName = "High";
+#ifdef FF_PROFILE_H264_HIGH_10
+    } else if (profile == FF_PROFILE_H264_HIGH_10) {
+        validProfile = true;
+        profileName = "High 10";
+#endif
+#ifdef FF_PROFILE_H264_HIGH_422
+    } else if (profile == FF_PROFILE_H264_HIGH_422) {
+        validProfile = true;
+        profileName = "High 4:2:2";
+#endif
+#ifdef FF_PROFILE_H264_HIGH_444
+    } else if (profile == FF_PROFILE_H264_HIGH_444) {
+        validProfile = true;
+        profileName = "High 4:4:4";
+#endif
+        addIssue(IssueSeverity::Warning, IssueCategory::Profile,
+                 QString("Unknown H.264 profile: %1").arg(profile),
+                 "ISO/IEC 14496-10 Annex A");
+        return;
     }
 
     addIssue(IssueSeverity::Info, IssueCategory::Profile,
