@@ -735,7 +735,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/dialogs/compliancedialog.cpp" line="184"/>
         <source>Profile</source>
-        <translation type="unfinished">配置</translation>
+        <translation>配置</translation>
     </message>
     <message>
         <location filename="../src/dialogs/compliancedialog.cpp" line="185"/>
@@ -801,7 +801,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/dialogs/duplicateframedetectiondialog.cpp" line="75"/>
         <source>Start Analysis</source>
-        <translation type="unfinished">开始分析</translation>
+        <translation>开始分析</translation>
     </message>
     <message>
         <location filename="../src/dialogs/duplicateframedetectiondialog.cpp" line="76"/>
@@ -816,7 +816,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/dialogs/duplicateframedetectiondialog.cpp" line="94"/>
         <source>Results</source>
-        <translation type="unfinished">结果</translation>
+        <translation>结果</translation>
     </message>
     <message>
         <location filename="../src/dialogs/duplicateframedetectiondialog.cpp" line="97"/>
@@ -862,7 +862,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/dialogs/duplicateframedetectiondialog.cpp" line="117"/>
         <source>Type</source>
-        <translation type="unfinished">类型</translation>
+        <translation>类型</translation>
     </message>
     <message>
         <location filename="../src/dialogs/duplicateframedetectiondialog.cpp" line="117"/>
@@ -912,7 +912,7 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/dialogs/duplicateframedetectiondialog.cpp" line="225"/>
         <source>Analysis complete</source>
-        <translation type="unfinished">分析完成</translation>
+        <translation>分析完成</translation>
     </message>
     <message>
         <location filename="../src/dialogs/duplicateframedetectiondialog.cpp" line="239"/>
@@ -1942,12 +1942,12 @@ Occupancy: %2 Mbits (%3%)</source>
     <message>
         <location filename="../src/mainwindow.cpp" line="2380"/>
         <source>Language Changed</source>
-        <translation type="unfinished">语言已更改</translation>
+        <translation>语言已更改</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2381"/>
         <source>Please restart the application for language changes to take effect.</source>
-        <translation type="unfinished">请重启应用程序以使语言更改生效。</translation>
+        <translation>请重启应用程序以使语言更改生效。</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="2500"/>
@@ -2455,7 +2455,7 @@ Supported TS parameters:
     <message>
         <location filename="../src/panels/propertypanel.cpp" line="679"/>
         <source>Parameter &apos;%1&apos; is not supported for Graphics Panel or has no data.</source>
-        <translation type="unfinished"></translation>
+        <translation>图形面板不支持参数 '%1' 或无数据。</translation>
     </message>
     <message>
         <location filename="../src/panels/propertypanel.cpp" line="704"/>
@@ -3159,12 +3159,12 @@ Black=no diff, Blue=slight, Green=medium, Red=large</source>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="60"/>
         <source>Start Frame:</source>
-        <translation type="unfinished">起始帧：</translation>
+        <translation>起始帧：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="65"/>
         <source>End Frame:</source>
-        <translation type="unfinished">结束帧：</translation>
+        <translation>结束帧：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvexportdialog.cpp" line="70"/>
@@ -3299,7 +3299,7 @@ Please verify width, height, and format parameters.</source>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="154"/>
         <source>Failed to seek to frame %1 (offset %2).</source>
-        <translation type="unfinished"></translation>
+        <translation>无法跳转到帧 %1（偏移 %2）。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="168"/>
@@ -3307,7 +3307,7 @@ Please verify width, height, and format parameters.</source>
         <location filename="../src/core/yuvreader.cpp" line="221"/>
         <location filename="../src/core/yuvreader.cpp" line="242"/>
         <source>Failed to read Y plane for frame %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法读取帧 %1 的 Y 平面。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="175"/>
@@ -3315,7 +3315,7 @@ Please verify width, height, and format parameters.</source>
         <location filename="../src/core/yuvreader.cpp" line="206"/>
         <location filename="../src/core/yuvreader.cpp" line="225"/>
         <source>Failed to read U plane for frame %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法读取帧 %1 的 U 平面。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="179"/>
@@ -3323,37 +3323,37 @@ Please verify width, height, and format parameters.</source>
         <location filename="../src/core/yuvreader.cpp" line="210"/>
         <location filename="../src/core/yuvreader.cpp" line="229"/>
         <source>Failed to read V plane for frame %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法读取帧 %1 的 V 平面。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="246"/>
         <source>Failed to read UV plane for frame %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法读取帧 %1 的 UV 平面。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="258"/>
         <source>Failed to read packed YUV data for frame %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法读取帧 %1 的打包 YUV 数据。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="269"/>
         <source>Failed to read RGB24 data for frame %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法读取帧 %1 的 RGB24 数据。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="280"/>
         <source>Failed to read RGB32 data for frame %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法读取帧 %1 的 RGB32 数据。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="291"/>
         <source>Failed to read grayscale data for frame %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法读取帧 %1 的灰度数据。</translation>
     </message>
     <message>
         <location filename="../src/core/yuvreader.cpp" line="298"/>
         <source>Unsupported YUV format.</source>
-        <translation type="unfinished"></translation>
+        <translation>不支持的 YUV 格式。</translation>
     </message>
 </context>
 <context>
@@ -3361,17 +3361,17 @@ Please verify width, height, and format parameters.</source>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="22"/>
         <source>YUV Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>YUV 查看器</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="36"/>
         <source>File:</source>
-        <translation type="unfinished"></translation>
+        <translation>文件：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="38"/>
         <source>Select a raw YUV file...</source>
-        <translation type="unfinished"></translation>
+        <translation>选择原始 YUV 文件...</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="40"/>
@@ -3386,12 +3386,12 @@ Please verify width, height, and format parameters.</source>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="56"/>
         <source>Width:</source>
-        <translation type="unfinished"></translation>
+        <translation>宽度：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="63"/>
         <source>Height:</source>
-        <translation type="unfinished"></translation>
+        <translation>高度：</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="78"/>
@@ -3417,7 +3417,7 @@ Please verify width, height, and format parameters.</source>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="98"/>
         <source>Playback Controls</source>
-        <translation type="unfinished"></translation>
+        <translation>播放控制</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="102"/>
@@ -3428,12 +3428,12 @@ Please verify width, height, and format parameters.</source>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="107"/>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="259"/>
         <source>▶</source>
-        <translation type="unfinished"></translation>
+        <translation>▶</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="112"/>
         <source>►</source>
-        <translation type="unfinished"></translation>
+        <translation>►</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="117"/>
@@ -3449,7 +3449,7 @@ Please verify width, height, and format parameters.</source>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="144"/>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="342"/>
         <source>Export Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>导出帧</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="149"/>
@@ -3464,32 +3464,32 @@ Please verify width, height, and format parameters.</source>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="161"/>
         <source>YUV Files (*.yuv *.raw);;All Files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>YUV 文件 (*.yuv *.raw);;所有文件 (*)</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="172"/>
         <source>No File Selected</source>
-        <translation type="unfinished"></translation>
+        <translation>未选择文件</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="172"/>
         <source>Please select a YUV file first.</source>
-        <translation type="unfinished"></translation>
+        <translation>请先选择 YUV 文件。</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="183"/>
         <source>Frames: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>帧数：%1</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="188"/>
         <source>/ %1</source>
-        <translation type="unfinished"></translation>
+        <translation>/ %1</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="198"/>
         <source>File Opened</source>
-        <translation type="unfinished"></translation>
+        <translation>文件已打开</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="199"/>
@@ -3514,12 +3514,12 @@ Frames: %5</source>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="246"/>
         <source>Frames: %1 ✓</source>
-        <translation type="unfinished"></translation>
+        <translation>帧数：%1 ✓</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="249"/>
         <source>Frames: %1 ✗ (mismatch)</source>
-        <translation type="unfinished"></translation>
+        <translation>帧数：%1 ✗（不匹配）</translation>
     </message>
     <message>
         <location filename="../src/dialogs/yuvviewerdialog.cpp" line="263"/>

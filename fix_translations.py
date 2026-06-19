@@ -33,6 +33,14 @@ def process_ts_file(filename):
                         output_lines.append(f'        <translation>{source_text}</translation>')
                         i += 2  # Skip the original translation line
                         continue
+                    # Check if there's already a translation in the line (unfinished but present)
+                    trans_match = re.search(r'<translation type="unfinished">(.*?)</translation>', next_line)
+                    if trans_match and trans_match.group(1):
+                        # Already has translation, just remove unfinished flag
+                        translation_text = trans_match.group(1)
+                        output_lines.append(f'        <translation>{translation_text}</translation>')
+                        i += 2
+                        continue
                     else:
                         # English source - translate if we have mapping
                         if source_text in translations:

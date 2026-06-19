@@ -333,4 +333,41 @@ translations = {
 
     # Graphics Panel (continued)
     "Parameter '%1' is not supported for Graphics Panel or has no data.": "图形面板不支持参数 '%1' 或无数据。",
+
+    # YUV Viewer
+    "YUV Viewer": "YUV 查看器",
+    "File:": "文件：",
+    "Select a raw YUV file...": "选择原始 YUV 文件...",
+    "Width:": "宽度：",
+    "Height:": "高度：",
+    "Playback Controls": "播放控制",
+    "Export Frame": "导出帧",
+    "YUV Files (*.yuv *.raw);;All Files (*)": "YUV 文件 (*.yuv *.raw);;所有文件 (*)",
+    "No File Selected": "未选择文件",
+    "Please select a YUV file first.": "请先选择 YUV 文件。",
+    "Frames: %1": "帧数：%1",
+    "/ %1": "/ %1",
+    "File Opened": "文件已打开",
+    "Successfully opened YUV file:\n%1\n\nResolution: %2x%3\nFormat: %4\nFrames: %5": "成功打开 YUV 文件：\n%1\n\n分辨率：%2x%3\n格式：%4\n帧数：%5",
+    "Frames: %1 ✓": "帧数：%1 ✓",
+    "Frames: %1 ✗ (mismatch)": "帧数：%1 ✗（不匹配）",
+    "Failed to save frame to:\n%1": "帧保存失败：\n%1",
+    "Failed to seek to frame %1 (offset %2).": "无法跳转到帧 %1（偏移 %2）。",
+    "Failed to read Y plane for frame %1.": "无法读取帧 %1 的 Y 平面。",
+    "Failed to read U plane for frame %1.": "无法读取帧 %1 的 U 平面。",
+    "Failed to read V plane for frame %1.": "无法读取帧 %1 的 V 平面。",
+    "Failed to read UV plane for frame %1.": "无法读取帧 %1 的 UV 平面。",
+    "Failed to read packed YUV data for frame %1.": "无法读取帧 %1 的打包 YUV 数据。",
+    "Failed to read RGB24 data for frame %1.": "无法读取帧 %1 的 RGB24 数据。",
+    "Failed to read RGB32 data for frame %1.": "无法读取帧 %1 的 RGB32 数据。",
+    "Failed to read grayscale data for frame %1.": "无法读取帧 %1 的灰度数据。",
+    "Unsupported YUV format.": "不支持的 YUV 格式。",
+
+    # Special encoded characters
+    "Parameter &apos;%1&apos; is not supported for Graphics Panel.\n\nSupported TS parameters:\n- PID\n- Continuity Counter\n- Adaptation Field Control\n- Scrambling Control\n- Transport Error Indicator\n- Payload Unit Start Indicator\n- Transport Priority\n- PCR (for selected PID)\n- PTS (for selected PID)\n- DTS (for selected PID)\n- Payload Size (for selected PID)": "图形面板不支持参数 '%1'。\n\n支持的 TS 参数：\n- PID\n- 连续计数器\n- 自适应字段控制\n- 加扰控制\n- 传输错误指示\n- 有效载荷单元起始指示\n- 传输优先级\n- PCR（针对选定的 PID）\n- PTS（针对选定的 PID）\n- DTS（针对选定的 PID）\n- 有效载荷大小（针对选定的 PID）",
+    "Parameter &apos;%1&apos; is not supported for Graphics Panel or has no data.": "图形面板不支持参数 '%1' 或无数据。",
+
+    # Playback symbols
+    "▶": "▶",
+    "►": "►",
 }
