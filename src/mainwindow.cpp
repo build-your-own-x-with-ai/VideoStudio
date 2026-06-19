@@ -1084,10 +1084,20 @@ void MainWindow::loadFile(const QString& fileName) {
         qDebug() << message;
     }, Qt::QueuedConnection);
 
+    // Track cancellation to prevent duplicate handling
+    auto cancelHandled = std::make_shared<bool>(false);
+
     // Connect cancel button to interrupt loading
-    connect(progressDialog, &QProgressDialog::canceled, this, [this, progressDialog]() {
+    connect(progressDialog, &QProgressDialog::canceled, this, [this, progressDialog, cancelHandled]() {
+        if (*cancelHandled) return;
+        *cancelHandled = true;
+
         qDebug() << "User cancelled file loading";
         progressDialog->setLabelText(tr("Cancelling..."));
+
+        // Immediately disconnect progress signals to prevent further updates
+        disconnect(m_decoder.get(), &VideoDecoder::indexingProgress, nullptr, nullptr);
+
         m_decoder->cancelOperation();  // Request cancellation
     });
 
