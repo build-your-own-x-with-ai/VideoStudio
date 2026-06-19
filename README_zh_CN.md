@@ -5,17 +5,40 @@
 使用 C++ Qt 和 FFmpeg 构建的专业视频流分析工具。
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)
-![Qt](https://img.shields.io/badge/Qt-6.11.0-green.svg)
-![FFmpeg](https://img.shields.io/badge/FFmpeg-7.1.1-orange.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
+![Qt](https://img.shields.io/badge/Qt-6.5.3+-green.svg)
+![FFmpeg](https://img.shields.io/badge/FFmpeg-4.x%20%7C%205.x%20%7C%206.x%20%7C%207.x-orange.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 
 ## 概述
 
 VideoStudio 是一款综合性视频编解码分析应用，灵感来自 Elecard StreamEye。它提供专业级工具用于调试编码问题、验证编解码器合规性、分析质量指标以及检查帧级细节。
 
+**🎉 版本 2.0 发布亮点：**
+- ✅ **跨平台支持**：现已支持 Windows、macOS 和 Linux
+- ✅ **自动化 CI/CD**：通过 GitHub Actions 提供所有平台的预构建二进制文件
+- ✅ **合规性验证**：H.264/H.265 比特流语法验证
+- ✅ **缓冲分析**：HRD/VBV 验证和 CPB 监控
+- ✅ **插件系统**：可扩展架构，支持自定义分析器
+- ✅ **音频分析**：全面的音频流分析和波形可视化
+- ✅ **增强稳定性**：FFmpeg 4.x-7.x 兼容层
+
 **提供两种模式：**
 - **GUI 应用程序**：功能齐全的基于 Qt 的桌面应用程序，支持交互式分析
 - **CLI 工具**：用于批处理和自动化的命令行界面（参见 [CLI 文档](docs/CLI.md)）
+
+## 下载
+
+**预构建二进制文件（推荐）：**
+
+访问 [Releases](https://github.com/build-your-own-x-with-ai/VideoStudio/releases) 页面下载预构建包：
+- **Windows**: VideoStudio-Windows-x64.zip
+- **macOS**: VideoStudio-macOS-x64.tar.gz  
+- **Linux**: VideoStudio-Linux-x64.tar.gz
+
+**备用下载：**
+
+链接: <https://pan.baidu.com/s/1hjvHDnAHsCuQhaC5K1LMeQ?pwd=3kxq> 提取码:3kxq
 
 ### 核心特性
 
@@ -44,7 +67,15 @@ VideoStudio 是一款综合性视频编解码分析应用，灵感来自 Elecard
 - **缩略图栏**: 快速帧导航，带视觉缩略图
 - **消息面板**: 编解码器警告、错误和合规问题
 - **EPG面板**: 来自传输流的电子节目指南数据
-- **缓冲分析**: CPB（编码图像缓冲）监控
+- **缓冲分析**: CPB（编码图像缓冲）监控，支持 HRD/VBV 验证
+- **音频分析**: 波形、频谱、响度（LUFS）和相位表可视化
+- **块统计**: 运动矢量叠加和分区可视化
+
+#### 合规性与验证（2.0 新增）
+- **H.264/H.265 合规性**: 根据 ITU-T 规范进行比特流语法验证
+- **配置与级别验证**: 自动检测和验证编解码器配置
+- **缓冲模型验证**: HRD（假设参考解码器）验证
+- **语法错误检测**: 实时识别比特流违规
 
 #### 用户界面
 - **专业界面**: 基于Qt的界面，带可停靠面板和流畅动画
@@ -53,26 +84,40 @@ VideoStudio 是一款综合性视频编解码分析应用，灵感来自 Elecard
 - **实时日志查看器**: 实时显示文件加载和解析进度
 - **上下文菜单**: 右键点击帧分析和导出选项
 - **可自定义布局**: 多种预定义工作区布局，适用于不同的分析工作流程
+- **插件系统**（2.0 新增）：可扩展架构，支持使用 C++ API 的自定义分析插件
 
 ### 计划功能
 
-- 合规性验证（H.264/H.265比特流语法验证）
-- 高级缓冲分析（HRD/VBV验证）
 - 参考流比较，支持并排差异模式
-- 命令行批处理工具
-- 自定义分析器插件系统
+- 高级运动矢量分析工具
+- 场景变化检测和分析
 
 ## 系统要求
 
-- **macOS**: 10.15 或更高版本
-- **Qt**: 6.11.0 或更高版本
-- **FFmpeg**: 7.1.1 或更高版本
+### 所有平台
+- **Qt**: 6.5.3 或更高版本（推荐 6.11.0 用于开发）
+- **FFmpeg**: 4.x、5.x、6.x 或 7.x（自动兼容层）
 - **CMake**: 3.16 或更高版本
-- **编译器**: 支持 C++17 的 Clang
+- **C++17 编译器**: Clang、GCC 或 MSVC
+
+### 平台特定要求
+- **macOS**: 10.15 (Catalina) 或更高版本
+- **Windows**: Windows 10 或更高版本，Visual Studio 2019+
+- **Linux**: Ubuntu 20.04+ 或同等版本（glibc 2.31+）
 
 ## 安装
 
-### 安装依赖
+### 方式 1：下载预构建二进制文件（推荐）
+
+从 [GitHub Releases](https://github.com/build-your-own-x-with-ai/VideoStudio/releases/tag/v2.0.0) 下载最新版本：
+
+- **Windows**: 解压 `VideoStudio-Windows-x64.zip` 并运行 `VideoStudio.exe`
+- **macOS**: 解压 `VideoStudio-macOS-x64.tar.gz` 并运行 `VideoStudio.app`
+- **Linux**: 解压 `VideoStudio-Linux-x64.tar.gz` 并运行 `./VideoStudio`
+
+### 方式 2：从源码构建
+
+#### macOS
 
 ```bash
 # 安装 Homebrew（如果尚未安装）
@@ -82,9 +127,52 @@ VideoStudio 是一款综合性视频编解码分析应用，灵感来自 Elecard
 brew install ffmpeg
 
 # 从 https://www.qt.io/download 下载并安装 Qt 6.11.0
+
+# 克隆并构建
+git clone https://github.com/build-your-own-x-with-ai/VideoStudio.git
+cd VideoStudio
+mkdir build && cd build
+cmake .. -DCMAKE_PREFIX_PATH=~/Qt/6.11.0/macos
+cmake --build .
+./VideoStudio.app/Contents/MacOS/VideoStudio
 ```
 
-### 从源码构建
+#### Linux (Ubuntu/Debian)
+
+```bash
+# 安装依赖
+sudo apt update
+sudo apt install -y build-essential cmake git
+sudo apt install -y libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev
+sudo apt install -y qt6-base-dev qt6-multimedia-dev qt6-tools-dev
+
+# 克隆并构建
+git clone https://github.com/build-your-own-x-with-ai/VideoStudio.git
+cd VideoStudio
+mkdir build && cd build
+cmake ..
+cmake --build .
+./VideoStudio
+```
+
+#### Windows
+
+```bash
+# 通过 Chocolatey 安装依赖
+choco install cmake git
+
+# 下载 Qt 和 FFmpeg：
+# - Qt: https://www.qt.io/download
+# - FFmpeg: https://github.com/BtbN/FFmpeg-Builds/releases
+
+# 克隆并构建
+git clone https://github.com/build-your-own-x-with-ai/VideoStudio.git
+cd VideoStudio
+mkdir build && cd build
+cmake .. -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64" -DFFMPEG_DIR="C:/ffmpeg"
+cmake --build . --config Release
+./Release/VideoStudio.exe
+```
 
 ```bash
 # 克隆仓库

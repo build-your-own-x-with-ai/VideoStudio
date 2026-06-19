@@ -5,17 +5,40 @@
 Professional video stream analysis tool built with C++ Qt and FFmpeg.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)
-![Qt](https://img.shields.io/badge/Qt-6.11.0-green.svg)
-![FFmpeg](https://img.shields.io/badge/FFmpeg-7.1.1-orange.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
+![Qt](https://img.shields.io/badge/Qt-6.5.3+-green.svg)
+![FFmpeg](https://img.shields.io/badge/FFmpeg-4.x%20%7C%205.x%20%7C%206.x%20%7C%207.x-orange.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 
 ## Overview
 
 VideoStudio is a comprehensive video codec analysis application inspired by Elecard StreamEye. It provides professional-grade tools for debugging encoding issues, validating codec compliance, analyzing quality metrics, and inspecting frame-level details.
 
+**🎉 Version 2.0 Release Highlights:**
+- ✅ **Cross-Platform Support**: Now available on Windows, macOS, and Linux
+- ✅ **Automated CI/CD**: Pre-built binaries for all platforms via GitHub Actions
+- ✅ **Compliance Validation**: H.264/H.265 bitstream syntax verification
+- ✅ **Buffer Analysis**: HRD/VBV verification with CPB monitoring
+- ✅ **Plugin System**: Extensible architecture for custom analyzers
+- ✅ **Audio Analysis**: Comprehensive audio stream analysis with waveform visualization
+- ✅ **Enhanced Stability**: FFmpeg 4.x-7.x compatibility layer
+
 **Available in two modes:**
 - **GUI Application**: Full-featured Qt-based desktop application with interactive analysis
 - **CLI Tool**: Command-line interface for batch processing and automation (see [CLI Documentation](docs/CLI.md))
+
+## Download
+
+**Pre-built Binaries (Recommended):**
+
+Visit the [Releases](https://github.com/build-your-own-x-with-ai/VideoStudio/releases) page to download pre-built packages:
+- **Windows**: VideoStudio-Windows-x64.zip
+- **macOS**: VideoStudio-macOS-x64.tar.gz  
+- **Linux**: VideoStudio-Linux-x64.tar.gz
+
+**Alternative Download:**
+
+链接: <https://pan.baidu.com/s/1hjvHDnAHsCuQhaC5K1LMeQ?pwd=3kxq> 提取码:3kxq
 
 ### Key Features
 
@@ -44,7 +67,15 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 - **Thumbnail Bar**: Quick frame navigation with visual thumbnails
 - **Messages Panel**: Codec warnings, errors, and compliance issues
 - **EPG Panel**: Electronic Program Guide data from transport streams
-- **Buffer Analysis**: CPB (Coded Picture Buffer) monitoring
+- **Buffer Analysis**: CPB (Coded Picture Buffer) monitoring with HRD/VBV verification
+- **Audio Analysis**: Waveform, spectrum, loudness (LUFS), and phase meter visualization
+- **Block Statistics**: Motion vector overlay and partition visualization
+
+#### Compliance & Validation (NEW in 2.0)
+- **H.264/H.265 Compliance**: Bitstream syntax validation against ITU-T specifications
+- **Profile & Level Verification**: Automatic detection and validation of codec profiles
+- **Buffer Model Verification**: HRD (Hypothetical Reference Decoder) validation
+- **Syntax Error Detection**: Real-time identification of bitstream violations
 
 #### User Interface
 - **Professional UI**: Qt-based interface with dockable panels and smooth animations
@@ -53,12 +84,13 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 - **Real-time Log Viewer**: Monitor file loading and parsing progress with live log display
 - **Context Menus**: Right-click frame analysis and export options
 - **Customizable Layouts**: Multiple predefined workspace layouts for different analysis workflows
+- **Plugin System** (NEW in 2.0): Extensible architecture for custom analysis plugins with C++ API
 
 ### Planned Features
 
-- Compliance verification (H.264/H.265 bitstream syntax validation)
-- Advanced buffer analysis (HRD/VBV verification)
 - Reference stream comparison with side-by-side difference modes
+- Advanced motion vector analysis tools
+- Scene change detection and analysis
 - Command-line tool for batch processing
 - Plugin system for custom analyzers
 
@@ -118,15 +150,30 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 
 ## Requirements
 
-- **macOS**: 10.15 or later
-- **Qt**: 6.11.0 or later
-- **FFmpeg**: 7.1.1 or later
+### All Platforms
+- **Qt**: 6.5.3 or later (6.11.0 recommended for development)
+- **FFmpeg**: 4.x, 5.x, 6.x, or 7.x (automatic compatibility layer)
 - **CMake**: 3.16 or later
-- **Compiler**: Clang with C++17 support
+- **C++17 Compiler**: Clang, GCC, or MSVC
+
+### Platform-Specific
+- **macOS**: 10.15 (Catalina) or later
+- **Windows**: Windows 10 or later, Visual Studio 2019+
+- **Linux**: Ubuntu 20.04+ or equivalent (glibc 2.31+)
 
 ## Installation
 
-### Install Dependencies
+### Option 1: Download Pre-built Binaries (Recommended)
+
+Download the latest release from [GitHub Releases](https://github.com/build-your-own-x-with-ai/VideoStudio/releases/tag/v2.0.0):
+
+- **Windows**: Extract `VideoStudio-Windows-x64.zip` and run `VideoStudio.exe`
+- **macOS**: Extract `VideoStudio-macOS-x64.tar.gz` and run `VideoStudio.app`
+- **Linux**: Extract `VideoStudio-Linux-x64.tar.gz` and run `./VideoStudio`
+
+### Option 2: Build from Source
+
+#### macOS
 
 ```bash
 # Install Homebrew (if not already installed)
@@ -136,26 +183,51 @@ VideoStudio is a comprehensive video codec analysis application inspired by Elec
 brew install ffmpeg
 
 # Download and install Qt 6.11.0 from https://www.qt.io/download
-```
 
-### Build from Source
-
-```bash
-# Clone the repository
+# Clone and build
 git clone https://github.com/build-your-own-x-with-ai/VideoStudio.git
 cd VideoStudio
-
-# Create build directory
 mkdir build && cd build
-
-# Configure with CMake
 cmake .. -DCMAKE_PREFIX_PATH=~/Qt/6.11.0/macos
-
-# Build
 cmake --build .
-
-# Run
 ./VideoStudio.app/Contents/MacOS/VideoStudio
+```
+
+#### Linux (Ubuntu/Debian)
+
+```bash
+# Install dependencies
+sudo apt update
+sudo apt install -y build-essential cmake git
+sudo apt install -y libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev
+sudo apt install -y qt6-base-dev qt6-multimedia-dev qt6-tools-dev
+
+# Clone and build
+git clone https://github.com/build-your-own-x-with-ai/VideoStudio.git
+cd VideoStudio
+mkdir build && cd build
+cmake ..
+cmake --build .
+./VideoStudio
+```
+
+#### Windows
+
+```bash
+# Install dependencies via Chocolatey
+choco install cmake git
+
+# Download Qt and FFmpeg:
+# - Qt: https://www.qt.io/download
+# - FFmpeg: https://github.com/BtbN/FFmpeg-Builds/releases
+
+# Clone and build
+git clone https://github.com/build-your-own-x-with-ai/VideoStudio.git
+cd VideoStudio
+mkdir build && cd build
+cmake .. -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64" -DFFMPEG_DIR="C:/ffmpeg"
+cmake --build . --config Release
+./Release/VideoStudio.exe
 ```
 
 ## Usage
@@ -373,7 +445,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Roadmap
 
-### Version 1.0 (Current - MVP)
+### Version 1.0 (Released)
 - [x] Basic video decoding with FFmpeg
 - [x] Frame-by-frame navigation
 - [x] Bitrate visualization (bar chart)
@@ -385,7 +457,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [x] MKV container element analysis
 - [x] Multi-threaded file loading with progress feedback
 
-### Version 1.1
+### Version 1.1 (Released)
 - [x] Stream info panel
 - [x] Thumbnail navigation bar
 - [x] GOP structure viewer
@@ -397,7 +469,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [x] Time dynamics panel (PTS/DTS/PCR)
 - [x] Messages and error reporting
 
-### Version 1.2 (Current)
+### Version 1.2 (Released)
 - [x] Raw YUV file viewer with format detection
 - [x] All analysis panels implemented (Bitrate, Buffer, TR 101-290, Time Dynamics, etc.)
 - [x] Stream info export functionality
@@ -415,10 +487,22 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [x] VMAF quality metric (Video Multimethod Assessment Fusion)
 - [x] Command-line tool for batch processing and automation
 
-### Version 2.0 (Planned)
-- [x] Compliance verification (H.264/H.265 bitstream syntax validation)
-- [x] Advanced buffer analysis (HRD/VBV verification)
-- [x] Plugin system for custom analyzers
+### Version 2.0 (Current - Released)
+- [x] **Cross-Platform Support**: Windows, macOS, and Linux builds
+- [x] **Automated CI/CD**: GitHub Actions for multi-platform builds
+- [x] **Compliance Verification**: H.264/H.265 bitstream syntax validation
+- [x] **Advanced Buffer Analysis**: HRD/VBV verification with CPB monitoring
+- [x] **Plugin System**: Extensible architecture for custom analyzers
+- [x] **Audio Analysis**: Comprehensive audio stream analysis panels
+- [x] **FFmpeg Compatibility**: Automatic compatibility layer for FFmpeg 4.x-7.x
+- [x] **Enhanced Stability**: Robust error handling and cross-platform fixes
+
+### Version 2.1 (Planned)
+- [ ] Reference stream comparison with side-by-side difference modes
+- [ ] Advanced motion vector analysis tools
+- [ ] Scene change detection and analysis
+- [ ] Batch processing improvements
+- [ ] More quality metrics (MS-SSIM, VIF)
 
 ## Support
 
