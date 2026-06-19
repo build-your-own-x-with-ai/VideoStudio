@@ -655,7 +655,11 @@ void VideoOutput::drawFrameTypeInfo(QPainter& painter, const QRect& videoRect) {
     painter.drawText(textRect, Qt::AlignCenter, frameTypeStr);
 
     // Draw key frame indicator
+#ifdef AV_FRAME_FLAG_KEY
     if (m_currentFrame->flags & AV_FRAME_FLAG_KEY) {
+#else
+    if (m_currentFrame->key_frame) {
+#endif
         painter.setFont(QFont("Arial", 10, QFont::Bold));
         QRect keyRect(videoRect.left() + 10, videoRect.top() + textRect.height() + 15, 80, 20);
         painter.fillRect(keyRect, QColor(255, 215, 0, 200));

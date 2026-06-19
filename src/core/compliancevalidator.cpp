@@ -309,11 +309,19 @@ void ComplianceValidator::validateH265_ProfileLevel(AVCodecContext* codecCtx) {
     int level = codecCtx->level;
 
     QString profileName;
-    switch (profile) {
-        case FF_PROFILE_HEVC_MAIN: profileName = "Main"; break;
-        case FF_PROFILE_HEVC_MAIN_10: profileName = "Main 10"; break;
-        case FF_PROFILE_HEVC_MAIN_STILL_PICTURE: profileName = "Main Still Picture"; break;
-        default: profileName = QString("Unknown (%1)").arg(profile); break;
+    // Use if-else instead of switch for older FFmpeg versions where these aren't compile-time constants
+    if (profile == FF_PROFILE_HEVC_MAIN) {
+        profileName = "Main";
+#ifdef FF_PROFILE_HEVC_MAIN_10
+    } else if (profile == FF_PROFILE_HEVC_MAIN_10) {
+        profileName = "Main 10";
+#endif
+#ifdef FF_PROFILE_HEVC_MAIN_STILL_PICTURE
+    } else if (profile == FF_PROFILE_HEVC_MAIN_STILL_PICTURE) {
+        profileName = "Main Still Picture";
+#endif
+    } else {
+        profileName = QString("Unknown (%1)").arg(profile);
     }
 
     addIssue(IssueSeverity::Info, IssueCategory::Profile,

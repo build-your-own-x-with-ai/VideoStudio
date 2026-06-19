@@ -114,7 +114,11 @@ bool AudioAnalyzer::openFile(const QString& filename, int audioStreamIndex) {
     qDebug() << "AudioAnalyzer: Opened audio stream" << m_audioStreamIndex;
     qDebug() << "  Codec:" << m_codec->name;
     qDebug() << "  Sample rate:" << m_codecCtx->sample_rate;
+#if LIBAVUTIL_VERSION_MAJOR >= 57
     qDebug() << "  Channels:" << m_codecCtx->ch_layout.nb_channels;
+#else
+    qDebug() << "  Channels:" << m_codecCtx->channels;
+#endif
 
     return true;
 }
@@ -149,7 +153,8 @@ bool AudioAnalyzer::initResampler() {
         return false;
     }
 
-    // Allocate resampler context
+#if LIBAVUTIL_VERSION_MAJOR >= 57
+    // Allocate resampler context (new API)
     int ret = swr_alloc_set_opts2(&m_swrCtx,
                                   &m_codecCtx->ch_layout,
                                   AV_SAMPLE_FMT_FLT,
@@ -158,6 +163,18 @@ bool AudioAnalyzer::initResampler() {
                                   m_codecCtx->sample_fmt,
                                   m_codecCtx->sample_rate,
                                   0, nullptr);
+#else
+    // Allocate resampler context (old API)
+    m_swrCtx = swr_alloc_set_opts(nullptr,
+                                  m_codecCtx->channel_layout,
+                                  AV_SAMPLE_FMT_FLT,
+                                  m_codecCtx->sample_rate,
+                                  m_codecCtx->channel_layout,
+                                  m_codecCtx->sample_fmt,
+                                  m_codecCtx->sample_rate,
+                                  0, nullptr);
+    int ret = m_swrCtx ? 0 : -1;
+#endif
 
     if (ret < 0) {
         qWarning() << "AudioAnalyzer: Failed to allocate resampler";
@@ -185,12 +202,20 @@ AudioStreamInfo AudioAnalyzer::getStreamInfo() const {
     info.codecName = QString(m_codec->name);
     info.codecLongName = QString(m_codec->long_name);
     info.sampleRate = m_codecCtx->sample_rate;
+#if LIBAVUTIL_VERSION_MAJOR >= 57
     info.channels = m_codecCtx->ch_layout.nb_channels;
+#else
+    info.channels = m_codecCtx->channels;
+#endif
     info.bitrate = m_codecCtx->bit_rate;
 
     // Channel layout
     char layout[64];
+#if LIBAVUTIL_VERSION_MAJOR >= 57
     av_channel_layout_describe(&m_codecCtx->ch_layout, layout, sizeof(layout));
+#else
+    av_get_channel_layout_string(layout, sizeof(layout), m_codecCtx->channels, m_codecCtx->channel_layout);
+#endif
     info.channelLayout = QString(layout);
 
     // Sample format
@@ -241,11 +266,19 @@ QVector<AudioStreamInfo> AudioAnalyzer::getAllAudioStreams() const {
             }
 
             info.sampleRate = codecpar->sample_rate;
+#if LIBAVUTIL_VERSION_MAJOR >= 57
             info.channels = codecpar->ch_layout.nb_channels;
+#else
+            info.channels = codecpar->channels;
+#endif
             info.bitrate = codecpar->bit_rate;
 
             char layout[64];
+#if LIBAVUTIL_VERSION_MAJOR >= 57
             av_channel_layout_describe(&codecpar->ch_layout, layout, sizeof(layout));
+#else
+            av_get_channel_layout_string(layout, sizeof(layout), codecpar->channels, codecpar->channel_layout);
+#endif
             info.channelLayout = QString(layout);
 
             info.sampleFormat = QString(av_get_sample_fmt_name((AVSampleFormat)codecpar->format));
@@ -336,7 +369,11 @@ QVector<float> AudioAnalyzer::convertToFloat(AVFrame* frame) {
         return samples;
     }
 
+#if LIBAVUTIL_VERSION_MAJOR >= 57
     int channels = frame->ch_layout.nb_channels;
+#else
+    int channels = frame->channels;
+#endif
     int sampleCount = frame->nb_samples;
 
     // Allocate output buffer
