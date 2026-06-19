@@ -231,6 +231,9 @@ AudioStreamInfo AudioAnalyzer::getStreamInfo() const {
     }
 
     // Profile
+#ifndef FF_PROFILE_UNKNOWN
+#define FF_PROFILE_UNKNOWN -99
+#endif
     if (m_codecCtx->profile != FF_PROFILE_UNKNOWN) {
         const char* profile = avcodec_profile_name(m_codecCtx->codec_id, m_codecCtx->profile);
         if (profile) {
@@ -350,7 +353,18 @@ bool AudioAnalyzer::decodeNextFrame(AudioFrameData& frameData) {
         frameData.dts = m_frame->pkt_dts;
         frameData.timestamp = m_frame->pts * av_q2d(m_audioStream->time_base);
         frameData.sampleCount = m_frame->nb_samples;
+#if LIBAVUTIL_VERSION_MAJOR < 58
         frameData.size = m_frame->pkt_size;
+#else
+        // pkt_size removed in FFmpeg 5.1+, calculate from sample count
+        int channels;
+#if LIBAVUTIL_VERSION_MAJOR >= 57
+        channels = m_frame->ch_layout.nb_channels;
+#else
+        channels = m_frame->channels;
+#endif
+        frameData.size = m_frame->nb_samples * av_get_bytes_per_sample((AVSampleFormat)m_frame->format) * channels;
+#endif
 
         // Convert to float samples
         frameData.samples = convertToFloat(m_frame);
